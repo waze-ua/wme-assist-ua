@@ -57,15 +57,69 @@ function run_wme_assist() {
         }));
     }
 
-    var Rules = function () {
-        var rules = [
-            new Rule('Incorrect street name', function (text) {
-                return text.replace(/(^| )(пр-т)( |$)/, '$1проспект$3');
-            }),
-            new Rule('Incorrect street name', function (text) {
-                return text.replace(/(^| )(ул\.?)( |$)/, '$1улица$3');
-            }),
-        ];
+    var Rules = function (countryName) {
+        var rules_RU = function () {
+            return [
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(пр-т\.?)( |$)/, '$1проспект$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(просп\.?)( |$)/, '$1проспект$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(ул\.?)( |$)/, '$1улица$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(пер\.?)( |$)/, '$1переулок$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(пр-д\.?)( |$)/, '$1проезд$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(пл\.?)( |$)/, '$1площадь$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(ш\.)( |$)/, '$1шоссе$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(б-р)( |$)/, '$1бульвар$3');
+                }),
+            ];
+        };
+
+        var rules_BY = function () {
+            return rules_RU().concat([
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(тр-т)( |$)/, '$1тракт$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(вул\.?)( |$)/, '$1вуліца$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(зав)( |$)/, '$1завулак$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(прасп)( |$)/, '$1праспект$3');
+                }),
+            ]);
+        }
+
+        var getCountryRules = function (name) {
+            info('Get rules for country: ' + name);
+            switch (name) {
+            case 'Russia':
+                return rules_RU();
+                break;
+            case 'Belarus':
+                return rules_BY();
+                break;
+            default:
+                alert('There are not implemented rules for country: ' + name);
+                return [];
+            }
+        }
+
+        var rules = getCountryRules(countryName);
         var customRulesIndex = rules.length;
 
         var onAdd = function (rule) {}
@@ -75,6 +129,14 @@ function run_wme_assist() {
         this.onAdd = function (cb) { onAdd = cb }
         this.onEdit = function (cb) { onEdit = cb }
         this.onDelete = function (cb) { onDelete = cb }
+
+        this.onCountryChange = function (name) {
+            info('Country was changed to ' + name);
+            var newrules = getCountryRules(name);
+            rules.splice(0, customRulesIndex);
+            customRulesIndex = newrules.length;
+            rules = newrules.concat(rules);
+        }
 
         this.get = function (index) {
             return rules[index + customRulesIndex];
@@ -112,7 +174,6 @@ function run_wme_assist() {
 
         this.push = function (oldname, newname) {
             var rule = new CustomRule(oldname, newname);
-            console.log(rule);
             rules.push(rule);
             onAdd(rule);
 
@@ -471,8 +532,16 @@ function run_wme_assist() {
     };
 
     var Application = function (wazeapi) {
+        var countryName = function () {
+            var id = wazeapi.model.countries.top.id;
+            var name = wazeapi.model.countries.objects[id].name;
+            return name;
+        }
+
+        var country = countryName();
+
         var action = new ActionHelper(wazeapi);
-        var rules = new Rules();
+        var rules = new Rules(country);
         var ui = new Ui();
 
         rules.onAdd(function (rule) {
@@ -485,6 +554,14 @@ function run_wme_assist() {
 
         rules.onDelete(function (index) {
             ui.removeCustomRule(index);
+        });
+
+        wazeapi.model.events.register('mergeend', map, function () {
+            var name = countryName();
+            if (name != country) {
+                rules.onCountryChange(name);
+                country = name;
+            }
         });
 
         rules.load();
