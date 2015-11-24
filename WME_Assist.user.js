@@ -60,6 +60,15 @@ function run_wme_assist() {
     var Rules = function (countryName) {
         var rules_RU = function () {
             return [
+                new Rule('Redundant space in street name', function (text) {
+                    return text.replace(/[ ]+/g, ' ');
+                }),
+                new Rule('Space at the begin of street name', function (text) {
+                    return text.replace(/^[ ]*/, '');
+                }),
+                new Rule('Space at the end of street name', function (text) {
+                    return text.replace(/[ ]*$/, '');
+                }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пр-т\.?)( |$)/, '$1проспект$3');
                 }),
@@ -88,6 +97,25 @@ function run_wme_assist() {
         };
 
         var rules_BY = function () {
+            var isStatus = function (str) {
+                var list = ['улица', 'переулок', 'проспект', 'проезд',
+                            'площадь', 'шоссе', 'бульвар', 'тракт',
+                            'тупик', 'спуск', 'вуліца', 'завулак',
+                            'праспект', 'праезд', 'плошча', 'шаша'];
+                if (list.indexOf(str) > -1) return true;
+                return false;
+            }
+
+            var isPseudoStatus = function (str) {
+                var list = ['шоссе', 'тракт', 'площадь', 'шаша', 'плошча', 'спуск'];
+                if (list.indexOf(str) > -1) return true;
+                return false;
+            }
+
+            var isNumber = function (str) {
+                return /([0-9])-[іыйя]/.test(str);
+            }
+
             return rules_RU().concat([
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(тр-т)( |$)/, '$1тракт$3');
@@ -100,6 +128,62 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(прасп)( |$)/, '$1праспект$3');
+                }),
+
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/-ая/, '-я').replace(/-ой/, '-й');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    function replaceParts(text) {
+                        var arr = text.split(' ');
+                        var result = [];
+                        var status;
+                        var number;
+
+                        var previousPart = '';
+                        for (var i = 0; i < arr.length; ++i) {
+                            var part = arr[i];
+
+                            if (isStatus(part) && !isPseudoStatus(part)) {
+                                status = part;
+                            } else if (isNumber(part) && previousPart.toLowerCase() != 'героев') {
+                                number = part;
+                            } else {
+                                result.push(part);
+                            }
+
+                            previousPart = part;
+                        }
+
+                        if (status) {
+                            result.splice(0, 0, status);
+                        }
+
+                        if (number) {
+                            result.push(number);
+                        }
+
+                        return result.join(' ');
+                    }
+
+                    if (/[РрНнМмPpHM]-?([0-9])/.test(text)) {
+                        text = text
+                            .replace('р', 'Р')
+                            .replace('н', 'Н')
+                            .replace('м', 'М')
+                            .replace('P', 'Р')
+                            .replace('p', 'Р')
+                            .replace('H', 'Н')
+                            .replace('M', 'М');
+
+                        if (text.search('-') == -1) {
+                            text = text.substring(0, 1) + '-' + text.substring(1, text.lenth);
+                        }
+
+                        return text;
+                    } else {
+                        return replaceParts(text);
+                    }
                 }),
             ]);
         }
