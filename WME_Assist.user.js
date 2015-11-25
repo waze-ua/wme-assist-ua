@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.0.5
+// @version   0.1.0
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.0.5';
+    var ver = '0.1.0';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
