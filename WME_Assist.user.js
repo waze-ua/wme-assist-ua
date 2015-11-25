@@ -284,11 +284,19 @@ function run_wme_assist() {
         var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
         var WazeActionAddOrGetStreet = require("Waze/Action/AddOrGetStreet");
 
-        this.Select = function (id, center, zoom) {
+        var type2repo = function (type) {
+            var map = {
+                'venue': wazeapi.model.venues,
+                'segment': wazeapi.model.segments
+            };
+            return map[type];
+        }
+
+        this.Select = function (id, type, center, zoom) {
             var select = function () {
                 info('select: ' + id);
 
-                var obj = wazeapi.model.venues.objects[id];
+                var obj = type2repo(type).objects[id];
 
                 wazeapi.model.events.unregister('mergeend', map, select);
 
@@ -324,12 +332,14 @@ function run_wme_assist() {
             var deferred = $.Deferred();
 
             var fix = function () {
-                var obj = wazeapi.model.venues.objects[problem.id];
+                var obj = type2repo(problem.type).objects[problem.id];
                 wazeapi.model.events.unregister('mergeend', map, fix);
 
                 if (obj) {
                     var correctStreet = addOrGetStreet(problem.cityId, problem.newStreetName);
-                    wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, {streetID: correctStreet.getID()}));
+                    var request = {};
+                    request[problem.attrName] = correctStreet.getID();
+                    wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, request));
                     deferred.resolve((obj.getID()));
                 } else {
                     wazeapi.model.events.register('mergeend', map, fix);
@@ -550,7 +560,7 @@ function run_wme_assist() {
         }
 
         var escapeId = function (id) {
-            return id.replace(/\./g, "\\.");
+            return String(id).replace(/\./g, "\\.");
         }
 
         this.moveToFixedList = function (id) {
@@ -654,55 +664,74 @@ function run_wme_assist() {
         var unresolvedIdx = 0;
         var analyzedIds = [];
 
+        var checkStreet = function (streetID, obj, attrName) {
+            var street = wazeapi.model.streets.objects[streetID];
+
+            if (!street) return;
+
+            if (street.isEmpty) return;
+
+            var newStreetName = rules.correct(street.name);
+
+            if (newStreetName != street.name) {
+                var title = obj.type + ' street: ' + street.name + ' -> ' + newStreetName;
+                var center = obj.geometry.getBounds().getCenterLonLat();
+                var zoom = Waze.map.getZoom();
+                ui.addProblem(obj.getID(), title, action.Select(obj.getID(), obj.type, center, zoom));
+
+                problems.push({
+                    id: obj.getID(),
+                    type: obj.type,
+                    attrName: attrName,
+                    center: center,
+                    detectPos: wazeapi.map.getCenter(),
+                    zoom: zoom,
+                    newStreetName: newStreetName,
+                    cityId: street.cityID,
+                });
+
+                ui.setUnresolvedErrorNum(problems.length - unresolvedIdx);
+            }
+        }
+
         var analyze = function () {
+            var startTime = new Date().getTime();
+
             info('start analyze');
             info('venues.num   = ' + wazeapi.model.venues.getObjectArray().length);
             info('segments.num = ' + wazeapi.model.segments.getObjectArray().length);
 
-            for (var id in wazeapi.model.venues.objects) {
-                if (analyzedIds.indexOf(id) >= 0) continue;
-
-                var venue = wazeapi.model.venues.objects[id];
-
-                if (!venue.isAllowed(venue.PERMISSIONS.EDIT_GEOMETRY)) continue;
-
-                if (!venue.attributes.approved) continue;
-
-                var streetID = venue.attributes.streetID;
-
-                var street = wazeapi.model.streets.objects[streetID];
-
-                if (!street) continue;
-
-                if (street.isEmpty) continue;
-
-                var newStreetName = rules.correct(street.name);
-
-                if (newStreetName != street.name) {
-                    info(venue.attributes.id);
-                    info(street.name);
-
-                    var title = 'POI street: ' + street.name + ' -> ' + newStreetName;
-                    var center = venue.geometry.getBounds().getCenterLonLat();
-                    var zoom = Waze.map.getZoom();
-                    ui.addProblem(venue.attributes.id, title, action.Select(id, center, zoom));
-
-                    problems.push({
-                        id: id,
-                        center: center,
-                        detectPos: wazeapi.map.getCenter(),
-                        zoom: zoom,
-                        newStreetName: newStreetName,
-                        cityId: street.cityID,
-                    });
-
-                    ui.setUnresolvedErrorNum(problems.length - unresolvedIdx);
+            var subjects = {
+                'segment': {
+                    attr: 'primaryStreetID',
+                    repo: wazeapi.model.segments,
+                },
+                'poi': {
+                    attr: 'streetID',
+                    repo: wazeapi.model.venues,
                 }
+            };
 
-                analyzedIds.push(id);
+            for (var k in subjects) {
+                var subject = subjects[k];
+
+                for (var id in subject.repo.objects) {
+                    if (analyzedIds.indexOf(id) >= 0) continue;
+
+                    var obj = subject.repo.objects[id];
+
+                    if (!obj.isAllowed(obj.PERMISSIONS.EDIT_GEOMETRY)) continue;
+
+                    if (typeof obj.attributes.approved != 'undefined' && !obj.attributes.approved) continue;
+
+                    var streetID = obj.attributes[subject.attr];
+                    checkStreet(streetID, obj, subject.attr);
+
+                    analyzedIds.push(id);
+                }
             }
 
-            info('end analyze');
+            info('end analyze: ' + (new Date().getTime() - startTime) + 'ms');
         }
 
         this.start = function () {
