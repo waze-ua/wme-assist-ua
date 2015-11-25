@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name WME Assist
 // @author borman84 (Boris Molodenkov)
-// @description This script checks and fixes POI street name
+// @description This script checks and fixes street name for POI and segments
 // @match     https://world.waze.com/editor/*
 // @match     https://*.waze.com/editor/*
 // @match     https://*.waze.com/*/editor/*
