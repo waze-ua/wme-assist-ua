@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.0
+// @version   0.1.1
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.0';
+    var ver = '0.1.1';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -116,6 +116,38 @@ function run_wme_assist() {
                 return /([0-9])-[іыйя]/.test(str);
             }
 
+            var replaceParts = function (text) {
+                var arr = text.split(' ');
+                var result = [];
+                var status;
+                var number;
+
+                var previousPart = '';
+                for (var i = 0; i < arr.length; ++i) {
+                    var part = arr[i];
+
+                    if (isStatus(part) && !isPseudoStatus(part)) {
+                        status = part;
+                    } else if (isNumber(part) && previousPart.toLowerCase() != 'героев') {
+                        number = part;
+                    } else {
+                        result.push(part);
+                    }
+
+                    previousPart = part;
+                }
+
+                if (status) {
+                    result.splice(0, 0, status);
+                }
+
+                if (number) {
+                    result.push(number);
+                }
+
+                return result.join(' ');
+            }
+
             return rules_RU().concat([
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(тр-т)( |$)/, '$1тракт$3');
@@ -134,40 +166,8 @@ function run_wme_assist() {
                     return text.replace(/-ая/, '-я').replace(/-ой/, '-й');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    function replaceParts(text) {
-                        var arr = text.split(' ');
-                        var result = [];
-                        var status;
-                        var number;
-
-                        var previousPart = '';
-                        for (var i = 0; i < arr.length; ++i) {
-                            var part = arr[i];
-
-                            if (isStatus(part) && !isPseudoStatus(part)) {
-                                status = part;
-                            } else if (isNumber(part) && previousPart.toLowerCase() != 'героев') {
-                                number = part;
-                            } else {
-                                result.push(part);
-                            }
-
-                            previousPart = part;
-                        }
-
-                        if (status) {
-                            result.splice(0, 0, status);
-                        }
-
-                        if (number) {
-                            result.push(number);
-                        }
-
-                        return result.join(' ');
-                    }
-
-                    if (/[РрНнМмPpHM]-?([0-9])/.test(text)) {
-                        text = text
+                    return text.replace(/([РрНнМмPpHM])-?([0-9])/, function (a, p1, p2) {
+                        p1 = p1
                             .replace('р', 'Р')
                             .replace('н', 'Н')
                             .replace('м', 'М')
@@ -176,15 +176,10 @@ function run_wme_assist() {
                             .replace('H', 'Н')
                             .replace('M', 'М');
 
-                        if (text.search('-') == -1) {
-                            text = text.substring(0, 1) + '-' + text.substring(1, text.lenth);
-                        }
-
-                        return text;
-                    } else {
-                        return replaceParts(text);
-                    }
+                        return p1 + '-' + p2;
+                    });
                 }),
+                new Rule('Incorrect street name', replaceParts),
             ]);
         }
 
@@ -865,7 +860,6 @@ function run_wme_assist() {
         app.start();
     });
 }
-
 var script = document.createElement("script");
 script.textContent = run_wme_assist.toString() + ' \n' + 'run_wme_assist();';
 script.setAttribute("type", "application/javascript");
