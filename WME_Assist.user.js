@@ -12,7 +12,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.1
+// @version   0.1.2
 // ==/UserScript==
 
 function run_wme_assist() {
