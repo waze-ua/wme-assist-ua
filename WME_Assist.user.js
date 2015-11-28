@@ -16,7 +16,7 @@
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.1';
+    var ver = '0.1.2';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -57,17 +57,17 @@ function run_wme_assist() {
         }));
     }
 
+    var ExperimentalRule = function (comment,  func) {
+        this.comment = comment;
+        this.correct = func;
+        this.experimental = true;
+    }
+
     var Rules = function (countryName) {
-        var rules_RU = function () {
+        var rules_basicRU = function () {
             return [
-                new Rule('Redundant space in street name', function (text) {
-                    return text.replace(/[ ]+/g, ' ');
-                }),
-                new Rule('Space at the begin of street name', function (text) {
-                    return text.replace(/^[ ]*/, '');
-                }),
-                new Rule('Space at the end of street name', function (text) {
-                    return text.replace(/[ ]*$/, '');
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(.+\.)/, '$1 ');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пр-т\.?)( |$)/, '$1проспект$3');
@@ -93,7 +93,21 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(б-р)( |$)/, '$1бульвар$3');
                 }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(дор\.)( |$)/, '$1дорога$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(наб\.)( |$)/, '$1набережная$3');
+                }),
             ];
+        };
+
+        var rules_RU = function () {
+            return rules_basicRU().concat([
+                new ExperimentalRule('Experimental', function (text) {
+                    return text.replace(/experimental/, 'corrected_experimental');
+                }),
+            ]);
         };
 
         var rules_BY = function () {
@@ -148,7 +162,7 @@ function run_wme_assist() {
                 return result.join(' ');
             }
 
-            return rules_RU().concat([
+            return rules_basicRU().concat([
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(тр-т)( |$)/, '$1тракт$3');
                 }),
@@ -184,18 +198,33 @@ function run_wme_assist() {
         }
 
         var getCountryRules = function (name) {
+            var commonRules = [
+                // Following rules must be at the end because
+                // previous rules might insert additional spaces
+                new Rule('Redundant space in street name', function (text) {
+                    return text.replace(/[ ]+/g, ' ');
+                }),
+                new Rule('Space at the begin of street name', function (text) {
+                    return text.replace(/^[ ]*/, '');
+                }),
+                new Rule('Space at the end of street name', function (text) {
+                    return text.replace(/[ ]*$/, '');
+                }),
+            ];
+            var countryRules;
             info('Get rules for country: ' + name);
             switch (name) {
             case 'Russia':
-                return rules_RU();
+                countryRules = rules_RU();
                 break;
             case 'Belarus':
-                return rules_BY();
+                countryRules = rules_BY();
                 break;
             default:
                 alert('There are not implemented rules for country: ' + name);
-                return [];
+                countryRules = [];
             }
+            return countryRules.concat(commonRules);
         }
 
         var rules = getCountryRules(countryName);
@@ -223,13 +252,25 @@ function run_wme_assist() {
 
         this.correct = function (text) {
             var newtext = text;
+            var experimental = false;
 
             for (var i = 0; i < rules.length; ++i) {
                 var rule = rules[i];
+
+                if (rule.experimental && !this.experimental) continue;
+
+                var previous = newtext;
                 newtext = rule.correct(newtext);
+                if (rule.experimental && previous != newtext) {
+                    experimental = true;
+                }
+                previous = newtext;
             }
 
-            return newtext;
+            return {
+                value: newtext,
+                experimental: experimental
+            };
         }
 
         var save = function (rules) {
@@ -535,8 +576,8 @@ function run_wme_assist() {
             }
         });
 
-        this.addProblem = function (id, text, func) {
-            $('<li>')
+        this.addProblem = function (id, text, func, experimental) {
+            var problem = $('<li>')
                 .prop('id', 'issue-' + id)
                 .append($('<a>', {
                     href: "javascript:void(0)",
@@ -544,6 +585,10 @@ function run_wme_assist() {
                     click: func
                 }))
                 .appendTo($('#assist_unresolved_list'));
+
+            if (experimental) {
+                problem.children().css({color: 'red'}).prop('title', 'Experimental rule');
+            }
         }
 
         this.setUnresolvedErrorNum = function (text) {
@@ -633,6 +678,8 @@ function run_wme_assist() {
         var rules = new Rules(country);
         var ui = new Ui();
 
+//        rules.experimental = true;
+
         rules.onAdd(function (rule) {
             ui.addCustomRule(rule.comment);
         });
@@ -666,13 +713,14 @@ function run_wme_assist() {
 
             if (street.isEmpty) return;
 
-            var newStreetName = rules.correct(street.name);
+            var result = rules.correct(street.name);
+            var newStreetName = result.value;
 
             if (newStreetName != street.name) {
                 var title = obj.type + ' street: ' + street.name + ' -> ' + newStreetName;
                 var center = obj.geometry.getBounds().getCenterLonLat();
                 var zoom = Waze.map.getZoom();
-                ui.addProblem(obj.getID(), title, action.Select(obj.getID(), obj.type, center, zoom));
+                ui.addProblem(obj.getID(), title, action.Select(obj.getID(), obj.type, center, zoom), result.experimental);
 
                 problems.push({
                     id: obj.getID(),
@@ -683,6 +731,7 @@ function run_wme_assist() {
                     zoom: zoom,
                     newStreetName: newStreetName,
                     cityId: street.cityID,
+                    experimental: result.experimental,
                 });
 
                 ui.setUnresolvedErrorNum(problems.length - unresolvedIdx);
@@ -759,6 +808,8 @@ function run_wme_assist() {
                 var arr = [];
 
                 for (var i = unresolvedIdx; i < problems.length; ++i) {
+                    if (problems[i].experimental) continue;
+
                     var promise = action.fixProblem(problems[i]);
                     promise.done(function (id) {
                         ++unresolvedIdx;
