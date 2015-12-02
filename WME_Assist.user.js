@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.3
+// @version   0.1.4
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.3';
+    var ver = '0.1.4';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -399,7 +399,7 @@ function run_wme_assist() {
         section.id = "assist_options";
         section.innerHTML = '<b>Editor Options</b><br/>' +
             '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
-            '<label><input type="checkbox" id="assist_visibility" value="1"/> Show/hide window</label><br/>' +
+            '<label><input type="checkbox" id="assist_visibility" value="0"/> Show/hide window</label><br/>' +
             '<label><input type="checkbox" id="assist_debug" value="0"/> Debug</label><br/>';
         addon.appendChild(section);
 
@@ -778,11 +778,15 @@ function run_wme_assist() {
         this.start = function () {
             ui.enableCheckbox().click(function () {
                 if (ui.enableCheckbox().is(':checked')) {
+                    localStorage.setItem('assist_enabled', true);
+
                     info('enabled');
 
                     analyze();
                     wazeapi.model.events.register('mergeend', map, analyze);
                 } else {
+                    localStorage.setItem('assist_enabled', false);
+
                     info('disabled');
 
                     wazeapi.model.events.unregister('mergeend', map, analyze);
@@ -792,10 +796,20 @@ function run_wme_assist() {
             ui.showWindowCheckbox().click(function () {
                 if (ui.showWindowCheckbox().is(':checked')) {
                     ui.window().show();
+                    localStorage.setItem('show_window', true);
                 } else {
                     ui.window().hide();
+                    localStorage.setItem('show_window', false);
                 }
             });
+
+            if (localStorage.getItem('assist_enabled') == 'true') {
+                ui.enableCheckbox().click();
+            }
+
+            if (localStorage.getItem('show_window') == 'true') {
+                ui.showWindowCheckbox().click();
+            }
 
             ui.fixallBtn().click(function () {
                 ui.fixallBtn().hide();
