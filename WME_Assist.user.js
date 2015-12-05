@@ -580,6 +580,22 @@ function run_wme_assist() {
                 text: 0,
             }).css({color: 'green'}));
 
+        // Hack jquery ui dialog
+        var icon = mainWindow.prev('.ui-dialog-titlebar').find('span.ui-icon').switchClass('ui-icon-closethick', 'ui-icon-minusthick', 0);
+        var btn = mainWindow.prev('.ui-dialog-titlebar').find('button');
+        mainWindow.prev('.ui-dialog-titlebar').find('button').unbind('click');
+        mainWindow.prev('.ui-dialog-titlebar').find('button').click(function () {
+            if ($('#WME_AssistWindow').is(':visible')) {
+                icon.switchClass('ui-icon-minusthick', 'ui-icon-arrow-4-diag', 0);
+                $('#WME_AssistWindow').hide();
+                btn.prop('title', 'maximize');
+            } else {
+                icon.switchClass('ui-icon-arrow-4-diag', 'ui-icon-minusthick', 0);
+                $('#WME_AssistWindow').show();
+                btn.prop('title', 'minimize');
+            }
+        })
+
         this.addProblem = function (id, text, func, experimental) {
             var problem = $('<li>')
                 .prop('id', 'issue-' + id)
