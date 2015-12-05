@@ -415,15 +415,6 @@ function run_wme_assist() {
             .append($('<ul>').addClass('result-list'));
         addon.appendChild(section);
 
-        section = document.createElement('p');
-        section.style.paddingTop = "8px";
-        section.style.textIndent = "16px";
-        section.id = "assist_minireport";
-        section.innerHTML = '<b>Mini report</b><br/>' +
-            '<p>Unresolved errors: <span id="assist-error-num">0</span></p>' +
-            '<p>Fixed errors: <span id="assist-fixed-num">0</span></p>';
-        addon.appendChild(section);
-
         var newtab = document.createElement('li');
         newtab.innerHTML = '<a href="#sidepanel-assist" data-toggle="tab">Assist</a>';
         $('#user-info .nav-tabs').append(newtab);
@@ -574,6 +565,20 @@ function run_wme_assist() {
             'opacity': '0.9',
         });
         mainWindow.prev('.ui-dialog-titlebar').css('background','lightblue');
+        mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title').append($('<span> - </span>'));
+        mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title')
+            .append($('<span>', {
+                id: 'assist-error-num',
+                title: 'Number of unresolved issues',
+                text: 0,
+            }).css({color: 'red'}));
+        mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title').append($('<span> / </span>'));
+        mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title')
+            .append($('<span>', {
+                id: 'assist-fixed-num',
+                title: 'Number of fixed issues',
+                text: 0,
+            }).css({color: 'green'}));
 
         this.addProblem = function (id, text, func, experimental) {
             var problem = $('<li>')
