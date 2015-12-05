@@ -477,29 +477,10 @@ function run_wme_assist() {
             selectedCustomRule = -1;
         }
 
-        $('<div>').prop('id', 'WME_AssistWindow').css({
-            position: 'absolute',
-            'z-index': 1040, // below Toolbox dropdown menu
-            'background-color': 'white',
-            '-webkit-box-shadow': '1px 1px 5px 0px rgba(50, 50, 50, 0.75)',
-            '-moz-box-shadow':    '1px 1px 5px 0px rgba(50, 50, 50, 0.75)',
-            'box-shadow':         '1px 1px 5px 0px rgba(50, 50, 50, 0.75)',
-            border: '1px solid black',
-            'border-radius': 5,
-            padding: 0,
-            margin: 0,
-            overflow: 'hidden',
-            opacity: 0.9,
+        $('<div>', {
+            id: 'WME_AssistWindow',
+            title: 'WME Assist',
         })
-            .append($('<h1>WME Assist</h1>').css({
-                cursor: 'move',
-                'font-size': '110%',
-                'font-weight': 'bold',
-                padding: 10,
-                margin: 0,
-                'border-bottom': '1px solid black',
-                'background-color': 'lightblue',
-            }))
             .append($('<div>').css({
                 padding: 10,
             })
@@ -508,10 +489,7 @@ function run_wme_assist() {
                         'font-weight': 'bold',
                     }))
                     .append($('<ol id="assist_unresolved_list"></ol>').css({
-                        'min-width': 300,
-                        'max-height': 200,
                         border: '1px solid lightgrey',
-                        overflow: 'auto',
                         'padding-top': 2,
                         'padding-bottom': 2,
                     })))
@@ -523,10 +501,7 @@ function run_wme_assist() {
                         'font-weight': 'bold',
                     }))
                     .append($('<ol id="assist_fixed_list"></ol>').css({
-                        'min-width': 300,
-                        'max-height': 200,
                         border: '1px solid lightgrey',
-                        overflow: 'auto',
                         'padding-top': 2,
                         'padding-bottom': 2,
                     })))
@@ -554,6 +529,7 @@ function run_wme_assist() {
                    )
             .appendTo($('#map'));
 
+
         $('#assist_custom_rule_dialog label').css({display: 'block'});
         $('#assist_custom_rule_dialog input').css({display: 'block', width: '100%'});
 
@@ -573,6 +549,31 @@ function run_wme_assist() {
                 }
             }
         });
+
+        var mainWindow = $('#WME_AssistWindow').dialog({
+            autoOpen: false,
+            appendTo: $('#WazeMap'),
+            width: 350,
+            height: 400,
+            position: {
+            my: 'right-5 top',
+            at: 'right top',
+            of: '#WazeMap',
+            },
+            resize: function (event, ui) {
+                var w = ui.size.width;
+                var h = ui.size.height;
+                var dx = parseFloat($('#WME_AssistWindow').css('padding-left'));
+                var dy = parseFloat($('#WME_AssistWindow').css('padding-top'));
+                $('#WME_AssistWindow').width(w - 2*dx);
+                $('#WME_AssistWindow').height(h - 2*dy - 50);
+            },
+        });
+        mainWindow.parent('.ui-dialog').css({
+            'zIndex': 1040,
+            'opacity': '0.9',
+        });
+        mainWindow.prev('.ui-dialog-titlebar').css('background','lightblue');
 
         this.addProblem = function (id, text, func, experimental) {
             var problem = $('<li>')
@@ -612,7 +613,6 @@ function run_wme_assist() {
         var fixedList = $('#assist_fixed_list');
         var enableCheckbox = $('#assist_enabled');
         var showWindowCheckbox = $('#assist_visibility');
-        var mainWindow = $('#WME_AssistWindow');
 
         var addCustomRuleBtn = $('#assist_add_custom_rule');
         var editCustomRuleBtn = $('#assist_edit_custom_rule');
@@ -628,7 +628,7 @@ function run_wme_assist() {
         this.enableCheckbox = function () { return enableCheckbox }
         this.showWindowCheckbox = function () { return showWindowCheckbox }
 
-        this.window = function () { return mainWindow }
+        this.window = function () { return mainWindow; }
 
         this.addCustomRuleBtn = function () { return addCustomRuleBtn }
         this.editCustomRuleBtn = function () { return editCustomRuleBtn }
@@ -653,13 +653,6 @@ function run_wme_assist() {
 
             return deferred.promise();
         }
-
-        mainWindow.hide();
-        mainWindow.draggable({handle: 'h1'});
-
-        var pos_x = $('#WazeMap').width() - mainWindow.width();
-
-        mainWindow.css({top: 0, left: pos_x});
     };
 
     var Application = function (wazeapi) {
@@ -795,10 +788,10 @@ function run_wme_assist() {
 
             ui.showWindowCheckbox().click(function () {
                 if (ui.showWindowCheckbox().is(':checked')) {
-                    ui.window().show();
+                    ui.window().dialog('open');
                     localStorage.setItem('show_window', true);
                 } else {
-                    ui.window().hide();
+                    ui.window().dialog('close');
                     localStorage.setItem('show_window', false);
                 }
             });
