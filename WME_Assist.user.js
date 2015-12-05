@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.5
+// @version   0.1.6
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.5';
+    var ver = '0.1.6';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -466,6 +466,11 @@ function run_wme_assist() {
 
         this.showMainWindow = function () {
             mainWindow.dialog('open');
+            mainWindow.dialog('option', 'position', {
+                my: 'right-5 top',
+                at: 'right top',
+                of: '#WazeMap',
+            });
             // Minimize window
             mainWindow.prev('.ui-dialog-titlebar').find('button').click();
         }
@@ -556,9 +561,9 @@ function run_wme_assist() {
             width: 350,
             height: 400,
             position: {
-            my: 'right-5 top',
-            at: 'right top',
-            of: '#WazeMap',
+                my: 'right-5 top',
+                at: 'right top',
+                of: '#WazeMap',
             },
             resize: function (event, ui) {
                 var w = ui.size.width;
