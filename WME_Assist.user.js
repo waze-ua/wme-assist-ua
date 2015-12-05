@@ -421,10 +421,7 @@ function run_wme_assist() {
         section.id = "assist_minireport";
         section.innerHTML = '<b>Mini report</b><br/>' +
             '<p>Unresolved errors: <span id="assist-error-num">0</span></p>' +
-            '<p>Fixed errors: <span id="assist-fixed-num">0</span></p>' +
-            '<button id="assist_fixall_btn" class="btn btn-danger">Fix all</button>' +
-            '<button id="assist_reset_btn" class="btn btn-warning">Reset</button>' +
-            '<button id="assist_clearfixed_btn" class="btn btn-success">Clear fixed</button>';
+            '<p>Fixed errors: <span id="assist-fixed-num">0</span></p>';
         addon.appendChild(section);
 
         var newtab = document.createElement('li');
@@ -484,6 +481,9 @@ function run_wme_assist() {
             .append($('<div>').css({
                 padding: 10,
             })
+                    .append($('<button id="assist_fixall_btn" class="btn btn-danger">Fix all</button>'))
+                    .append($('<button id="assist_reset_btn" class="btn btn-warning">Reset</button>'))
+                    .append($('<button id="assist_clearfixed_btn" class="btn btn-success">Clear fixed</button>'))
                     .append($('<h2>Unresolved issues</h2>').css({
                         'font-size': '100%',
                         'font-weight': 'bold',
