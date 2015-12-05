@@ -399,7 +399,6 @@ function run_wme_assist() {
         section.id = "assist_options";
         section.innerHTML = '<b>Editor Options</b><br/>' +
             '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
-            '<label><input type="checkbox" id="assist_visibility" value="0"/> Show/hide window</label><br/>' +
             '<label><input type="checkbox" id="assist_debug" value="0"/> Debug</label><br/>';
         addon.appendChild(section);
 
@@ -463,6 +462,16 @@ function run_wme_assist() {
         this.removeCustomRule = function (index) {
             $('#assist_custom_rules li.result').eq(index).remove();
             selectedCustomRule = -1;
+        }
+
+        this.showMainWindow = function () {
+            mainWindow.dialog('open');
+            // Minimize window
+            mainWindow.prev('.ui-dialog-titlebar').find('button').click();
+        }
+
+        this.hideMainWindow = function () {
+            mainWindow.dialog('close');
         }
 
         $('<div>', {
@@ -633,7 +642,6 @@ function run_wme_assist() {
         var unresolvedList = $('#assist_unresolved_list');
         var fixedList = $('#assist_fixed_list');
         var enableCheckbox = $('#assist_enabled');
-        var showWindowCheckbox = $('#assist_visibility');
 
         var addCustomRuleBtn = $('#assist_add_custom_rule');
         var editCustomRuleBtn = $('#assist_edit_custom_rule');
@@ -647,9 +655,6 @@ function run_wme_assist() {
         this.fixedList = function () { return fixedList }
 
         this.enableCheckbox = function () { return enableCheckbox }
-        this.showWindowCheckbox = function () { return showWindowCheckbox }
-
-        this.window = function () { return mainWindow; }
 
         this.addCustomRuleBtn = function () { return addCustomRuleBtn }
         this.editCustomRuleBtn = function () { return editCustomRuleBtn }
@@ -793,6 +798,7 @@ function run_wme_assist() {
             ui.enableCheckbox().click(function () {
                 if (ui.enableCheckbox().is(':checked')) {
                     localStorage.setItem('assist_enabled', true);
+                    ui.showMainWindow();
 
                     info('enabled');
 
@@ -800,6 +806,7 @@ function run_wme_assist() {
                     wazeapi.model.events.register('mergeend', map, analyze);
                 } else {
                     localStorage.setItem('assist_enabled', false);
+                    ui.hideMainWindow();
 
                     info('disabled');
 
@@ -807,22 +814,8 @@ function run_wme_assist() {
                 }
             });
 
-            ui.showWindowCheckbox().click(function () {
-                if (ui.showWindowCheckbox().is(':checked')) {
-                    ui.window().dialog('open');
-                    localStorage.setItem('show_window', true);
-                } else {
-                    ui.window().dialog('close');
-                    localStorage.setItem('show_window', false);
-                }
-            });
-
             if (localStorage.getItem('assist_enabled') == 'true') {
                 ui.enableCheckbox().click();
-            }
-
-            if (localStorage.getItem('show_window') == 'true') {
-                ui.showWindowCheckbox().click();
             }
 
             ui.fixallBtn().click(function () {
