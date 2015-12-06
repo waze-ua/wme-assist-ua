@@ -349,6 +349,13 @@ function run_wme_assist() {
             return select;
         }
 
+        this.isObjectVisible = function (obj) {
+            if (!onlyVisible) return true;
+	        if (obj.geometry)
+		        return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
+	        return false;
+        }
+
         var addOrGetStreet = function (cityId, name, isEmpty) {
             var foundStreets = wazeapi.model.streets.getByAttributes({
                 cityID: cityId,
@@ -383,6 +390,7 @@ function run_wme_assist() {
         }
 
         var cityMap = {};
+        var onlyVisible = false;
 
         this.newCityID = function (id) {
             var newid = cityMap[id];
@@ -402,6 +410,7 @@ function run_wme_assist() {
             var newcity = addOrGetCity(city.countryID, city.stateID, newname);
 
             cityMap[city.getID()] = newcity.getID();
+            onlyVisible = true;
 
             console.log('Do not forget press reset button and re-enable script');
             return true;
@@ -826,20 +835,25 @@ function run_wme_assist() {
                 'segment': {
                     attr: 'primaryStreetID',
                     repo: wazeapi.model.segments,
+                    layer: wazeapi.map.roadLayers[0],
                 },
                 'poi': {
                     attr: 'streetID',
                     repo: wazeapi.model.venues,
+                    layer: wazeapi.map.landmarkLayer,
                 }
             };
 
             for (var k in subjects) {
                 var subject = subjects[k];
 
+                if (!subject.layer.visibility) continue;
+
                 for (var id in subject.repo.objects) {
                     if (analyzedIds.indexOf(id) >= 0) continue;
 
                     var obj = subject.repo.objects[id];
+                    if (!action.isObjectVisible(obj)) continue;
 
                     if (!obj.isAllowed(obj.PERMISSIONS.EDIT_GEOMETRY)) continue;
 
