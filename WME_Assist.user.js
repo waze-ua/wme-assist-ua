@@ -16,7 +16,7 @@
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.6';
+    var ver = '0.1.6 torston';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -104,6 +104,9 @@ function run_wme_assist() {
 
         var rules_RU = function () {
             return rules_basicRU().concat([
+                new Rule('Move status to begin of name', function (text) {
+                    return text.replace(/(.*)(улица)(.*)/, '$2 $1 $3');
+                }),
                 new ExperimentalRule('Experimental', function (text) {
                     return text.replace(/experimental/, 'corrected_experimental');
                 }),
