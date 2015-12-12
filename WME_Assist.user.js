@@ -517,9 +517,10 @@ function run_wme_assist() {
         }
 
         this.showMainWindow = function () {
+            $('#WazeMap').css('overflow', 'hidden');
             mainWindow.dialog('open');
             mainWindow.dialog('option', 'position', {
-                my: 'right-5 top',
+                my: 'right top',
                 at: 'right top',
                 of: '#WazeMap',
             });
@@ -612,11 +613,6 @@ function run_wme_assist() {
             appendTo: $('#WazeMap'),
             width: 350,
             height: 400,
-            position: {
-                my: 'right-5 top',
-                at: 'right top',
-                of: '#WazeMap',
-            },
             resize: function (event, ui) {
                 var w = ui.size.width;
                 var h = ui.size.height;
