@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.6
+// @version   0.1.7
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.6';
+    var ver = '0.1.7';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -465,9 +465,10 @@ function run_wme_assist() {
         }
 
         this.showMainWindow = function () {
+            $('#WazeMap').css('overflow', 'hidden');
             mainWindow.dialog('open');
             mainWindow.dialog('option', 'position', {
-                my: 'right-5 top',
+                my: 'right top',
                 at: 'right top',
                 of: '#WazeMap',
             });
@@ -560,11 +561,6 @@ function run_wme_assist() {
             appendTo: $('#WazeMap'),
             width: 350,
             height: 400,
-            position: {
-                my: 'right-5 top',
-                at: 'right top',
-                of: '#WazeMap',
-            },
             resize: function (event, ui) {
                 var w = ui.size.width;
                 var h = ui.size.height;
