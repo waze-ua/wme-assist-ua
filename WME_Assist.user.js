@@ -610,13 +610,16 @@ function run_wme_assist() {
             if ($('#WME_AssistWindow').is(':visible')) {
                 $('#WME_AssistWindow').hide();
                 btn.prop('title', 'maximize');
+
+                icon.removeClass('ui-icon-minusthick');
+                icon.addClass('ui-icon-arrow-4-diag');
             } else {
                 $('#WME_AssistWindow').show();
                 btn.prop('title', 'minimize');
-            }
 
-            icon.toggleClass('ui-icon-minusthick');
-            icon.toggleClass('ui-icon-arrow-4-diag');
+                icon.addClass('ui-icon-minusthick');
+                icon.removeClass('ui-icon-arrow-4-diag');
+            }
         })
 
         this.addProblem = function (id, text, func, experimental) {
