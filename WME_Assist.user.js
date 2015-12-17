@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.7
+// @version   0.1.8
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.7';
+    var ver = '0.1.8';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -613,6 +613,7 @@ function run_wme_assist() {
             appendTo: $('#WazeMap'),
             width: 350,
             height: 400,
+            draggable: false,
             resize: function (event, ui) {
                 var w = ui.size.width;
                 var h = ui.size.height;
@@ -643,19 +644,28 @@ function run_wme_assist() {
             }).css({color: 'green'}));
 
         // Hack jquery ui dialog
-        var icon = mainWindow.prev('.ui-dialog-titlebar').find('span.ui-icon').switchClass('ui-icon-closethick', 'ui-icon-minusthick', 0);
+        var icon = mainWindow.prev('.ui-dialog-titlebar').find('span.ui-icon');
+        if (!icon.hasClass('ui-icon-minusthick')) {
+            icon.addClass('ui-icon-minusthick');
+        }
+        if (icon.hasClass('ui-icon-closethick')) {
+            icon.removeClass('ui-icon-closethick');
+        }
         var btn = mainWindow.prev('.ui-dialog-titlebar').find('button');
         mainWindow.prev('.ui-dialog-titlebar').find('button').unbind('click');
+        var visible = true;
+        var height;
         mainWindow.prev('.ui-dialog-titlebar').find('button').click(function () {
             if ($('#WME_AssistWindow').is(':visible')) {
-                icon.switchClass('ui-icon-minusthick', 'ui-icon-arrow-4-diag', 0);
                 $('#WME_AssistWindow').hide();
                 btn.prop('title', 'maximize');
             } else {
-                icon.switchClass('ui-icon-arrow-4-diag', 'ui-icon-minusthick', 0);
                 $('#WME_AssistWindow').show();
                 btn.prop('title', 'minimize');
             }
+
+            icon.toggleClass('ui-icon-minusthick');
+            icon.toggleClass('ui-icon-arrow-4-diag');
         })
 
         this.addProblem = function (id, text, func, experimental) {
