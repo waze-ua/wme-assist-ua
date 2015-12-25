@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.8
+// @version   0.1.9
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.8 torston';
+    var ver = '0.1.9 torston';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -322,6 +322,7 @@ function run_wme_assist() {
     var ActionHelper = function (wazeapi) {
         var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
         var WazeActionAddOrGetStreet = require("Waze/Action/AddOrGetStreet");
+        var WazeActionAddOrGetCity = require("Waze/Action/AddOrGetCity");
 
         var type2repo = function (type) {
             var map = {
@@ -351,7 +352,14 @@ function run_wme_assist() {
             return select;
         }
 
-        var addOrGetStreet = function (cityId, name) {
+        this.isObjectVisible = function (obj) {
+            if (!onlyVisible) return true;
+	        if (obj.geometry)
+		        return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
+	        return false;
+        }
+
+        var addOrGetStreet = function (cityId, name, isEmpty) {
             var foundStreets = wazeapi.model.streets.getByAttributes({
                 cityID: cityId,
                 name: name,
@@ -361,10 +369,54 @@ function run_wme_assist() {
                 return foundStreets[0];
 
             var city = wazeapi.model.cities.objects[cityId];
-            var a = new WazeActionAddOrGetStreet(name, city, false);
+            var a = new WazeActionAddOrGetStreet(name, city, isEmpty);
             wazeapi.model.actionManager.add(a);
 
             return a.street;
+        }
+
+        var addOrGetCity = function (countryID, stateID, cityName) {
+	        var foundCities = Waze.model.cities.getByAttributes({
+                countryID: countryID,
+                stateID: stateID,
+                name : cityName
+            });
+
+	        if (foundCities.length == 1)
+                return foundCities[0];
+
+		    var state = Waze.model.states.objects[stateID];
+		    var country = Waze.model.countries.objects[countryID];
+		    var a = new WazeActionAddOrGetCity(state, country, cityName);
+		    Waze.model.actionManager.add(a);
+            return a.city;
+        }
+
+        var cityMap = {};
+        var onlyVisible = false;
+
+        this.newCityID = function (id) {
+            var newid = cityMap[id];
+            if (newid) return newid;
+            return id;
+        }
+
+        this.renameCity = function (oldname, newname) {
+            var oldcity = wazeapi.model.cities.getByAttributes({name: oldname});
+
+            if (oldcity.length == 0) {
+                console.log('City not found: ' + oldname);
+                return false;
+            }
+
+            var city = oldcity[0];
+            var newcity = addOrGetCity(city.countryID, city.stateID, newname);
+
+            cityMap[city.getID()] = newcity.getID();
+            onlyVisible = true;
+
+            console.log('Do not forget press reset button and re-enable script');
+            return true;
         }
 
         this.fixProblem = function (problem) {
@@ -375,7 +427,7 @@ function run_wme_assist() {
                 wazeapi.model.events.unregister('mergeend', map, fix);
 
                 if (obj) {
-                    var correctStreet = addOrGetStreet(problem.cityId, problem.newStreetName);
+                    var correctStreet = addOrGetStreet(problem.cityId, problem.newStreetName, problem.isEmpty);
                     var request = {};
                     request[problem.attrName] = correctStreet.getID();
                     wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, request));
@@ -744,16 +796,28 @@ function run_wme_assist() {
 
             if (!street) return;
 
-            if (street.isEmpty) return;
+            var detected = false;
+            var title;
 
-            var result = rules.correct(street.name);
-            var newStreetName = result.value;
+            if (!street.isEmpty) {
+                var result = rules.correct(street.name);
+                var newStreetName = result.value;
+                detected = (newStreetName != street.name);
+                title = obj.type + ' street: ' + street.name + ' -> ' + newStreetName;
+            }
 
-            if (newStreetName != street.name) {
-                var title = obj.type + ' street: ' + street.name + ' -> ' + newStreetName;
+            var newCityID = action.newCityID(street.cityID);
+            if (newCityID != street.cityID) {
+                detected = true;
+                title = 'city: ' +
+                    wazeapi.model.cities.objects[street.cityID].name + ' -> ' +
+                    wazeapi.model.cities.objects[newCityID].name;
+            }
+
+            if (detected) {
                 var center = obj.geometry.getBounds().getCenterLonLat();
-                var zoom = Waze.map.getZoom();
-                ui.addProblem(obj.getID(), title, action.Select(obj.getID(), obj.type, center, zoom), result.experimental);
+                var zoom = wazeapi.map.getZoom();
+                ui.addProblem(obj.getID(), title, action.Select(obj.getID(), obj.type, center, zoom), false);
 
                 problems.push({
                     id: obj.getID(),
@@ -763,8 +827,9 @@ function run_wme_assist() {
                     detectPos: wazeapi.map.getCenter(),
                     zoom: zoom,
                     newStreetName: newStreetName,
-                    cityId: street.cityID,
-                    experimental: result.experimental,
+                    isEmpty: street.isEmpty,
+                    cityId: newCityID,
+                    experimental: false,
                 });
 
                 ui.setUnresolvedErrorNum(problems.length - unresolvedIdx);
@@ -782,20 +847,25 @@ function run_wme_assist() {
                 'segment': {
                     attr: 'primaryStreetID',
                     repo: wazeapi.model.segments,
+                    layer: wazeapi.map.roadLayers[0],
                 },
                 'poi': {
                     attr: 'streetID',
                     repo: wazeapi.model.venues,
+                    layer: wazeapi.map.landmarkLayer,
                 }
             };
 
             for (var k in subjects) {
                 var subject = subjects[k];
 
+                if (!subject.layer.visibility) continue;
+
                 for (var id in subject.repo.objects) {
                     if (analyzedIds.indexOf(id) >= 0) continue;
 
                     var obj = subject.repo.objects[id];
+                    if (!action.isObjectVisible(obj)) continue;
 
                     if (!obj.isAllowed(obj.PERMISSIONS.EDIT_GEOMETRY)) continue;
 
@@ -910,7 +980,11 @@ function run_wme_assist() {
                     alert('Custom rule is not selected');
                 }
             });
+
+            window.assist = this;
         }
+
+        this.renameCity = action.renameCity;
     };
 
     function waitForWaze(done) {
