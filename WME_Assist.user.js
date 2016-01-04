@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.10
+// @version   0.1.11
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.10';
+    var ver = '0.1.11';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -814,12 +814,15 @@ function run_wme_assist() {
                 title = obj.type + ' street: ' + street.name + ' -> ' + newStreetName;
             }
 
-            var newCityID = action.newCityID(street.cityID);
-            if (newCityID != street.cityID) {
-                detected = true;
-                title = 'city: ' +
-                    wazeapi.model.cities.objects[street.cityID].name + ' -> ' +
-                    wazeapi.model.cities.objects[newCityID].name;
+            var newCityID = street.cityID;
+            if (obj.type != 'segment') {
+                newCityID = action.newCityID(street.cityID);
+                if (newCityID != street.cityID) {
+                    detected = true;
+                    title = 'city: ' +
+                        wazeapi.model.cities.objects[street.cityID].name + ' -> ' +
+                        wazeapi.model.cities.objects[newCityID].name;
+                }
             }
 
             if (detected) {
@@ -855,19 +858,15 @@ function run_wme_assist() {
                 'segment': {
                     attr: 'primaryStreetID',
                     repo: wazeapi.model.segments,
-                    layer: wazeapi.map.roadLayers[0],
                 },
                 'poi': {
                     attr: 'streetID',
                     repo: wazeapi.model.venues,
-                    layer: wazeapi.map.landmarkLayer,
                 }
             };
 
             for (var k in subjects) {
                 var subject = subjects[k];
-
-                if (!subject.layer.visibility) continue;
 
                 for (var id in subject.repo.objects) {
                     if (analyzedIds.indexOf(id) >= 0) continue;
