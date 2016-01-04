@@ -12,11 +12,11 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.1.9
+// @version   0.1.10
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.1.9';
+    var ver = '0.1.10';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -98,6 +98,17 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(наб\.)( |$)/, '$1набережная$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(\d+)(-ая)( |$)/, '$1-я$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    if (text.search(/Нехая|Тукая|Мая/) == -1)
+                        return text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба)( )(.+[а|я|ь]я$)/, '$3$2$1');
+                    return text;
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|микрорайон|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|поселок|городок|разворот|шлагбаум|обход|подъезд)( )(.+[и|о|ы]й$)/, '$3$2$1');
                 }),
             ];
         };
