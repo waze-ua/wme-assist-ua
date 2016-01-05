@@ -116,6 +116,9 @@ function run_wme_assist() {
 
         var rules_RU = function () {
             return rules_basicRU().concat([
+                new Rule('Move status to begin of name', function (text) {
+                    return text.replace(/(.*)(улица)(.*)/, '$2 $1 $3');
+                }, 'Tula'),
                 new ExperimentalRule('Experimental', function (text) {
                     return text.replace(/experimental/, 'corrected_experimental');
                 }),
