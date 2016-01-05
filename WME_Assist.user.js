@@ -43,9 +43,10 @@ function run_wme_assist() {
         return wazeapi;
     }
 
-    var Rule = function (comment, func) {
+    var Rule = function (comment, func, variant) {
         this.comment = comment;
         this.correct = func;
+        this.variant = variant;
     }
 
     var CustomRule = function (oldname, newname) {
@@ -106,10 +107,10 @@ function run_wme_assist() {
                     if (text.search(/Нехая|Тукая|Мая/) == -1)
                         return text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба)( )(.+[а|я|ь]я$)/, '$3$2$1');
                     return text;
-                }),
+                }, 'Moscow'),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|микрорайон|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|поселок|городок|разворот|шлагбаум|обход|подъезд)( )(.+[и|о|ы]й$)/, '$3$2$1');
-                }),
+                }, 'Moscow'),
             ];
         };
 
@@ -261,7 +262,7 @@ function run_wme_assist() {
             return rules[index + customRulesIndex];
         }
 
-        this.correct = function (text) {
+        this.correct = function (variant, text) {
             var newtext = text;
             var experimental = false;
 
@@ -269,6 +270,8 @@ function run_wme_assist() {
                 var rule = rules[i];
 
                 if (rule.experimental && !this.experimental) continue;
+
+                if (rule.variant && rule.variant != variant) continue;
 
                 var previous = newtext;
                 newtext = rule.correct(newtext);
@@ -463,6 +466,12 @@ function run_wme_assist() {
         section.innerHTML = '<b>Editor Options</b><br/>' +
             '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
             '<label><input type="checkbox" id="assist_debug" value="0"/> Debug</label><br/>';
+        var variant = document.createElement('p');
+        variant.id = 'variant_options';
+        variant.innerHTML = '<b>Variants</b><br/>' +
+            '<label><input type="radio" name="assist_variant" value="Moscow" checked/> Moscow</label><br/>' +
+            '<label><input type="radio" name="assist_variant" value="Tula"/> Tula</label><br/>';
+        section.appendChild(variant);
         addon.appendChild(section);
 
         section = document.createElement('p');
@@ -732,6 +741,13 @@ function run_wme_assist() {
         this.fixedList = function () { return fixedList }
 
         this.enableCheckbox = function () { return enableCheckbox }
+        this.variantRadio = function (value) {
+            if (!value) {
+                return $('[name=assist_variant]');
+            }
+
+            return $('[name=assist_variant][value=' + value + ']');
+        }
 
         this.addCustomRuleBtn = function () { return addCustomRuleBtn }
         this.editCustomRuleBtn = function () { return editCustomRuleBtn }
@@ -755,6 +771,9 @@ function run_wme_assist() {
             customRuleDialog.dialog('open');
 
             return deferred.promise();
+        }
+        this.variant = function () {
+            return $('[name=assist_variant]:checked')[0].value;
         }
     };
 
@@ -808,7 +827,7 @@ function run_wme_assist() {
             var title;
 
             if (!street.isEmpty) {
-                var result = rules.correct(street.name);
+                var result = rules.correct(ui.variant(), street.name);
                 var newStreetName = result.value;
                 detected = (newStreetName != street.name);
                 title = obj.type + ' street: ' + street.name + ' -> ' + newStreetName;
@@ -908,9 +927,16 @@ function run_wme_assist() {
                 }
             });
 
+            ui.variantRadio().click(function () {
+                localStorage.setItem('assist_variant', this.value);
+            });
+
             if (localStorage.getItem('assist_enabled') == 'true') {
                 ui.enableCheckbox().click();
             }
+
+            console.log(ui.variantRadio(localStorage.getItem('assist_variant')));
+            ui.variantRadio(localStorage.getItem('assist_variant')).prop('checked', true);
 
             ui.fixallBtn().click(function () {
                 ui.fixallBtn().hide();
