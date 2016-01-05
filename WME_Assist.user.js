@@ -959,8 +959,10 @@ function run_wme_assist() {
                 ui.enableCheckbox().click();
             }
 
-            console.log(ui.variantRadio(localStorage.getItem('assist_variant')));
-            ui.variantRadio(localStorage.getItem('assist_variant')).prop('checked', true);
+            var savedVariant = localStorage.getItem('assist_variant');
+            if (savedVariant != null) {
+                ui.variantRadio(savedVariant).prop('checked', true);
+            }
 
             ui.fixallBtn().click(function () {
                 ui.fixallBtn().hide();
