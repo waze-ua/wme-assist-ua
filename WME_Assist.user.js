@@ -103,6 +103,11 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d+)(-ая)( |$)/, '$1-я$3');
                 }),
+            ];
+        };
+
+        var rules_RU = function () {
+            return rules_basicRU().concat([
                 new Rule('Incorrect street name', function (text) {
                     if (text.search(/Нехая|Тукая|Мая/) == -1)
                         return text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба)( )(.+[а|я|ь]я$)/, '$3$2$1');
@@ -111,11 +116,6 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|микрорайон|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|поселок|городок|разворот|шлагбаум|обход|подъезд)( )(.+[и|о|ы]й$)/, '$3$2$1');
                 }, 'Moscow'),
-            ];
-        };
-
-        var rules_RU = function () {
-            return rules_basicRU().concat([
                 new Rule('Move status to begin of name', function (text) {
                     return text.replace(/(.*)(улица)(.*)/, '$2 $1 $3');
                 }, 'Tula'),
