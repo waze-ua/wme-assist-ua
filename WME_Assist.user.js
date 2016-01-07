@@ -859,6 +859,25 @@ function run_wme_assist() {
         var onAdd = function (name) {}
         var onDelete = function (index) {}
 
+        var save = function (exception) {
+            if (localStorage) {
+                localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
+            }
+        }
+
+        this.load = function () {
+            if (localStorage) {
+                var str = localStorage.getItem('assistExceptionsKey');
+                if (str) {
+                    var arr = JSON.parse(str);
+                    for (var i = 0; i < arr.length; ++i) {
+                        var exception = arr[i];
+                        this.add(exception);
+                    }
+                }
+            }
+        }
+
         this.contains = function (name) {
             if (exceptions.indexOf(name) == -1) return false;
             return true;
@@ -866,11 +885,13 @@ function run_wme_assist() {
 
         this.add = function (name) {
             exceptions.push(name);
+            save(exceptions);
             onAdd(name);
         }
 
         this.remove = function (index) {
             exceptions.splice(index, 1);
+            save(exceptions);
             onDelete(index);
         }
 
@@ -904,9 +925,6 @@ function run_wme_assist() {
             ui.removeException(index);
         });
 
-        exceptions.add('улица 1-я Линия');
-        exceptions.add('улица 2-я Линия');
-
 //        rules.experimental = true;
 
         rules.onAdd(function (rule) {
@@ -929,6 +947,7 @@ function run_wme_assist() {
             }
         });
 
+        exceptions.load();
         rules.load();
 
         var problems = [];
