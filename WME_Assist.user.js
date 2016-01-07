@@ -518,7 +518,7 @@ function run_wme_assist() {
         section.style.textIndent = "16px";
         section.id = "assist_exceptions";
         $(section)
-            .append($('<p>').addClass('message').css({'font-weight': 'bold'}).text('Exceptions'))
+            .append($('<p title="Right click on error in list to add">').addClass('message').css({'font-weight': 'bold'}).text('Exceptions'))
             .append($('<ul>').addClass('result-list'));
         addon.appendChild(section);
 
@@ -763,13 +763,13 @@ function run_wme_assist() {
                     href: "javascript:void(0)",
                     text: text,
                     click: function (event) {
-                        if (event.ctrlKey) {
-                            exception(event);
-                            event.preventDefault();
-                            return;
-                        }
                         func(event);
-                    }
+                    },
+                    contextmenu: function (event) {
+                        exception(event);
+                        event.preventDefault();
+                        event.stopPropagation();
+                    },
                 }))
                 .appendTo($('#assist_unresolved_list'));
 
