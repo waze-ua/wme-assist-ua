@@ -1097,9 +1097,6 @@ function run_wme_assist() {
                 localStorage.setItem('assist_variant', this.value);
 
                 ui.resetBtn().click();
-                setTimeout(function () {
-                    analyze();
-                }, 0);
             });
 
             if (localStorage.getItem('assist_enabled') == 'true') {
@@ -1150,6 +1147,7 @@ function run_wme_assist() {
                 analyzedIds = [];
                 ui.setUnresolvedErrorNum(0);
                 ui.setFixedErrorNum(0);
+                analyze();
             });
 
             ui.addCustomRuleBtn().click(function () {
