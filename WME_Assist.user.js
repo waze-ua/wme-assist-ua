@@ -572,14 +572,10 @@ function run_wme_assist() {
             selectedCustomRule = -1;
         }
 
-        this.addException = function (name) {
+        this.addException = function (name, del) {
             var thisrule = $('<li>').addClass('result').click(function () {
-                selectedException = $('#assist_exceptions li.result').index(thisrule);
-                info('index: ' + selectedException);
-                $('#assist_exceptions li.result').css({'background-color': ''});
-                $('#assist_exceptions li.result').removeClass('active');
-                $(this).css({'background-color': 'lightblue'});
-                $(this).addClass('active');
+                var index = $('#assist_exceptions li.result').index(thisrule);
+                del(index);
             }).hover(function () {
                 $(this).css({
                     cursor: 'pointer',
@@ -597,6 +593,10 @@ function run_wme_assist() {
             })
                 .append($('<p>').addClass('additional-info clearfix').text(name))
                 .appendTo($('#assist_exceptions ul.result-list'));
+        }
+
+        this.removeException = function (index) {
+            $('#assist_exceptions li.result').eq(index).remove();
         }
 
         this.showMainWindow = function () {
@@ -893,7 +893,15 @@ function run_wme_assist() {
         var exceptions = new Exceptions();
 
         exceptions.onAdd(function (name) {
-            ui.addException(name);
+            ui.addException(name, function (index) {
+                if (confirm('Delete exception for ' + name + '?')) {
+                    exceptions.remove(index);
+                }
+            });
+        });
+
+        exceptions.onDelete(function (index) {
+            ui.removeException(index);
         });
 
         exceptions.add('улица 1-я Линия');
