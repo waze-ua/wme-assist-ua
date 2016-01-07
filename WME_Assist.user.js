@@ -1068,6 +1068,11 @@ function run_wme_assist() {
 
                     info('enabled');
 
+                    var savedVariant = localStorage.getItem('assist_variant');
+                    if (savedVariant != null) {
+                        ui.variantRadio(savedVariant).prop('checked', true);
+                    }
+
                     analyze();
                     wazeapi.model.events.register('mergeend', map, analyze);
                 } else {
@@ -1082,15 +1087,15 @@ function run_wme_assist() {
 
             ui.variantRadio().click(function () {
                 localStorage.setItem('assist_variant', this.value);
+
+                ui.resetBtn().click();
+                setTimeout(function () {
+                    analyze();
+                }, 0);
             });
 
             if (localStorage.getItem('assist_enabled') == 'true') {
                 ui.enableCheckbox().click();
-            }
-
-            var savedVariant = localStorage.getItem('assist_variant');
-            if (savedVariant != null) {
-                ui.variantRadio(savedVariant).prop('checked', true);
             }
 
             ui.fixallBtn().click(function () {
