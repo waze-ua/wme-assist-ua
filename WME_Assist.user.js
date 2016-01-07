@@ -754,13 +754,22 @@ function run_wme_assist() {
             }
         })
 
-        this.addProblem = function (id, text, func, experimental) {
+        var self = this;
+
+        this.addProblem = function (id, text, func, exception, experimental) {
             var problem = $('<li>')
                 .prop('id', 'issue-' + id)
                 .append($('<a>', {
                     href: "javascript:void(0)",
                     text: text,
-                    click: func
+                    click: function (event) {
+                        if (event.ctrlKey) {
+                            exception(event);
+                            event.preventDefault();
+                            return;
+                        }
+                        func(event);
+                    }
                 }))
                 .appendTo($('#assist_unresolved_list'));
 
@@ -783,6 +792,10 @@ function run_wme_assist() {
 
         this.moveToFixedList = function (id) {
             $("#issue-" + escapeId(id)).appendTo($('#assist_fixed_list'));
+        }
+
+        this.removeError = function (id) {
+            $("#issue-" + escapeId(id)).remove();
         }
 
         var fixallBtn = $('#assist_fixall_btn');
@@ -921,6 +934,7 @@ function run_wme_assist() {
 
             var detected = false;
             var title;
+            var reason;
 
             if (!street.isEmpty) {
                 if (!exceptions.contains(street.name)) {
@@ -928,6 +942,7 @@ function run_wme_assist() {
                     var newStreetName = result.value;
                     detected = (newStreetName != street.name);
                     title = obj.type + ' street: «' + street.name.replace(/\u00A0/g, '_') + '» -> ' + newStreetName;
+                    reason = street.name;
                 }
             }
 
@@ -945,10 +960,22 @@ function run_wme_assist() {
             if (detected) {
                 var center = obj.geometry.getBounds().getCenterLonLat();
                 var zoom = wazeapi.map.getZoom();
-                ui.addProblem(obj.getID(), title, action.Select(obj.getID(), obj.type, center, zoom), false);
+                ui.addProblem(obj.getID(), title, action.Select(obj.getID(), obj.type, center, zoom), function () {
+                    ui.addException(reason);
+
+                    var i;
+                    for (i = 0; i < problems.length; ++i) {
+                        var problem = problems[i];
+                        if (problem.reason == reason) {
+                            problem.skip = true;
+                            ui.removeError(problem.id);
+                        }
+                    }
+                }, false);
 
                 problems.push({
                     id: obj.getID(),
+                    reason: reason,
                     type: obj.type,
                     attrName: attrName,
                     center: center,
@@ -1047,6 +1074,7 @@ function run_wme_assist() {
 
                 for (var i = unresolvedIdx; i < problems.length; ++i) {
                     if (problems[i].experimental) continue;
+                    if (problems[i].skip) continue;
 
                     var promise = action.fixProblem(problems[i]);
                     promise.done(function (id) {
