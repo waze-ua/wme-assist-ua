@@ -306,10 +306,10 @@ function run_wme_assist() {
                     experimental = true;
                 }
                 previous = newtext;
-                if (rule.custom && changed) {
-                    // prevent result overwriting by common rules
-                    break;
-                }
+                // if (rule.custom && changed) {
+                //     // prevent result overwriting by common rules
+                //     break;
+                // }
             }
 
             return {
