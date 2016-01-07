@@ -961,7 +961,7 @@ function run_wme_assist() {
                 var center = obj.geometry.getBounds().getCenterLonLat();
                 var zoom = wazeapi.map.getZoom();
                 ui.addProblem(obj.getID(), title, action.Select(obj.getID(), obj.type, center, zoom), function () {
-                    ui.addException(reason);
+                    exceptions.add(reason);
 
                     var i;
                     for (i = 0; i < problems.length; ++i) {
