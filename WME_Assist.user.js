@@ -53,6 +53,7 @@ function run_wme_assist() {
         var title = oldname + ' -> ' + newname;
         this.oldname = oldname;
         this.newname = newname;
+        this.custom = true;
         $.extend(this, new Rule(title, function (text) {
             return text.replace(new RegExp(oldname), newname);
         }));
@@ -266,8 +267,8 @@ function run_wme_assist() {
             return countryRules.concat(commonRules);
         }
 
-        var rules = getCountryRules(countryName);
-        var customRulesIndex = rules.length;
+        var rules = [];
+        var customRulesNumber = 0;
 
         var onAdd = function (rule) {}
         var onEdit = function (index, rule) {}
@@ -279,14 +280,12 @@ function run_wme_assist() {
 
         this.onCountryChange = function (name) {
             info('Country was changed to ' + name);
-            var newrules = getCountryRules(name);
-            rules.splice(0, customRulesIndex);
-            customRulesIndex = newrules.length;
-            rules = newrules.concat(rules);
+            rules.splice(customRulesNumber, rules.length - customRulesNumber);
+            rules = rules.concat(getCountryRules(name));
         }
 
         this.get = function (index) {
-            return rules[index + customRulesIndex];
+            return rules[index];
         }
 
         this.correct = function (variant, text) {
@@ -302,10 +301,15 @@ function run_wme_assist() {
 
                 var previous = newtext;
                 newtext = rule.correct(newtext);
+                var changed = (previous != newtext);
                 if (rule.experimental && previous != newtext) {
                     experimental = true;
                 }
                 previous = newtext;
+                if (rule.custom && changed) {
+                    // prevent result overwriting by common rules
+                    break;
+                }
             }
 
             return {
@@ -316,7 +320,7 @@ function run_wme_assist() {
 
         var save = function (rules) {
             if (localStorage) {
-                localStorage.setItem('assistRulesKey', JSON.stringify(rules.slice(customRulesIndex)));
+                localStorage.setItem('assistRulesKey', JSON.stringify(rules.slice(0, customRulesNumber)));
             }
         }
 
@@ -331,11 +335,13 @@ function run_wme_assist() {
                     }
                 }
             }
+
+            rules = rules.concat(getCountryRules(countryName));
         }
 
         this.push = function (oldname, newname) {
             var rule = new CustomRule(oldname, newname);
-            rules.push(rule);
+            rules.splice(customRulesNumber++, 0, rule);
             onAdd(rule);
 
             save(rules);
@@ -343,14 +349,15 @@ function run_wme_assist() {
 
         this.update = function (index, oldname, newname) {
             var rule = new CustomRule(oldname, newname);
-            rules[index + customRulesIndex] = rule;
+            rules[index] = rule;
             onEdit(index, rule);
 
             save(rules);
         }
 
         this.remove = function (index) {
-            rules.splice(index + customRulesIndex, 1);
+            rules.splice(index, 1);
+            --customRulesNumber;
             onDelete(index);
 
             save(rules);
