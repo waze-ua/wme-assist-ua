@@ -132,14 +132,14 @@ function run_wme_assist() {
                     text = text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба)(\s)(.+[-|а|я|ь]я$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-я)/, '$3 $1');
                     return text;
-                }, 'Moscow'),
+                }),
                 new Rule('Incorrect street name', function (text) {
                     var text0 = text;
                     if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной/.test(text)) return text;
                     text = text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|разворот|шлагбаум|обход|подъезд)(\s)(.+[-|и|о|ы]й$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-й)/, '$3 $1');
                     return text;
-                }, 'Moscow'),
+                }),
                 new Rule('Move status to begin of name', function (text) {
                     return text.replace(/(.*)(улица)(.*)/, '$2 $1 $3');
                 }, 'Tula'),
