@@ -1046,7 +1046,7 @@ function run_wme_assist() {
                     if (!action.isObjectVisible(obj)) continue;
 
                     if (!obj.isAllowed(obj.PERMISSIONS.EDIT_GEOMETRY)) continue;
-                    if (obj.hasClosures) continue;
+                    if (obj.attributes.hasClosures) continue;
 
                     if (typeof obj.attributes.approved != 'undefined' && !obj.attributes.approved) continue;
 
