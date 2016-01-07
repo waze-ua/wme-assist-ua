@@ -54,7 +54,7 @@ function run_wme_assist() {
         this.oldname = oldname;
         this.newname = newname;
         $.extend(this, new Rule(title, function (text) {
-            return text.replace(oldname, newname);
+            return text.replace(new RegExp(oldname), newname);
         }));
     }
 
