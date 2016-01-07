@@ -465,10 +465,14 @@ function run_wme_assist() {
                 wazeapi.model.events.unregister('mergeend', map, fix);
 
                 if (obj) {
-                    var correctStreet = addOrGetStreet(problem.cityId, problem.newStreetName, problem.isEmpty);
-                    var request = {};
-                    request[problem.attrName] = correctStreet.getID();
-                    wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, request));
+                    // protect user manual fix
+                    var currentValue = wazeapi.model.streets.objects[obj.attributes[problem.attrName]].name;
+                    if (problem.reason == currentValue) {
+                        var correctStreet = addOrGetStreet(problem.cityId, problem.newStreetName, problem.isEmpty);
+                        var request = {};
+                        request[problem.attrName] = correctStreet.getID();
+                        wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, request));
+                    }
                     deferred.resolve((obj.getID()));
                 } else {
                     wazeapi.model.events.register('mergeend', map, fix);
