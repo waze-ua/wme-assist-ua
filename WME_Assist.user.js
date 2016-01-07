@@ -513,6 +513,15 @@ function run_wme_assist() {
             .append($('<ul>').addClass('result-list'));
         addon.appendChild(section);
 
+        section = document.createElement('p');
+        section.style.paddingTop = "8px";
+        section.style.textIndent = "16px";
+        section.id = "assist_exceptions";
+        $(section)
+            .append($('<p>').addClass('message').css({'font-weight': 'bold'}).text('Exceptions'))
+            .append($('<ul>').addClass('result-list'));
+        addon.appendChild(section);
+
         var newtab = document.createElement('li');
         newtab.innerHTML = '<a href="#sidepanel-assist" data-toggle="tab">Assist</a>';
         $('#user-info .nav-tabs').append(newtab);
@@ -561,6 +570,33 @@ function run_wme_assist() {
         this.removeCustomRule = function (index) {
             $('#assist_custom_rules li.result').eq(index).remove();
             selectedCustomRule = -1;
+        }
+
+        this.addException = function (name) {
+            var thisrule = $('<li>').addClass('result').click(function () {
+                selectedException = $('#assist_exceptions li.result').index(thisrule);
+                info('index: ' + selectedException);
+                $('#assist_exceptions li.result').css({'background-color': ''});
+                $('#assist_exceptions li.result').removeClass('active');
+                $(this).css({'background-color': 'lightblue'});
+                $(this).addClass('active');
+            }).hover(function () {
+                $(this).css({
+                    cursor: 'pointer',
+                    'background-color': 'lightblue'
+                });
+            }, function () {
+                $(this).css({
+                    cursor: 'auto'
+                });
+                if (!$(this).hasClass('active')) {
+                    $(this).css({
+                        'background-color': ''
+                    });
+                }
+            })
+                .append($('<p>').addClass('additional-info clearfix').text(name))
+                .appendTo($('#assist_exceptions ul.result-list'));
         }
 
         this.showMainWindow = function () {
@@ -804,6 +840,31 @@ function run_wme_assist() {
         }
     };
 
+    var Exceptions = function () {
+        var exceptions = [];
+
+        var onAdd = function (name) {}
+        var onDelete = function (index) {}
+
+        this.contains = function (name) {
+            if (exceptions.indexOf(name) == -1) return false;
+            return true;
+        }
+
+        this.add = function (name) {
+            exceptions.push(name);
+            onAdd(name);
+        }
+
+        this.remove = function (index) {
+            exceptions.splice(index, 1);
+            onDelete(index);
+        }
+
+        this.onAdd = function (cb) { onAdd = cb }
+        this.onDelete = function (cb) {onDelete = cb }
+    }
+
     var Application = function (wazeapi) {
         var countryName = function () {
             var id = wazeapi.model.countries.top.id;
@@ -816,6 +877,14 @@ function run_wme_assist() {
         var action = new ActionHelper(wazeapi);
         var rules = new Rules(country);
         var ui = new Ui();
+        var exceptions = new Exceptions();
+
+        exceptions.onAdd(function (name) {
+            ui.addException(name);
+        });
+
+        exceptions.add('улица 1-я Линия');
+        exceptions.add('улица 2-я Линия');
 
 //        rules.experimental = true;
 
@@ -854,10 +923,12 @@ function run_wme_assist() {
             var title;
 
             if (!street.isEmpty) {
-                var result = rules.correct(ui.variant(), street.name);
-                var newStreetName = result.value;
-                detected = (newStreetName != street.name);
-                title = obj.type + ' street: «' + street.name.replace(/\u00A0/g, '_') + '» -> ' + newStreetName;
+                if (!exceptions.contains(street.name)) {
+                    var result = rules.correct(ui.variant(), street.name);
+                    var newStreetName = result.value;
+                    detected = (newStreetName != street.name);
+                    title = obj.type + ' street: «' + street.name.replace(/\u00A0/g, '_') + '» -> ' + newStreetName;
+                }
             }
 
             var newCityID = street.cityID;
