@@ -952,6 +952,7 @@ function run_wme_assist() {
 
         var problems = [];
         var unresolvedIdx = 0;
+        var skippedErrors = 0;
         var analyzedIds = [];
 
         var checkStreet = function (streetID, obj, attrName) {
@@ -995,9 +996,12 @@ function run_wme_assist() {
                         var problem = problems[i];
                         if (problem.reason == reason) {
                             problem.skip = true;
+                            ++skippedErrors;
                             ui.removeError(problem.id);
                         }
                     }
+
+                    ui.setUnresolvedErrorNum(problems.length - unresolvedIdx - skippedErrors);
                 }, false);
 
                 problems.push({
@@ -1014,7 +1018,7 @@ function run_wme_assist() {
                     experimental: false,
                 });
 
-                ui.setUnresolvedErrorNum(problems.length - unresolvedIdx);
+                ui.setUnresolvedErrorNum(problems.length - unresolvedIdx - skippedErrors);
             }
         }
 
@@ -1113,7 +1117,7 @@ function run_wme_assist() {
                     promise.done(function (id) {
                         ++unresolvedIdx;
 
-                        ui.setUnresolvedErrorNum(problems.length - unresolvedIdx);
+                        ui.setUnresolvedErrorNum(problems.length - unresolvedIdx - skippedErrors);
                         ui.setFixedErrorNum(unresolvedIdx);
                         ui.moveToFixedList(id);
                     });
@@ -1137,6 +1141,7 @@ function run_wme_assist() {
                 ui.fixedList().empty();
                 ui.unresolvedList().empty();
                 unresolvedIdx = 0;
+                skippedErrors = 0;
                 problems = [];
                 analyzedIds = [];
                 ui.setUnresolvedErrorNum(0);
