@@ -113,7 +113,7 @@ function run_wme_assist() {
                     return text.replace(/(\d)(-ая)( |$)/, '$1-я$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)(-ой)( |$)/, '$1-й$3');
+                    return text.replace(/(\d)(-[о|ы|и]й)( |$)/, '$1-й$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(\sЛет)(\s|$)/, '$1 лет$3');
@@ -127,12 +127,15 @@ function run_wme_assist() {
         var rules_RU = function () {
             return rules_basicRU().concat([
                 new Rule('Incorrect street name', function (text) {
-                    if (/Нехая|Тукая|Мая|Барклая|Батырая/.test(text)) return text;
-                    return text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба)(\s)(.+[-|а|я|ь]я$)/, '$3 $1').replace(/(.+)(\s)(\d+-я)/, '$3 $1');
+                    var text0 = text;
+                    if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая/.test(text)) return text;
+                    text = text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба)(\s)(.+[-|а|я|ь]я$)/, '$3 $1');
+                    if (text0 != text) text = text.replace(/(.+)(\s)(\d+-я)/, '$3 $1');
+                    return text;
                 }, 'Moscow'),
                 new Rule('Incorrect street name', function (text) {
                     var text0 = text;
-                    if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской/.test(text)) return text;
+                    if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной/.test(text)) return text;
                     text = text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|разворот|шлагбаум|обход|подъезд)(\s)(.+[-|и|о|ы]й$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-й)/, '$3 $1');
                     return text;
@@ -655,7 +658,7 @@ function run_wme_assist() {
         var mainWindow = $('#WME_AssistWindow').dialog({
             autoOpen: false,
             appendTo: $('#WazeMap'),
-            width: 350,
+            width: 500,
             height: 400,
             draggable: false,
             resize: function (event, ui) {
