@@ -13,6 +13,7 @@
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
 // @version   0.2.3
+// @namespace https://greasyfork.org/users/20609
 // ==/UserScript==
 
 function run_wme_assist() {
@@ -136,7 +137,7 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect street name', function (text) {
                     var text0 = text;
-                    if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной/.test(text)) return text;
+                    if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской/.test(text)) return text;
                     text = text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|разворот|шлагбаум|обход|подъезд)(\s)(.+[-|и|о|ы]й$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-й)/, '$3 $1');
                     return text;
