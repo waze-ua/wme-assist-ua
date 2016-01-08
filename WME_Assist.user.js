@@ -137,7 +137,7 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect street name', function (text) {
                     var text0 = text;
-                    if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской/.test(text)) return text;
+                    if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой/.test(text)) return text;
                     text = text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|разворот|шлагбаум|обход|подъезд)(\s)(.+[-|и|о|ы]й$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-й)/, '$3 $1');
                     return text;
@@ -981,7 +981,7 @@ function run_wme_assist() {
                     var result = rules.correct(ui.variant(), street.name);
                     var newStreetName = result.value;
                     detected = (newStreetName != street.name);
-                    title = obj.type + ' street: «' + street.name.replace(/\u00A0/g, '_') + '» -> ' + newStreetName;
+                    title = obj.type + ': ' + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
                     reason = street.name;
                 }
             }
