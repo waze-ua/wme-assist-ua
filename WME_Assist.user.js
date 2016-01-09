@@ -707,8 +707,8 @@ function run_wme_assist() {
             autoOpen: false,
             appendTo: $('#WazeMap'),
             width: 500,
-            height: 400,
-            draggable: false,
+            draggable: true,
+            height:'auto',
             resize: function (event, ui) {
                 var w = ui.size.width;
                 var h = ui.size.height;
@@ -716,7 +716,11 @@ function run_wme_assist() {
                 var dy = parseFloat($('#WME_AssistWindow').css('padding-top'));
                 $('#WME_AssistWindow').width(w - 2*dx);
                 $('#WME_AssistWindow').height(h - 2*dy - 50);
+                $('#WME_AssistWindow').parent().css('height', 'auto');
             },
+            dragStop: function () {
+                $('#WME_AssistWindow').parent().css('height', 'auto');
+            }
         });
         mainWindow.parent('.ui-dialog').css({
             'zIndex': 1040,
