@@ -400,9 +400,9 @@ function run_wme_assist() {
 
         this.isObjectVisible = function (obj) {
             if (!onlyVisible) return true;
-	        if (obj.geometry)
-		        return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
-	        return false;
+            if (obj.geometry)
+                return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
+            return false;
         }
 
         var addOrGetStreet = function (cityId, name, isEmpty) {
@@ -422,19 +422,19 @@ function run_wme_assist() {
         }
 
         var addOrGetCity = function (countryID, stateID, cityName) {
-	        var foundCities = Waze.model.cities.getByAttributes({
+            var foundCities = Waze.model.cities.getByAttributes({
                 countryID: countryID,
                 stateID: stateID,
                 name : cityName
             });
 
-	        if (foundCities.length == 1)
+            if (foundCities.length == 1)
                 return foundCities[0];
 
-		    var state = Waze.model.states.objects[stateID];
-		    var country = Waze.model.countries.objects[countryID];
-		    var a = new WazeActionAddOrGetCity(state, country, cityName);
-		    Waze.model.actionManager.add(a);
+            var state = Waze.model.states.objects[stateID];
+            var country = Waze.model.countries.objects[countryID];
+            var a = new WazeActionAddOrGetCity(state, country, cityName);
+            Waze.model.actionManager.add(a);
             return a.city;
         }
 
