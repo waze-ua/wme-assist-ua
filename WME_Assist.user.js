@@ -1237,3 +1237,12 @@ var script = document.createElement("script");
 script.textContent = run_wme_assist.toString() + ' \n' + 'run_wme_assist();';
 script.setAttribute("type", "application/javascript");
 document.body.appendChild(script);
+
+//Position "right top" after resize window
+$(window).resize(function(){
+    $('#WME_AssistWindow').dialog('option', 'position', {
+        my: 'right top',
+        at: 'right top',
+        of: '#WazeMap',
+    });
+});
