@@ -12,12 +12,12 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.2.4
+// @version   0.2.5
 // @namespace https://greasyfork.org/users/20609
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.2.4';
+    var ver = '0.2.5';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -400,9 +400,9 @@ function run_wme_assist() {
 
         this.isObjectVisible = function (obj) {
             if (!onlyVisible) return true;
-	        if (obj.geometry)
-		        return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
-	        return false;
+            if (obj.geometry)
+                return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
+            return false;
         }
 
         var addOrGetStreet = function (cityId, name, isEmpty) {
@@ -422,19 +422,19 @@ function run_wme_assist() {
         }
 
         var addOrGetCity = function (countryID, stateID, cityName) {
-	        var foundCities = Waze.model.cities.getByAttributes({
+            var foundCities = Waze.model.cities.getByAttributes({
                 countryID: countryID,
                 stateID: stateID,
                 name : cityName
             });
 
-	        if (foundCities.length == 1)
+            if (foundCities.length == 1)
                 return foundCities[0];
 
-		    var state = Waze.model.states.objects[stateID];
-		    var country = Waze.model.countries.objects[countryID];
-		    var a = new WazeActionAddOrGetCity(state, country, cityName);
-		    Waze.model.actionManager.add(a);
+            var state = Waze.model.states.objects[stateID];
+            var country = Waze.model.countries.objects[countryID];
+            var a = new WazeActionAddOrGetCity(state, country, cityName);
+            Waze.model.actionManager.add(a);
             return a.city;
         }
 
@@ -707,8 +707,8 @@ function run_wme_assist() {
             autoOpen: false,
             appendTo: $('#WazeMap'),
             width: 500,
-            height: 400,
-            draggable: false,
+            draggable: true,
+            height:'auto',
             resize: function (event, ui) {
                 var w = ui.size.width;
                 var h = ui.size.height;
@@ -716,7 +716,11 @@ function run_wme_assist() {
                 var dy = parseFloat($('#WME_AssistWindow').css('padding-top'));
                 $('#WME_AssistWindow').width(w - 2*dx);
                 $('#WME_AssistWindow').height(h - 2*dy - 50);
+                $('#WME_AssistWindow').parent().css('height', 'auto');
             },
+            dragStop: function () {
+                $('#WME_AssistWindow').parent().css('height', 'auto');
+            }
         });
         mainWindow.parent('.ui-dialog').css({
             'zIndex': 1040,
@@ -1233,3 +1237,12 @@ var script = document.createElement("script");
 script.textContent = run_wme_assist.toString() + ' \n' + 'run_wme_assist();';
 script.setAttribute("type", "application/javascript");
 document.body.appendChild(script);
+
+//Position "right top" after resize window
+$(window).resize(function(){
+    $('#WME_AssistWindow').dialog('option', 'position', {
+        my: 'right top',
+        at: 'right top',
+        of: '#WazeMap',
+    });
+});
