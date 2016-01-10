@@ -130,7 +130,7 @@ function run_wme_assist() {
             return rules_basicRU().concat([
                 new Rule('Incorrect street name', function (text) {
                     var text0 = text;
-                    if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая/.test(text)) return text;
+                    if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая/.test(text)) return text;
                     text = text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба)(\s)(.+[-|а|я|ь]я$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-я)/, '$3 $1');
                     return text;
