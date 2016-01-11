@@ -536,7 +536,7 @@ function run_wme_assist() {
 
         var newtab = document.createElement('li');
         newtab.innerHTML = '<a href="#sidepanel-assist" data-toggle="tab">Assist</a>';
-        $('#user-info .nav-tabs').append(newtab);
+        $('#user-info #user-tabs .nav-tabs').append(newtab);
 
         addon.id = "sidepanel-assist";
         addon.className = "tab-pane";
