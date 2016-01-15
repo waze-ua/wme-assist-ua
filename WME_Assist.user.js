@@ -708,7 +708,7 @@ function run_wme_assist() {
             appendTo: $('#WazeMap'),
             width: 500,
             draggable: true,
-            height:'auto',
+            height: 600,
             resize: function (event, ui) {
                 var w = ui.size.width;
                 var h = ui.size.height;
