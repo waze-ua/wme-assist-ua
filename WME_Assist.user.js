@@ -12,12 +12,12 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.2.5
+// @version   0.2.6
 // @namespace https://greasyfork.org/users/20609
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.2.5';
+    var ver = '0.2.6';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
