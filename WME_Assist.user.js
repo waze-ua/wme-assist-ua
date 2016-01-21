@@ -76,10 +76,10 @@ function run_wme_assist() {
                     return text.replace(/\u0301/g, '');
                 }),
                 new Rule('No space after the word', function (text) {
-                    return text.replace(/\.(?!\s)/, '. ');
+                    return text.replace(/\.(?!\s)/g, '. ');
                 }),
                 new Rule('Garbage dot', function (text) {
-                    return text.replace(/(^|\s+)\./, ' ');
+                    return text.replace(/(^|\s+)\./g, ' ');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пр-т\.?)( |$)/, '$1проспект$3');
