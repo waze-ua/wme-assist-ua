@@ -75,11 +75,11 @@ function run_wme_assist() {
                 new Rule('ACUTE ACCENT in street name', function (text) {
                     return text.replace(/\u0301/g, '');
                 }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^|\s+)\./, ' ');
+                new Rule('No space after the word', function (text) {
+                    return text.replace(/\.(?!\s)/, '. ');
                 }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(.+\.)/, '$1 ');
+                new Rule('Garbage dot', function (text) {
+                    return text.replace(/(^|\s+)\./, ' ');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пр-т\.?)( |$)/, '$1проспект$3');
