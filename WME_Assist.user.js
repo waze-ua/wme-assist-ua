@@ -123,9 +123,6 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(№)(\d)/, '$1 $2');
                 }),
-                new Rule('no status after adjectives', function (text) {
-                    return text.replace(/(?!улица)(.+[-|а|я|ь]я$)/, '$1 улица');
-                }),
             ];
         };
 
