@@ -75,12 +75,6 @@ function run_wme_assist() {
                 new Rule('ACUTE ACCENT in street name', function (text) {
                     return text.replace(/\u0301/g, '');
                 }),
-                new Rule('No space after the word', function (text) {
-                    return text.replace(/\.(?!\s)/g, '. ');
-                }),
-                new Rule('Garbage dot', function (text) {
-                    return text.replace(/(^|\s+)\./g, ' ');
-                }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пр-т\.?)( |$)/, '$1проспект$3');
                 }),
@@ -128,6 +122,12 @@ function run_wme_assist() {
 
         var rules_RU = function () {
             return rules_basicRU().concat([
+                new Rule('No space after the word', function (text) {
+                    return text.replace(/\.(?!\s)/g, '. ');
+                }),
+                new Rule('Garbage dot', function (text) {
+                    return text.replace(/(^|\s+)\./g, ' ');
+                }),
                 new Rule('Incorrect street name', function (text) {
                     var text0 = text;
                     if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая/.test(text)) return text;
