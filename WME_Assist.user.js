@@ -100,7 +100,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(ш\.)( |$)/, '$1шоссе$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(б-р)( |$)/, '$1бульвар$3');
+                    return text.replace(/(^| )(б-р|Б-р)( |$)/, '$1бульвар$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(дор\.)( |$)/, '$1дорога$3');
