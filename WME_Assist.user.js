@@ -136,11 +136,9 @@ function run_wme_assist() {
                     return 'улица ' + text;
                 }),
                 new Rule('Incorrect street name', function (text) {
-                	var exStreet = new RegExp('Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая|Ухсая|Хузангая');
-                	var streetStatus = 'улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба|хорда'
                     var text0 = text;
-                    if (exStreet.test(text)) return text;
-                    text = text.replace(/(streetStatus)(\s)(.+[-|а|я|ь]я$)/, '$3 $1');
+                    if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая|Ухсая/.test(text)) return text;
+                    text = text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба|хорда)(\s)(.+[-|а|я|ь]я$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-я)/, '$3 $1');
                     return text;
                 }),
