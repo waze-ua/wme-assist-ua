@@ -1171,8 +1171,8 @@ function run_wme_assist() {
 
             ui.addCustomRuleBtn().click(function () {
                 ui.customRuleDialog('Add', {
-                    oldname: 'oldname',
-                    newname: 'newname'
+                    oldname: '',
+                    newname: ''
                 }).done(function (response) {
                     rules.push(response.oldname, response.newname);
                 });
