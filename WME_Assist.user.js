@@ -141,7 +141,7 @@ function run_wme_assist() {
                     var exAdj = 'Репищева';
                     var brackets = '';
                     var indexOfBrackets = text.indexOf('(');
-                    if ( indexOfBrackets != -1 ) {
+                    if ( indexOfBrackets !== -1 ) {
                         brackets = text.substring(indexOfBrackets);
                         text = text.substring(0,indexOfBrackets);
                     };
