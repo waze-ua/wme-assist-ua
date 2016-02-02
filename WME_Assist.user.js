@@ -140,7 +140,7 @@ function run_wme_assist() {
      
                     var text0 = text;
                     if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая|Ухсая|Хузангая/.test(text)) return text;
-                    text = text.replace(RegExp('('+WStatus+'')(\\s)(.+[-|а|я|ь]я$)'), '$3 $1');
+                    text = text.replace(RegExp('('+WStatus+')(\\s)(.+[-|а|я|ь]я$)'), '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-я)/, '$3 $1');
                     return text;
                 }),
