@@ -140,13 +140,15 @@ function run_wme_assist() {
                     var exM = 'Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой|Чайкиной|Богомоловой|Савиной|Попковой|Петровой';
                     var exAdj = 'Репищева';
                     var brackets = '';
+                    debug(text);
                     var indexOfBrackets = text.indexOf('(');
                     if ( indexOfBrackets !== -1 ) {
                         brackets = text.substring(indexOfBrackets);
                         text = text.substring(0,indexOfBrackets);
-                    };
-                    if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) )
+                    }
+                    if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
                         text = 'улица ' + text;
+                    }
                     if ( new RegExp(wStatus).test(text) ) {
                         if ( ! new RegExp(exW).test(text) ) {
                             text = text.replace(/(.+)(\s)(\d+-я)/, '$3 $1');
