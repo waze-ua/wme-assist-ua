@@ -88,7 +88,10 @@ function run_wme_assist() {
                     return text.replace(/(^| )(пер\.?)( |$)/, '$1переулок$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пр-д\.?)( |$)/, '$1проезд$3');
+                    return text.replace(/(^| )(пр\.?|пр-д\.?)( |$)/, '$1проезд$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(пр-кт)( |$)/, '$1проспект$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пл\.?)( |$)/, '$1площадь$3');
@@ -97,7 +100,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(ш\.)( |$)/, '$1шоссе$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(б-р)( |$)/, '$1бульвар$3');
+                    return text.replace(/(^| )(б-р|Б-р)( |$)/, '$1бульвар$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(дор\.)( |$)/, '$1дорога$3');
@@ -128,17 +131,21 @@ function run_wme_assist() {
                 new Rule('Garbage dot', function (text) {
                     return text.replace(/(^|\s+)\./g, ' ');
                 }),
+                new Rule('Missing street type', function (text) {
+                    if (/улица|квартал|площадь|дорога|проезд|магистраль|спуск|путепровод|обвод|съезд|переулок|шоссе| тракт|[А-Я][0-9]|[0-9]+$|тупик|мост|набережная|бульвар|площадь|проспект|аллея|метро|кольцо|тоннель|разворот|шлагбаум|трамвай|пути|мост|Мост|эстакада|линия|сад|подход|подъезд|обход|Объездная|въезд|слобода|городок|посёлок|^на |^в |^к |^под |^с |^от |ж\/д|КАД|[0-9][0-9][А-Я]:\/|[0-9][0-9]:|^$|[А-Я]\-[0-9]|[0-9]+$| - |микрорайон|сквер|хорда|Грейдер/.test(text)) return text;
+                    return 'улица ' + text;
+                }),
                 new Rule('Incorrect street name', function (text) {
                     var text0 = text;
-                    if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая/.test(text)) return text;
-                    text = text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба)(\s)(.+[-|а|я|ь]я$)/, '$3 $1');
+                    if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая|Ухсая|Хузангая/.test(text)) return text;
+                    text = text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба|хорда)(\s)(.+[-|а|я|ь]я$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-я)/, '$3 $1');
                     return text;
                 }),
                 new Rule('Incorrect street name', function (text) {
                     var text0 = text;
                     if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой|Чайкиной|Богомоловой|Савиной|Попковой/.test(text)) return text;
-                    text = text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|разворот|шлагбаум|обход|подъезд)(\s)(.+[-|и|о|ы]й$)/, '$3 $1');
+                    text = text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|разворот|шлагбаум|обход|подъезд|микрорайон|сквер)(\s)(.+[-|и|о|ы]й$)/, '$3 $1');
                     if (text0 != text) text = text.replace(/(.+)(\s)(\d+-й)/, '$3 $1');
                     return text;
                 }),
@@ -1164,8 +1171,8 @@ function run_wme_assist() {
 
             ui.addCustomRuleBtn().click(function () {
                 ui.customRuleDialog('Add', {
-                    oldname: 'oldname',
-                    newname: 'newname'
+                    oldname: '',
+                    newname: ''
                 }).done(function (response) {
                     rules.push(response.oldname, response.newname);
                 });
