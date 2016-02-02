@@ -145,7 +145,7 @@ function run_wme_assist() {
                         brackets = text.substring(indexOfBrackets);
                         text = text.substring(0,indexOfBrackets);
                     };
-                    if ( new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) )
+                    if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) )
                         text = 'улица ' + text;
                     if ( new RegExp(wStatus).test(text) ) {
                         if ( ! new RegExp(exW).test(text) ) {
