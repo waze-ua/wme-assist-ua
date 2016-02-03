@@ -140,7 +140,7 @@ function run_wme_assist() {
                     var exM = 'Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой|Чайкиной|Богомоловой|Савиной|Попковой|Петровой';
                     var exAdj = 'Репищева';
                     var brackets = '';
-                    text = text.replace(/\s*(.*?)\s*((.*)/),
+                    text = text.replace(/\s*(.*?)\s*((.*)/,
                         function (all,street,b){
                             brackets = b;
                             return street;
