@@ -140,10 +140,10 @@ function run_wme_assist() {
                     var exM = 'Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой|Чайкиной|Богомоловой|Савиной|Попковой|Петровой';
                     var exAdj = 'Репищева';
                     var brackets = '';
-                    text = text.replace(/\s*(.*?)\s*((.*)/,
-                        function (all,street,b){
+                    text = text.replace(/\s*(.*?)\s*(\(.*)/,
+                        function (all, s, b){
                             brackets = b;
-                            return street;
+                            return s;
                     });
                     if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
                         text = 'улица ' + text;
