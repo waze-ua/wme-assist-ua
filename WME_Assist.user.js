@@ -151,13 +151,13 @@ function run_wme_assist() {
                     if ( new RegExp(wStatus).test(text) ) {
                         if ( ! new RegExp(exW).test(text) ) {
                             text = text.replace(/(.+)(\s)(\d+-я$)/, '$3 $1');
-                            text = text.replace(new RegExp('('+wStatus+')(\\s)(.+[-|а|я|ь]я$)'), '$3 $1');
+                            text = text.replace(new RegExp('('+wStatus+')(\\s)(.+[-|а|я|ь]я)$'), '$3 $1');
                         }
                     }
                     if ( new RegExp(mStatus).test(text) ) {
                         if ( ! new RegExp(exM).test(text) ) {
                             text = text.replace(/(.+)(\s)(\d+-й)$/, '$3 $1');
-                            text = text.replace(new RegExp('('+mStatus+')(\\s)(.+[-|и|о|ы]й$)'), '$3 $1');
+                            text = text.replace(new RegExp('('+mStatus+')(\\s)(.+[-|и|о|ы]й)$'), '$3 $1');
                         }
                     }
                     return text + ' ' + brackets;
