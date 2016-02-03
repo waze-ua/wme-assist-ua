@@ -153,9 +153,9 @@ function run_wme_assist() {
                     }
                     // Статусы женского рода
                     if ( new RegExp(wStatus).test(text) ) {
-                        text = text.replace(new RegExp('(\\.*?)\\s(' + wStatus + ')'),
+                        text = text.replace(new RegExp('(\\.+?)\\s(' + wStatus + ')'),
                             function (all,adj,s){
-                                info('all: ' + all + ' adj: ' +adj);
+                                info('all: "' + all + '"" adj: "' + adj);
                                 if ( new RegExp(exAdjW).test(adj) ) return all;
                                 if ( new RegExp('[^\\s]+?[-|а|я|ь]я(\\s.+?[-|а|я|ь]я)*').test(adj) ) return all;
                                 return s + ' ' + adj;
