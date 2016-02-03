@@ -139,7 +139,7 @@ function run_wme_assist() {
                     var exW = 'Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая|Ухсая|Хузангая';
                     var exM = 'Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой|Чайкиной|Богомоловой|Савиной|Попковой|Петровой|Ангелиной|Терешковой';
                     var exAdjW = 'Репищева';
-                    var exAdjW = 'Григоров|Посланников';
+                    var exAdjM = 'Григоров|Посланников';
                     var brackets = '';
                     // Отделить примечания в скобках
                     text = text.replace(/\s*(.*?)\s*(\(.*)/,
@@ -153,6 +153,12 @@ function run_wme_assist() {
                     }
                     // Статусы женского рода
                     if ( new RegExp(wStatus).test(text) ) {
+                        text = text.replace(new RegExp('(\\.*?)\\s' + '(' + wStatus + ')'),
+                            function (all,adj,s){
+                                if ( new RegExp(exAdjW).test(adj) ) return all;
+                                if ( new RegExp('[^\\s]+?[-|а|я|ь]я(\\s.+?[-|а|я|ь]я)*').test(adj) ) return all;
+                                return s + ' ' + adj;
+                        });
                         if ( ! new RegExp(exW).test(text) ) {
                             text = text.replace(/(.+)(\s)(\d+-я$)/, '$3 $1'); // улица 1-я -> 1-я улица
                             text = text.replace(new RegExp('('+wStatus+')(\\s)(.+[-|а|я|ь]я)$'), '$3 $1');
