@@ -174,23 +174,19 @@ function run_wme_assist() {
                     // Голые числительные без склонения
                     text = text.replace(new RegExp('(\\d)\\s+(?='+ wStatus + ')', 'g'), '$1-я ');
                     // Всё пишем заглавными буквами, кроме  статусов и  лет, летия, реки
-                        text = text.replace(new RegExp('(' + wStatus+ '|' + mStatus + ')(.+?)(?!,)'),
+                        text = text.replace(new RegExp('(' + wStatus+ '|' + mStatus + ')(.+)'),
                             function(all, status, name){
-                                name = name.replace(/ ([^\s]+)/g,
+                                name = name.replace(/[\s\-]([^\s]+)/g,
                                     function(all, word){
-                                        if (/лет|реки|канала|острова|стороны|год|съезда|имени/i.test(word)) {
-                                            return ' ' + word.toLowerCase();
-                                        }
-                                        else {
-                                            return ' ' + word.charAt(0).toUpperCase() + word.substr(1);
-                                        }
+                                        if (/^(летия|лет|реки|канала|острова|стороны|год|съезда|имени)$/i.test(word)) return ' ' + word.toLowerCase();
+                                        else return ' ' +  word.charAt(0).toUpperCase() + word.substr(1);
                                     });
                                 return status + name;
                         });
                     // Статусы женского рода
                     if ( new RegExp(wStatus).test(text) ) {
                         // перед статусом могут быть только прилагательные
-                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + wStatus + ')(?=[\s$])'),
+                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + wStatus + ')'),
                             function (all, adj, s){
                                 if ( new RegExp(exAdjW).test(adj) ) return all;
                                 if ( (! new RegExp(exW).test(adj)) &&
@@ -208,7 +204,7 @@ function run_wme_assist() {
                     // Статусы мужского рода
                     if ( new RegExp(mStatus).test(text) ) {
                         // перед статусом могут быть только прилагательные
-                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?=[\s$])'),
+                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')'),
                             function (all, adj, s){
                                 if ( new RegExp(exAdjM).test(adj) ) return all;
                                 if ( ! new RegExp(exM).test(adj) &&
