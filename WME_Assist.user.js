@@ -216,6 +216,7 @@ function run_wme_assist() {
                         }
                          // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+[-иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
+                        text = text.replace(new RegExp('('+mStatus+')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоы]й)'), '$2 $1');
                     }
                     // Возвращаем скобки в конце
                     return text + ' ' + brackets;
