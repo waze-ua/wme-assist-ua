@@ -203,7 +203,7 @@ function run_wme_assist() {
                     // Статусы мужского рода
                     if ( new RegExp(mStatus).test(text) ) {
                         // перед статусом могут быть только прилагательные
-                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')'),
+                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?=[\s$])'),
                             function (all, adj, s){
                                 if ( new RegExp(exAdjM).test(adj) ) return all;
                                 if ( ! new RegExp(exM).test(adj) &&
