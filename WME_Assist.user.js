@@ -180,6 +180,7 @@ function run_wme_assist() {
                     }
                     // Добавляем пропущенный статус
                     if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
+                        if ( text == 'Набережная' ) { text = text + ' улица'; } else
                         if ( new RegExp(wStatus + '|' + mStatus + '|' + nStatus, 'i' ).test(text) ) {
                             text = text.replace( new RegExp(wStatus + '|' + mStatus + '|' + nStatus, 'i' ), function (status){
                                 return status.toLowerCase();
