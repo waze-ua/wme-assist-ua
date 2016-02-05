@@ -180,7 +180,11 @@ function run_wme_assist() {
                     }
                     // Добавляем пропущенный статус
                     if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
-                        text = 'улица ' + text;
+                        if ( new RegExp(wStatus + '|' + mStatus + '|' + nStatus, 'i' ).test(text) ) {
+                            text = text.replace( new RegExp(wStatus + '|' + mStatus + '|' + nStatus, 'i' ), function (status){
+                                return status.toLowerCase();
+                            });
+                        } else text = 'улица ' + text;
                     }
                     // Голые числительные без склонения
                     text = text.replace(new RegExp('(\\d)\\s+(?=' + wStatus + ')', 'g'), '$1-я ');
