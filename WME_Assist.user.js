@@ -226,8 +226,8 @@ function run_wme_assist() {
                             text = text.replace(new RegExp('('+mStatus+')(.*?)(?:\\s+)([^\\s]+[-иоы]й)(\\s+[^\\s]+[-иоы]й)*$'), '$3$4 $1$2');
                         }
                          // Числительное всегда вначале если оно согласовано с прилагательным
-                        text = text.replace(/(.+[-иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
-                        //text = text.replace(new RegExp('('+mStatus+')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоы]й)'), '$2 $1');
+                        text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
+                        text = text.replace(new RegExp('('+mStatus+')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий])'), '$2 $1');
                     }
                     // Возвращаем скобки в конце
                     return text + ' ' + brackets;
