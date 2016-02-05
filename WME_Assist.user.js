@@ -187,8 +187,8 @@ function run_wme_assist() {
                     text = text.replace(new RegExp('(\\d)\\s+(?=' + mStatus + ')', 'g'), '$1-й ');
 
                     // Распространённые сокращения
-                    text = text.replace(/М\. (?=Горького)/, 'Максима ');
-                    text = text.replace(/К\. (?=Маркса|Либкнехта)/, 'Карла ');
+                    text = text.replace(/М\.\s+(?=Горького)/, 'Максима ');
+                    text = text.replace(/К\.\s+(?=Маркса|Либкнехта)/, 'Карла ');
 
                     // Всё пишем заглавными буквами, кроме  статусов и  лет, летия, реки
                     text = text.replace(new RegExp('(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, status, name){
@@ -202,8 +202,8 @@ function run_wme_assist() {
                     // Статусы женского рода
                     if ( new RegExp(wStatus).test(text) ) {
                         // Распространённые сокращения
-                        text = text.replace(/М\. (?=[^\s]+?[аяь]я( |$))/, 'Малая ');
-                        text = text.replace(/Б\. (?=[^\s]+?[аяь]я( |$))/, 'Большая ');
+                        text = text.replace(/М\.\s+(?=[^\s]+?[аяь]я( |$))/, 'Малая ');
+                        text = text.replace(/Б\.\s+(?=[^\s]+?[аяь]я( |$))/, 'Большая ');
 
                         // перед статусом могут быть только прилагательные
                         text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + wStatus + ')(?= |$)'),
@@ -224,8 +224,8 @@ function run_wme_assist() {
                     // Статусы мужского рода
                     if ( new RegExp(mStatus).test(text) ) {
                         // Распространённые сокращения
-                        text = text.replace(/М\. (?=[^\s]+?[иоы]й( |$))/, 'Малый ');
-                        text = text.replace(/Б\. (?=[^\s]+?[иоы]й( |$))/, 'Большой ');
+                        text = text.replace(/М\.\s+(?=[^\s]+?[иоы]й( |$))/, 'Малый ');
+                        text = text.replace(/Б\.\s+(?=[^\s]+?[иоы]й( |$))/, 'Большой ');
 
                         // перед статусом могут быть только прилагательные
                         text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?= |$)'),
