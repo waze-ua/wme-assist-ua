@@ -76,7 +76,7 @@ function run_wme_assist() {
                     return text.replace(/\u0301/g, '');
                 }),
                 new Rule('Add space after last dot', function (text) {
-                    return text.replace(/(.+\.)/, '$1 ');
+                    return text.replace(/(.+\.(?! )))/, '$1 ');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(мая)( |$)/, '$1Мая$3');
