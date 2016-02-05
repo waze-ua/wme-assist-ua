@@ -75,8 +75,23 @@ function run_wme_assist() {
                 new Rule('ACUTE ACCENT in street name', function (text) {
                     return text.replace(/\u0301/g, '');
                 }),
+                new Rule('Add space after last dot', function (text) {
+                    return text.replace(/(.+\.)(?! )/, '$1 ');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(мая)( |$)/, '$1Мая$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(мкрн)( |$)/, '$1микрорайон$3');
+                }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пр-т\.?)( |$)/, '$1проспект$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(им\.?)( |$)/, '$1имени$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(пос\.?)( |$)/, '$1посёлок$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(просп\.?)( |$)/, '$1проспект$3');
@@ -106,13 +121,19 @@ function run_wme_assist() {
                     return text.replace(/(^| )(дор\.)( |$)/, '$1дорога$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(наб\.)( |$)/, '$1набережная$3');
+                    return text.replace(/(^| )(о\.?)( |$)/, '$1остров$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(наб\.?)( |$)/, '$1набережная$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(набережная р\.?)( |$)/, '$1набережная реки$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(-ая)( |$)/, '$1-я$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)(-[о|ы|и]й)( |$)/, '$1-й$3');
+                    return text.replace(/(\d)(-[еоыи]й)( |$)/, '$1-й$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(\sЛет)(\s|$)/, '$1 лет$3');
@@ -131,23 +152,103 @@ function run_wme_assist() {
                 new Rule('Garbage dot', function (text) {
                     return text.replace(/(^|\s+)\./g, ' ');
                 }),
-                new Rule('Missing street type', function (text) {
-                    if (/улица|квартал|площадь|дорога|проезд|магистраль|спуск|путепровод|обвод|съезд|переулок|шоссе| тракт|[А-Я][0-9]|[0-9]+$|тупик|мост|набережная|бульвар|площадь|проспект|аллея|метро|кольцо|тоннель|разворот|шлагбаум|трамвай|пути|мост|Мост|эстакада|линия|сад|подход|подъезд|обход|Объездная|въезд|слобода|городок|посёлок|^на |^в |^к |^под |^с |^от |ж\/д|КАД|[0-9][0-9][А-Я]:\/|[0-9][0-9]:|^$|[А-Я]\-[0-9]|[0-9]+$| - |микрорайон|сквер|хорда|Грейдер/.test(text)) return text;
-                    return 'улица ' + text;
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    var text0 = text;
-                    if (/Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая|Ухсая|Хузангая/.test(text)) return text;
-                    text = text.replace(/(улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба|хорда)(\s)(.+[-|а|я|ь]я$)/, '$3 $1');
-                    if (text0 != text) text = text.replace(/(.+)(\s)(\d+-я)/, '$3 $1');
-                    return text;
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    var text0 = text;
-                    if (/Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой|Чайкиной|Богомоловой|Савиной|Попковой/.test(text)) return text;
-                    text = text.replace(/(проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|разворот|шлагбаум|обход|подъезд|микрорайон|сквер)(\s)(.+[-|и|о|ы]й$)/, '$3 $1');
-                    if (text0 != text) text = text.replace(/(.+)(\s)(\d+-й)/, '$3 $1');
-                    return text;
+                new Rule('Incorrect status position', function (text) {
+                    var wStatus = 'улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба|хорда|коса';
+                    var mStatus = 'проспект|переулок|проезд|тупик|бульвар|тракт|объезд|заезд|съезд|просек|взвоз|спуск|переезд|квартал|путепровод|мост|обвод|разворот|шлагбаум|обход|подъезд|микрорайон| сад|сквер|тоннель|туннель|парк|проток|канал|остров';
+                    var nStatus = 'шоссе|кольцо';
+                    var exStatus = '[А-Я][0-9]|[0-9]+$|метро|монорельс|ворота|разворот|шлагбаум|трамвай|пути|Мост|подход|подъезд|обход|Объездная|въезд|выезд|слобода|городок|посёлок|поселок|Грейдер|^на |^в |^к |^под |^с |^от |ж\\/д|ТТК|КАД|ЗСД|АГ?ЗС|[0-9][0-9][А-Я]:\\/|[0-9][0-9]:|^$|[А-Я]\\-[0-9]|[0-9]+$| - |\\/|,|плотина|снт';
+                    var exW = 'Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая|Ухсая|Хузангая|Галлая';
+                    var exM = 'Расковой|Дуровой|Космодемьянской|строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой|Чайкиной|Богомоловой|Савиной|Попковой|Петровой|Ангелиной|Терешковой';
+                    var exAdjW = 'Репищева|Зеленина|Карташихина|Опочинина|Остоумова';
+                    var exAdjM = 'Григоров|Посланников|Мошков|Посланников|Тучков|Замятин|Силин|Горсткин|Алымов|Калинкин|Эсперов|Зеленков|Храмов|Матисов|Лештуков|Кокушкин|Дойников|Щербаков|Апраксин|Климов|Майков|Урхов|Сивков|Урюпин|Воронцов|Яшумов|Захаров|Ласточкин|Берингов|Зубарев|Гавриков';
+                    var brackets = '';
+                    // Игнорируем
+                    if ( new RegExp(exStatus).test(text) ) return text;
+                    // Отделить примечания в скобках
+                    text = text.replace(/\s*(.*?)\s*(\(.*\))/,
+                        function (all, s, b){
+                            brackets = b;
+                            return s;
+                    });
+                    // Двойное прилагательное без статуса
+                    if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
+                        text = text.replace(/о-[А-Я][^\s]+?[-аяь]я$/, '$& улица');
+                    }
+                    // Не хватает пробелов вокруг тире
+                    if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
+                        text = text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
+                    }
+                    // Добавляем пропущенный статус
+                    if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
+                        if ( new RegExp(wStatus + '|' + mStatus + '|' + nStatus, 'i' ).test(text) ) {
+                            text = text.replace( new RegExp(wStatus + '|' + mStatus + '|' + nStatus, 'i' ), function (status){
+                                return status.toLowerCase();
+                            });
+                        } else text = 'улица ' + text;
+                    }
+                    // Голые числительные без склонения
+                    text = text.replace(new RegExp('(\\d)\\s+(?=' + wStatus + ')', 'g'), '$1-я ');
+                    text = text.replace(new RegExp('(\\d)\\s+(?=' + mStatus + ')', 'g'), '$1-й ');
+
+                    // Распространённые сокращения
+                    text = text.replace(/М\.\s+(?=Горького)/, 'Максима ');
+                    text = text.replace(/К\.\s+(?=Маркса|Либкнехта)/, 'Карла ');
+
+                    // Всё пишем заглавными буквами, кроме  статусов и  лет, летия, реки
+                    text = text.replace(new RegExp('(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, status, name){
+                        name = name.replace(/[\s\-]([^\s]+)/g, function(all, word){
+                            if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки|и)$/i.test(word) || word.length == 1 )
+                                 return ' ' + word.toLowerCase();
+                            else return ' ' + word.charAt(0).toUpperCase() + word.substr(1);
+                        });
+                        return status + name;
+                    });
+                    // Статусы женского рода
+                    if ( new RegExp(wStatus).test(text) ) {
+                        // Распространённые сокращения
+                        text = text.replace(/М\.\s+(?=[^\s]+?[аяь]я( |$))/, 'Малая ');
+                        text = text.replace(/Б\.\s+(?=[^\s]+?[аяь]я( |$))/, 'Большая ');
+
+                        // перед статусом могут быть только прилагательные
+                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + wStatus + ')(?= |$)'),
+                            function (all, adj, s){
+                                if ( new RegExp(exAdjW + '|,').test(adj) ) return all;
+                                if ( (! new RegExp(exW).test(adj)) &&
+                                     (/^[^\s]+?[-аяь]я(?:\s+[^\s]+?[-аяь]я)*$/.test(adj)) ) return all;
+                                return s + ' ' + adj;
+                        });
+                        // Прилагательные вперёд
+                        if ( ! new RegExp(exW).test(text) ) {
+                            text = text.replace(new RegExp('(' + wStatus + ')(.*?)(?:\\s+)([^\\s]+[-аяь]я)(\\s+[^\\s]+[-аяь]я)*$'), '$3$4 $1$2');
+                        }
+                        // Числительное всегда вначале если оно согласовано с прилагательным
+                        text = text.replace(/(.+[аяь]я)(?:\s+)(\d+-я)(?! Линия)/, '$2 $1');
+                        text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+[аяьик][ая]( |$)|\\s+(' + wStatus + '))', 'i'), '$2 $1');
+                    }
+                    // Статусы мужского рода
+                    if ( new RegExp(mStatus).test(text) ) {
+                        // Распространённые сокращения
+                        text = text.replace(/М\.\s+(?=[^\s]+?[иоы]й( |$))/, 'Малый ');
+                        text = text.replace(/Б\.\s+(?=[^\s]+?[иоы]й( |$))/, 'Большой ');
+
+                        // перед статусом могут быть только прилагательные
+                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?= |$)'),
+                            function (all, adj, s){
+                                if ( new RegExp(exAdjM).test(adj) ) return all;
+                                if ( ! new RegExp(exM).test(adj) &&
+                                       new RegExp('[^\\s]+?[-иоы]й(\\s[^\\s]+?[-иоы]й)*$').test(adj) ) return all;
+                                return s + ' ' + adj;
+                        });
+                        // Прилагательное вперёд
+                        if ( ! (new RegExp(exM).test(text) || /переулок.+?ой(\s|$)/.test(text)) ) {
+                            text = text.replace(new RegExp('(' + mStatus + ')(.*?)(?:\\s+)([^\\s]+[-иоы]й)(\\s+[^\\s]+[-иоы]й)*$'), '$3$4 $1$2');
+                        }
+                         // Числительное всегда вначале если оно согласовано с прилагательным
+                        text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
+                        text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$)|\\s+(' + mStatus + '))', 'i'), '$2 $1');
+                    }
+                    // Возвращаем скобки в конце
+                    return text + ' ' + brackets;
                 }),
                 new Rule('Move status to begin of name', function (text) {
                     return text.replace(/(.*)(улица)(.*)/, '$2 $1 $3');
