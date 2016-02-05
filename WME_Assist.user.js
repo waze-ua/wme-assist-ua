@@ -184,6 +184,7 @@ function run_wme_assist() {
                     }
                     // Голые числительные без склонения
                     text = text.replace(new RegExp('(\\d)\\s+(?='+ wStatus + ')', 'g'), '$1-я ');
+                    text = text.replace(new RegExp('(\\d)\\s+(?='+ mStatus + ')', 'g'), '$1-й ');
                     // Всё пишем заглавными буквами, кроме  статусов и  лет, летия, реки
                     text = text.replace(new RegExp('(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, status, name){
                         name = name.replace(/[\s\-]([^\s]+)/g, function(all, word){
