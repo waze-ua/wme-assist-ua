@@ -252,6 +252,7 @@ function run_wme_assist() {
                     return text + ' ' + brackets;
                 }),
                 new Rule('Move status to begin of name', function (text) {
+                    if ( ! new RegExp(exAdjW).test(text) )
                     return text.replace(/(.*)(улица)(.*)/, '$2 $1 $3');
                 }, 'Tula'),
                 new ExperimentalRule('Experimental', function (text) {
