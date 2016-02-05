@@ -183,12 +183,17 @@ function run_wme_assist() {
                         text = 'улица ' + text;
                     }
                     // Голые числительные без склонения
-                    text = text.replace(new RegExp('(\\d)\\s+(?='+ wStatus + ')', 'g'), '$1-я ');
-                    text = text.replace(new RegExp('(\\d)\\s+(?='+ mStatus + ')', 'g'), '$1-й ');
+                    text = text.replace(new RegExp('(\\d)\\s+(?=' + wStatus + ')', 'g'), '$1-я ');
+                    text = text.replace(new RegExp('(\\d)\\s+(?=' + mStatus + ')', 'g'), '$1-й ');
+
+                    // Распространённые сокращения
+                    text = text.replace(/М. (?=Горького)/, 'Максима ');
+                    text = text.replace(/К. (?=Маркса|Либкнехта)/, 'Карла ');
+
                     // Всё пишем заглавными буквами, кроме  статусов и  лет, летия, реки
                     text = text.replace(new RegExp('(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, status, name){
                         name = name.replace(/[\s\-]([^\s]+)/g, function(all, word){
-                            if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки)$/i.test(word) || word.length < 3 )
+                            if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки|и)$/i.test(word) || word.length == 1 )
                                  return ' ' + word.toLowerCase();
                             else return ' ' + word.charAt(0).toUpperCase() + word.substr(1);
                         });
@@ -196,6 +201,10 @@ function run_wme_assist() {
                     });
                     // Статусы женского рода
                     if ( new RegExp(wStatus).test(text) ) {
+                        // Распространённые сокращения
+                        text = text.replace(/М. (?=[^\s]+?[аяь]я( |$))/, 'Малая ');
+                        text = text.replace(/Б. (?=[^\s]+?[аяь]я( |$))/, 'Большая ');
+
                         // перед статусом могут быть только прилагательные
                         text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + wStatus + ')(?= |$)'),
                             function (all, adj, s){
@@ -206,7 +215,7 @@ function run_wme_assist() {
                         });
                         // Прилагательные вперёд
                         if ( ! new RegExp(exW).test(text) ) {
-                            text = text.replace(new RegExp('('+wStatus+')(.*?)(?:\\s+)([^\\s]+[-аяь]я)(\\s+[^\\s]+[-аяь]я)*$'), '$3$4 $1$2');
+                            text = text.replace(new RegExp('(' + wStatus + ')(.*?)(?:\\s+)([^\\s]+[-аяь]я)(\\s+[^\\s]+[-аяь]я)*$'), '$3$4 $1$2');
                         }
                         // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+[аяь]я)(?:\s+)(\d+-я)(?! Линия)/, '$2 $1');
@@ -214,6 +223,10 @@ function run_wme_assist() {
                     }
                     // Статусы мужского рода
                     if ( new RegExp(mStatus).test(text) ) {
+                        // Распространённые сокращения
+                        text = text.replace(/М. (?=[^\s]+?[иоы]й( |$))/, 'Малый ');
+                        text = text.replace(/Б. (?=[^\s]+?[иоы]й( |$))/, 'Большой ');
+
                         // перед статусом могут быть только прилагательные
                         text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?= |$)'),
                             function (all, adj, s){
@@ -224,11 +237,11 @@ function run_wme_assist() {
                         });
                         // Прилагательное вперёд
                         if ( ! (new RegExp(exM).test(text) || /переулок.+?ой(\s|$)/.test(text)) ) {
-                            text = text.replace(new RegExp('('+mStatus+')(.*?)(?:\\s+)([^\\s]+[-иоы]й)(\\s+[^\\s]+[-иоы]й)*$'), '$3$4 $1$2');
+                            text = text.replace(new RegExp('(' + mStatus + ')(.*?)(?:\\s+)([^\\s]+[-иоы]й)(\\s+[^\\s]+[-иоы]й)*$'), '$3$4 $1$2');
                         }
                          // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
-                        text = text.replace(new RegExp('('+mStatus+')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$))'), '$2 $1');
+                        text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$))'), '$2 $1');
                     }
                     // Возвращаем скобки в конце
                     return text + ' ' + brackets;
