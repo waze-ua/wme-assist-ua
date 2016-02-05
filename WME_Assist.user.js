@@ -219,7 +219,7 @@ function run_wme_assist() {
                         }
                         // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+[аяь]я)(?:\s+)(\d+-я)(?! Линия)/, '$2 $1');
-                        text = text.replace(new RegExp('('+wStatus+')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+[аяьик][ая]( |$))'), '$2 $1');
+                        text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+[аяьик][ая]( |$)|\\s+(' + wStatus + '))'), '$2 $1');
                     }
                     // Статусы мужского рода
                     if ( new RegExp(mStatus).test(text) ) {
@@ -241,7 +241,7 @@ function run_wme_assist() {
                         }
                          // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
-                        text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$))'), '$2 $1');
+                        text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$)|\\s+(' + mStatus + '))'), '$2 $1');
                     }
                     // Возвращаем скобки в конце
                     return text + ' ' + brackets;
