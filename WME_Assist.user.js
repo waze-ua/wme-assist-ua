@@ -224,8 +224,8 @@ function run_wme_assist() {
                             text = text.replace(new RegExp('(' + wStatus + ')(.*?)(?:\\s+)([^\\s]+[-аяь]я)(\\s+[^\\s]+[-аяь]я)*$'), '$3$4 $1$2');
                         }
                         // Числительное всегда вначале если оно согласовано с прилагательным
-                        text = text.replace(/(.+[аяь]я)(?:\s+)(\d+-я)(?! Линия)/, '$2 $1');
-                        text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+[аяьик][ая]( |$)|\\s+(' + wStatus + '))', 'i'), '$2 $1');
+                        text = text.replace(/(.+[аяь]я)(?:\s+)(\d+-я)(?! Линия| Ферма)/, '$2 $1');
+                        text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+[аяьик][ая]( |$)|\\s+(' + wStatus + '| Ферма))', 'i'), '$2 $1');
                     }
                     // Статусы мужского рода
                     if ( new RegExp(mStatus).test(text) ) {
