@@ -91,10 +91,10 @@ function run_wme_assist() {
                     return text.replace(/(^| )(им\.?)( |$)/, '$1имени$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пос\.?)( |$)/, '$1посёлок$3');
+                    return text.replace(/(^| )(пос\.?)( |$)/i, '$1посёлок$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(просп\.?)( |$)/, '$1проспект$3');
+                    return text.replace(/(^| )(просп\.?)( |$)/i, '$1проспект$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(ул\.?)( |$)/i, '$1улица$3');
@@ -103,31 +103,31 @@ function run_wme_assist() {
                     return text.replace(/(^| )(р-д)( |$)/i, '$1разъезд$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пер\.?)( |$)/, '$1переулок$3');
+                    return text.replace(/(^| )(пер\.?)( |$)/i, '$1переулок$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пр\.?|пр-д\.?)( |$)/, '$1проезд$3');
+                    return text.replace(/(^| )(пр\.?|пр-д\.?)( |$)/i, '$1проезд$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пр-кт)( |$)/, '$1проспект$3');
+                    return text.replace(/(^| )(пр-кт)( |$)/i, '$1проспект$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пл\.?)( |$)/, '$1площадь$3');
+                    return text.replace(/(^| )(пл\.?)( |$)/i, '$1площадь$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(ш\.)( |$)/, '$1шоссе$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(б-р|Б-р)( |$)/, '$1бульвар$3');
+                    return text.replace(/(^| )(б-р)( |$)/i, '$1бульвар$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(дор\.)( |$)/, '$1дорога$3');
+                    return text.replace(/(^| )(дор\.)( |$)/i, '$1дорога$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(о\.?)( |$)/, '$1остров$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(наб\.?)( |$)/, '$1набережная$3');
+                    return text.replace(/(^| )(наб\.?)( |$)/i, '$1набережная$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(набережная р\.?)( |$)/i, '$1набережная реки$3');
