@@ -144,6 +144,9 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/([а-яё])-\s+/, '$1 - ');
                 }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/\s+км\./i, ' км');
+                }),
             ];
         };
 
