@@ -127,7 +127,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(наб\.?)( |$)/, '$1набережная$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(набережная р\.?)( |$)/, '$1набережная реки$3');
+                    return text.replace(/(^| )(набережная р\.?)( |$)/i, '$1набережная реки$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(-ая)( |$)/, '$1-я$3');
@@ -183,8 +183,8 @@ function run_wme_assist() {
                     if ( ! new RegExp('(^| )(' + wStatus + '|' + mStatus + '|' + nStatus + ')( |$)').test(text) ) {
                         if ( text == 'Набережная' ) { text = text + ' улица'; } else
                         if ( new RegExp('(^| )(' + wStatus + '|' + mStatus + '|' + nStatus + ')( |$)', 'i' ).test(text) ) {
-                            text = text.replace( new RegExp('(?:^| )(' + wStatus + '|' + mStatus + '|' + nStatus + ')(?: |$)', 'i' ), function (all, status){
-                                return status.toLowerCase();
+                            text = text.replace( new RegExp('(^| )(' + wStatus + '|' + mStatus + '|' + nStatus + ')(?= |$)', 'i' ), function (all, space, status){
+                                return space + status.toLowerCase();
                             });
                         } else text = 'улица ' + text;
                     }
