@@ -169,7 +169,7 @@ function run_wme_assist() {
                             return s;
                     });
                     // Игнорируем
-                    if ( new RegExp(exStatus).test(text) ) return text;
+                    if ( new RegExp(exStatus).test(text) ) return text + ' ' + brackets;
                     // Двойное прилагательное без статуса
                     if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
                         text = text.replace(/о-[А-Я][^\s]+?[-аяь]я$/, '$& улица');
@@ -225,7 +225,7 @@ function run_wme_assist() {
                         }
                         // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+[аяь]я)(?:\s+)(\d+-я)(?! Линия| Ферма)/, '$2 $1');
-                        text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+[аяьик][ая]( |$)|\\s+(' + wStatus + '| Ферма))', 'i'), '$2 $1');
+                        text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+[аяьик][ая]( |$)|\\s+(' + wStatus + '|Ферма))', 'i'), '$2 $1');
                     }
                     // Статусы мужского рода
                     if ( new RegExp(mStatus).test(text) ) {
