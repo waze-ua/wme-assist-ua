@@ -214,23 +214,23 @@ function run_wme_assist() {
                     // Статусы женского рода
                     if ( new RegExp(wStatus).test(text) ) {
                         // Распространённые сокращения
-                        text = text.replace(/М\.\s+(?=[^\s]+?[аяь]я( |$))/, 'Малая ');
-                        text = text.replace(/Б\.\s+(?=[^\s]+?[аяь]я( |$))/, 'Большая ');
+                        text = text.replace(/М\.\s+(?=[^\s]+?[аяьс]я( |$))/, 'Малая ');
+                        text = text.replace(/Б\.\s+(?=[^\s]+?[аяьс]я( |$))/, 'Большая ');
 
                         // перед статусом могут быть только прилагательные
                         text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + wStatus + ')(?= |$)'),
                             function (all, adj, s){
                                 if ( new RegExp(exAdjW + '|,').test(adj) ) return all;
                                 if ( (! new RegExp(exW).test(adj)) &&
-                                     (/^[^\s]+?[-аяь]я(?:\s+[^\s]+?[-аяь]я)*$/.test(adj)) ) return all;
+                                     (/^[^\s]+?[-аяьс]я(?:\s+[^\s]+?[-аяьс]я)*$/.test(adj)) ) return all;
                                 return s + ' ' + adj;
                         });
                         // Прилагательные вперёд
                         if ( ! new RegExp(exW).test(text) ) {
-                            text = text.replace(new RegExp('(' + wStatus + ')(.*?)(?:\\s+)([^\\s]+[-аяь]я)(\\s+[^\\s]+[-аяь]я)*$'), '$3$4 $1$2');
+                            text = text.replace(new RegExp('(' + wStatus + ')(.*?)(?:\\s+)([^\\s]+[-аяьс]я)(\\s+[^\\s]+[-аяьс]я)*$'), '$3$4 $1$2');
                         }
                         // Числительное всегда вначале если оно согласовано с прилагательным
-                        text = text.replace(/(.+[аяь]я)(?:\s+)(\d+-я)(?! Линия| Ферма)/, '$2 $1');
+                        text = text.replace(/(.+[аяьс]я)(?:\s+)(\d+-я)(?! Линия| Ферма)/, '$2 $1');
                         text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+[аяьик][ая]( |$)|\\s+(' + wStatus + '|Ферма|Авеню))', 'i'), '$2 $1');
                     }
                     // Статусы мужского рода
