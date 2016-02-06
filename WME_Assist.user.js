@@ -179,10 +179,10 @@ function run_wme_assist() {
                         text = text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
                     }
                     // Добавляем пропущенный статус
-                    if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
+                    if ( ! new RegExp('(^| )(' + wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus + ')( |$)').test(text) ) {
                         if ( text == 'Набережная' ) { text = text + ' улица'; } else
-                        if ( new RegExp(wStatus + '|' + mStatus + '|' + nStatus, 'i' ).test(text) ) {
-                            text = text.replace( new RegExp(wStatus + '|' + mStatus + '|' + nStatus, 'i' ), function (status){
+                        if ( new RegExp('(^| )(' + wStatus + '|' + mStatus + '|' + nStatus + ')( |$)', 'i' ).test(text) ) {
+                            text = text.replace( new RegExp('(?:^| )(' + wStatus + '|' + mStatus + '|' + nStatus + ')(?: |$)', 'i' ), function (all, status){
                                 return status.toLowerCase();
                             });
                         } else text = 'улица ' + text;
