@@ -100,6 +100,9 @@ function run_wme_assist() {
                     return text.replace(/(^| )(ул\.?)( |$)/i, '$1улица$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(р-д)( |$)/i, '$1разъезд$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пер\.?)( |$)/, '$1переулок$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
