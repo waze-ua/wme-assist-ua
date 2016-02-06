@@ -97,7 +97,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(просп\.?)( |$)/, '$1проспект$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(ул\.?)( |$)/, '$1улица$3');
+                    return text.replace(/(^| )(ул\.?)( |$)/i, '$1улица$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пер\.?)( |$)/, '$1переулок$3');
