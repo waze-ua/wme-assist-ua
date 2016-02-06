@@ -85,7 +85,7 @@ function run_wme_assist() {
                     return text.replace(/мкр[.н]/, 'микрорайон');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пр-т\.?)( |$)/, '$1проспект$3');
+                    return text.replace(/(^| )(пр-т\.?)( |$)/i, '$1проспект$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(им\.?)( |$)/, '$1имени$3');
