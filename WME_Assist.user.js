@@ -228,6 +228,7 @@ function run_wme_assist() {
                         // Прилагательные вперёд
                         if ( ! new RegExp(exW).test(text) ) {
                             text = text.replace(new RegExp('(' + wStatus + ')(.*?)(?:\\s+)([^\\s]+[-аяьс]я)(\\s+[^\\s]+[-аяьс]я)*$'), '$3$4 $1$2');
+                            text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)([^\\s]+[-аяьс]я)(?=\\s+\\d+-й\\s+Проезд)'), '$2 $1');
                         }
                         // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+[аяьс]я)(?:\s+)(\d+-я)(?! Линия| Ферма)/, '$2 $1');
@@ -250,6 +251,7 @@ function run_wme_assist() {
                         // Прилагательное вперёд
                         if ( ! (new RegExp(exM).test(text) || /переулок.+?ой(\s|$)/.test(text)) ) {
                             text = text.replace(new RegExp('(' + mStatus + ')(.*?)(?:\\s+)([^\\s]+[-иоы]й)(\\s+[^\\s]+[-иоы]й)*$'), '$3$4 $1$2');
+                            text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)([^\\s]+[-иоы]й)(?=\\s+\\d+-й\\s+Проезд)'), '$2 $1');
                         }
                          // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
