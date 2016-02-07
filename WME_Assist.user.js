@@ -153,6 +153,9 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/\s+км\./i, ' км');
                 }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/\[(.+)\]/, '$1');
+                }),
             ];
         };
 
