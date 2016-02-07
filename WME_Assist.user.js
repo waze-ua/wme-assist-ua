@@ -657,7 +657,7 @@ function run_wme_assist() {
 
         addon.id = "sidepanel-assist";
         addon.className = "tab-pane";
-        $('#user-info > .tab-content').append(addon);
+        $('#user-info > div > .tab-content').append(addon);
 
         var selectedCustomRule = -1;
 
