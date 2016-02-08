@@ -221,7 +221,7 @@ function run_wme_assist() {
                     text = text.replace(/набережная улица/, 'Набережная улица');
                     text = text.replace(new RegExp('(^|\s)(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, space, status, name){
                         name = name.replace(/([\s-])([^\s-]+)/g, function(all, space, word){
-                            if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки|из|от|км|де)$/i.test(word) || word.length == 1 )
+                            if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де)$/i.test(word) || word.length == 1 )
                                  return space + word.toLowerCase();
                             else return space + word.charAt(0).toUpperCase() + word.substr(1);
                         });
