@@ -75,6 +75,9 @@ function run_wme_assist() {
                 new Rule('ACUTE ACCENT in street name', function (text) {
                     return text.replace(/\u0301/g, '');
                 }),
+                new Rule('Dash in street name', function (text) {
+                    return text.replace(/\u2013/g, '-');
+                }),
                 new Rule('Add space after last dot', function (text) {
                     return text.replace(/(.+\.)(?! )/, '$1 ');
                 }),
@@ -140,9 +143,6 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(-[еоыи]й)( |$)/, '$1-й$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)(-го)( |$)/, '$1$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(-ти)( |$)/, '$1-и$3');
