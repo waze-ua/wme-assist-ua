@@ -156,6 +156,12 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/\[(.+)\]/, '$1');
                 }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(\d)й/, '$1-й');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(\d)я\]/, '$1-я');
+                }),
             ];
         };
 
