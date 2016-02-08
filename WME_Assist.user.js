@@ -142,6 +142,9 @@ function run_wme_assist() {
                     return text.replace(/(\d)(-[еоыи]й)( |$)/, '$1-й$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(\d)(-го)( |$)/, '$1$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(\sЛет)(\s|$)/, '$1 лет$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
