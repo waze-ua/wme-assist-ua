@@ -193,7 +193,7 @@ function run_wme_assist() {
                             return s;
                     });
                     // статус населённого пункта всегда вначале
-                    text = text.replace(/(.*)(?:\s+)(микрорайон|посёлок|деревня)/, '$2 $1');
+                    text = text.replace(/(.*?)(?:\s+)((?:.*ый )посёлок|деревня)/, '$2 $1');
                     // Игнорируем
                     if ( new RegExp(exStatus).test(text) ) return text + ' ' + brackets;
                     // Двойное прилагательное без статуса
