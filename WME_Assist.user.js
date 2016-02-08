@@ -145,6 +145,15 @@ function run_wme_assist() {
                     return text.replace(/(\d)(-го)( |$)/, '$1$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(\d)(-ти)( |$)/, '$1-и$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(\d)й/, '$1-й');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(\d)я/, '$1-я');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(\sЛет)(\s|$)/, '$1 лет$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
@@ -158,12 +167,6 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/\[(.+)\]/, '$1');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)й/, '$1-й');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)я\]/, '$1-я');
                 }),
             ];
         };
@@ -226,7 +229,7 @@ function run_wme_assist() {
                     text = text.replace(/(^|\s)набережная улица/, '$1Набережная улица');
                     text = text.replace(new RegExp('(^|\s)(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, space, status, name){
                         name = name.replace(/([\s-])([^\s-]+)/g, function(all, space, word){
-                            if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де)$/i.test(word) || word.length == 1 )
+                            if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де|ти|го)$/i.test(word) || word.length == 1 )
                                  return space + word.toLowerCase();
                             else return space + word.charAt(0).toUpperCase() + word.substr(1);
                         });
