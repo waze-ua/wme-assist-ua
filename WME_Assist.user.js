@@ -169,7 +169,7 @@ function run_wme_assist() {
                     return text.replace(/\[(.+)\]/, '$1');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/^(СНТ)\s(.*)/, '$2 снт');
+                    return text.replace(/^СНТ\s(.*)/, '$1 снт');
                 }),
             ];
         };
