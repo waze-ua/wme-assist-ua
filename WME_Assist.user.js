@@ -219,7 +219,7 @@ function run_wme_assist() {
 
                     // Всё пишем заглавными буквами, кроме  статусов и  лет, летия, реки
                     text = text.replace(new RegExp('(^| )(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, space, status, name){
-                        name = name.replace(/[\s\-]([^\s]+)/g, function(all, word){
+                        name = name.replace(/[\s-]([^\s]+)/g, function(all, word){
                             if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки|из|от|км|де)$/i.test(word) || word.length == 1 )
                                  return ' ' + word.toLowerCase();
                             else return ' ' + word.charAt(0).toUpperCase() + word.substr(1);
