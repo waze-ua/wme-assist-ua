@@ -1120,7 +1120,7 @@ function run_wme_assist() {
             if (!street) return;
 
             var detected = false;
-            var title;
+            var title = '';
             var reason;
 
             if (!street.isEmpty) {
