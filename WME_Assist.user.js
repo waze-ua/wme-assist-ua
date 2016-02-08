@@ -218,7 +218,8 @@ function run_wme_assist() {
                     text = text.replace(/К\.\s+(?=Маркса|Либкнехта)/, 'Карла ');
 
                     // Всё пишем заглавными буквами, кроме  статусов и  лет, летия, реки
-                    text = text.replace(new RegExp('(^| )(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, space, status, name){
+                    text = text.replace(/набережная улица/, 'Набережная улица');
+                    text = text.replace(new RegExp('(^|\s)(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, space, status, name){
                         name = name.replace(/([\s-])([^\s-]+)/g, function(all, space, word){
                             if (/^(летия|лет|года|реки|канала|острова|стороны|год|съезда|имени|ручей|канавки|из|от|км|де)$/i.test(word) || word.length == 1 )
                                  return space + word.toLowerCase();
