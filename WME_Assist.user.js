@@ -1128,7 +1128,8 @@ function run_wme_assist() {
                     var result = rules.correct(ui.variant(), street.name);
                     var newStreetName = result.value;
                     detected = (newStreetName != street.name);
-                    title = obj.type + ': ' + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
+                    if (obj.type == 'venue') title = 'POI: ';
+                    title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
                     reason = street.name;
                 }
             }
