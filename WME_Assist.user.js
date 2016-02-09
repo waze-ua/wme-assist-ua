@@ -112,7 +112,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(пер\.?)( |$)/i, '$1переулок$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пр\.?|пр-з?д\.?)( |$)/i, '$1проезд$3');
+                    return text.replace(/(^| )(пр\.?|пр?-з?д\.?)( |$)/i, '$1проезд$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пр-кт)( |$)/i, '$1проспект$3');
