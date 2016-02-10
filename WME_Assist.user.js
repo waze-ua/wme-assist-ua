@@ -284,8 +284,8 @@ function run_wme_assist() {
                                 return s + ' ' + adj;
                         });
                         // Прилагательное вперёд
-                        if ( ! (new RegExp(exM).test(text) || /переулок.+?трой(\s|$)/.test(text)) ) {
-                            text = text.replace(new RegExp('(' + mStatus + ')(.*?)(?:\\s+)([^\\s]+[-иоы]й)(\\s+[^\\s]+[-иоы]й)*$'), '$3$4 $1$2');
+                        if ( ! (new RegExp(exM).test(text) || /переулок.+?(трой|ской)(\s|$)/.test(text)) ) {
+                            text = text.replace(new RegExp('(' + mStatus + ')(.*?)((?:\\s+[^\\s]+[-иоы]й)+)$'), '$3 $1$2');
                             text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)([^\\s]+[-иоы]й)(?=\\s+\\d+-й\\s+Проезд)'), '$2 $1');
                         }
                          // Числительное всегда вначале если оно согласовано с прилагательным
