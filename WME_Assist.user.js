@@ -136,6 +136,9 @@ function run_wme_assist() {
                     return text.replace(/(^| )(наб\.?)( |$)/i, '$1набережная$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(туп\.?)( |$)/i, '$1тупик$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(набережная р\.?)( |$)/i, '$1набережная реки$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
