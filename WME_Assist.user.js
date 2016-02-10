@@ -236,7 +236,7 @@ function run_wme_assist() {
 
                     // Всё пишем заглавными буквами, кроме  статусов и  лет, летия, реки
                     text = text.replace(/(^|\s)набережная улица/, '$1Набережная улица');
-                    text = text.replace(new RegExp('(^|\s)(' + wStatus+ '|' + mStatus + ')( .+)'), function(all, space, status, name){
+                    text = text.replace(new RegExp('(^|\\s)(' + wStatus+ '|' + mStatus + ')(\\s.+)'), function(all, space, status, name){
                         name = name.replace(/([\s-])([^\s-]+)/g, function(all, space, word){
                             if (/^(летия|лет|года|реки|речки|канала|острова|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де|ти|го)$/i.test(word) || word.length == 1 )
                                  return space + word.toLowerCase();
@@ -262,7 +262,7 @@ function run_wme_assist() {
                         if ( ! new RegExp(exW).test(text) ) {
                             text = text.replace(new RegExp('(' + wStatus + ')(.*?)((?:\\s+[^\\s]+(?:-я|ая|ья|яя|яся))+)$'), '$3 $1$2');
                             text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)([^\\s]+(?:-я|ая|ья|яя|яся))(?=\\s+\\d+-й\\s+Проезд)'), '$2 $1');
-                            text = text.replace(new RegExp('^(' + wStatus + ')(?:\\s+)([^\\s]+(?:ая|ья|яя|яся))'), '$2 $1');
+                            text = text.replace(new RegExp('^(' + wStatus + ')(?:\\s+)([^\\s]+(?:ая|ья|яя|яся))(?=\s|$)'), '$2 $1');
                         }
                         // Числительное всегда вначале если оно согласовано с прилагательным
                         text = text.replace(/(.+(?:ая|ья|яя|яся))(?:\s+)(\d+-я)(?! Линия| Ферма| Рота)/, '$2 $1');
