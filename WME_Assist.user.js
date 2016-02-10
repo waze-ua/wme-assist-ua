@@ -181,7 +181,7 @@ function run_wme_assist() {
         };
 
         var rules_RU = function () {
-            var exAdjW = 'Репищева|Зеленина|Карташихина|Опочинина|Остоумова';
+            var exAdjW = 'Репищева|Зеленина|Карташихина|Опочинина|Остоумова|Гаврикова|Прасковьина';
             return rules_basicRU().concat([
                 new Rule('No space after the word', function (text) {
                     return text.replace(/\.(?!\s)/g, '. ');
