@@ -285,11 +285,11 @@ function run_wme_assist() {
                         text = text.replace(/Б\.\s+(?=[^\s]+?[иоы]й( |$))/, 'Большой ');
 
                         // перед статусом могут быть только прилагательные
-                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?= |$)'),
+                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?=\\s+|$)'),
                             function (all, adj, s){
-                                if ( new RegExp(/[а-яё]+([-иоы]й|ин|[оеё]в)( |$)/).test(adj) ) return all;
+                                if ( new RegExp(/[а-яё]+([-иоы]й|ин)(\\s+|$)/).test(adj) ) return all;
                                 if ( ! new RegExp(exM).test(adj) &&
-                                       new RegExp('[^\\s]+?[-иоы]й(\\s[^\\s]+?[-иоы]й)*$').test(adj) ) return all;
+                                       new RegExp('[^\\s]+?[-иоы]й(\\s[^\\s]+?([-иоы]й|ин|[оеё]в))*$').test(adj) ) return all;
                                 return s + ' ' + adj;
                         });
                         // Прилагательное вперёд
