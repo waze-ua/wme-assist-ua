@@ -264,7 +264,9 @@ function run_wme_assist() {
                         // Прилагательные вперёд
                         if ( ! new RegExp(exW).test(text) ) {
                             // улица Малая Зеленина -> Малая Зеленина улица
-                            text = text.replace(new RegExp('(' + wStatus + ')(.*?)((?:\\s+(?:' + exAdjW + ')|\\s+[^\\s]+(?:-я|ая|ья|яя|яся))+)$'), '$3 $1$2');
+                            // улица Авиаконструктора Яковлева?
+                            text = text.replace(new RegExp('(' + wStatus + ')((?:\\s+(?:' + exAdjW + ')|\\s+[^\\s]+(?:-я|ая|ья|яя|яся))+)$'), '$2 $1');
+                            text = text.replace(new RegExp('(' + wStatus + ')(.*?)((?:\\s+[^\\s]+(?:-я|ая|ья|яя|яся))+)$'), '$3 $1$2');
                             text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)([^\\s]+(?:-я|ая|ья|яя|яся))(?=\\s+\\d+-й\\s+Проезд)'), '$2 $1');
                             text = text.replace(new RegExp('^(' + wStatus + ')(?:\\s+)([^\\s]+(?:ая|ья|яя|яся))(?=\s|$)'), '$2 $1');
                         }
