@@ -177,6 +177,14 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/^ЖД$/i, 'ж/д');
                 }),
+                new Rule('Incorrect highway name', function (text) {
+                    return text.replace(/^M-?(\d)/, 'М$1')
+                    .replace(/^A-?(\d)/, 'А$1')
+                    .replace(/^P-?(\d)/, 'Р$1')
+                    .replace(/(\d{2})A-(\d)/, '$1А-$2')
+                    .replace(/(\d{2})K-(\d)/, '$1К-$2')
+                    .replace(/(\d{2})H-(\d)/, '$1Н-$2');
+                }),
             ];
         };
 
