@@ -214,10 +214,6 @@ function run_wme_assist() {
 
                     //var exAdjM = 'Григоров|Посланников|Мошков|Посланников|Тучков|Замятин|Силин|Горсткин|Алымов|Калинкин|Эсперов|Зеленков|Храмов|Матисов|Лештуков|Кокушкин|Дойников|Щербаков|Апраксин|Климов|Майков|Урхов|Сивков|Урюпин|Воронцов|Яшумов|Захаров|Ласточкин|Берингов|Зубарев|Гавриков|Цариков|Зельев|Горлов|Карелин';
 
-                    // Не хватает пробелов вокруг тире
-                    if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
-                        if (/[а-я]-[А-Я]/.test(text)) return text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
-                    }
 
                     // Отделить примечания в скобках (дублёр)
                     var brackets = '';
@@ -230,18 +226,19 @@ function run_wme_assist() {
                     // коттеджный, дачный, клубный посёлок в начало
                     text = text.replace(/(.*?)(?:\s+)((?:.*ый )посёлок)/, '$2 $1');
 
-                    // Игнорируем
+                    // Игнорируем исключения
                     if ( new RegExp(exStatus).test(text) ) return text + ' ' + brackets;
-
-                    // Двойное прилагательное без статуса
-                    //if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus).test(text) ) {
-                    //    text = text.replace(/о-[А-Я][^\s]+?[-аяь]я$/, '$& улица');
-                    //}
 
                     // Добавляем пропущенный статус
                     if ( ! new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(\\s+|$)').test(text) ) {
-                        if ( text == 'Набережная' ) { text = text + ' улица'; } else
+                        if ( /[-аяь]я$/.test(text)) { // Прилагательное без статуса
+                            text = text + ' улица';
+                        } else
+                        if (/[а-я]-[А-Я]/.test(text)) { // Не хватает пробелов вокруг тире
+                            return text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
+                        };
                         if ( new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(\\s+|$)', 'i' ).test(text) ) {
+                            // Если статус есть, но записан с заглавной буквы
                             text = text.replace( new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(?=\\s+|$)', 'i' ), function (all, space, status) {
                                 return space + status.toLowerCase();
                             });
