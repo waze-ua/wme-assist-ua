@@ -216,7 +216,7 @@ function run_wme_assist() {
 
                     // Не хватает пробелов вокруг тире
                     if ( ! new RegExp(wStatus + '|' + mStatus + '|' + nStatus + '|' + exStatus).test(text) ) {
-                        return text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
+                        if (/[а-я]-[А-Я]/.test(text)) return text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
                     }
 
                     // Отделить примечания в скобках (дублёр)
