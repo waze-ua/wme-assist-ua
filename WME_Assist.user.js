@@ -279,7 +279,7 @@ function run_wme_assist() {
                             function (all, adj, s) {
                                 if ( new RegExp(exAdjW).test(adj) ) return all;
                                 if ( (! new RegExp(exW).test(adj)) &&
-                                     (/^((\s+[^\s]+?(?:-я|ая|ья|яя|яся))+)$/.test(' ' + adj)) ) return all;
+                                     (/^((\s+[^\s]+?(-я|ая|ья|яя|яся))+)$/.test(' ' + adj)) ) return all;
                                 return s + ' ' + adj;
                             });
 
@@ -315,8 +315,8 @@ function run_wme_assist() {
                         text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?=\\s+|$)'),
                             function (all, adj, s){
                                 if ( /[а-яё]+([-иоы]й|ин)(\s+|$)/.test(adj) ) return all;
-                                if ( ! new RegExp(exM).test(adj) &&
-                                       new RegExp('[^\\s]+?[-иоы]й(\\s[^\\s]+?([-иоы]й|ин|[оеё]в))*$').test(adj) ) return all;
+                                if ( (! new RegExp(exM).test(adj)) &&
+                                     (/^((\s+[^\s]+?([-иоы]й|ин|[оеё]в))+)$/.test(' ' + adj)) ) return all;
                                 return s + ' ' + adj;
                             });
 
