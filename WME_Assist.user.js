@@ -231,7 +231,7 @@ function run_wme_assist() {
 
                     // Добавляем пропущенный статус
                     if ( ! new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(\\s+|$)').test(text) ) {
-                        if ( /[-аяь]я$/.test(text)) { // Прилагательное без статуса
+                        if ( /[-аяь]я$/.test(text)) { // Прилагательное без статуса (Русско-Полянская)
                             text = text + ' улица';
                         } else
                         if (/[а-я]-[А-Я]/.test(text)) { // Не хватает пробелов вокруг тире
@@ -255,9 +255,9 @@ function run_wme_assist() {
 
                     // Всё пишем заглавными буквами, кроме  статусов, предлогов и гидронимов
                     text = text.replace(/(^|\s+)набережная улица/, '$1Набережная улица');
-                    text = text.replace(new RegExp('(^|\\s)(' + wStatus+ '|' + mStatus + '|' + nStatus + ')(\\s.+)'), 
+                    text = text.replace(new RegExp('(^|\\s)(' + wStatus+ '|' + mStatus + '|' + nStatus + ')(\\s.+)'),
                         function(all, space, status, name) {
-                        name = name.replace(/([-\s])([^-\s]+)/g, 
+                        name = name.replace(/([-\s])([^-\s]+)/g,
                             function(all, space, word) {
                             if (/^(летия|лет|года|рек[иа]|речки|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де|ти|го)$/i.test(word) || word.length == 1 )
                                  return space + word.toLowerCase();
