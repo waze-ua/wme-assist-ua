@@ -181,9 +181,10 @@ function run_wme_assist() {
                     return text.replace(/^M-?(\d)/, 'М$1')
                     .replace(/^A-?(\d)/, 'А$1')
                     .replace(/^P-?(\d)/, 'Р$1')
-                    .replace(/(\d{2})A-(\d)/, '$1А-$2')
-                    .replace(/(\d{2})K-(\d)/, '$1К-$2')
-                    .replace(/(\d{2})H-(\d)/, '$1Н-$2')
+                    .replace(/^([МАР])-(\d)/, '$1$2')
+                    .replace(/^(\d{2})A-(\d)/, '$1А-$2')
+                    .replace(/^(\d{2})K-(\d)/, '$1К-$2')
+                    .replace(/^(\d{2})H-(\d)/, '$1Н-$2')
                     .replace(/(\d)А(:|\s+|$)/, '$1A$2')
                     .replace(/(\d)В(:|\s+|$)/, '$1B$2');
                 }),
