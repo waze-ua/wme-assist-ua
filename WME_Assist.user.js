@@ -82,6 +82,9 @@ function run_wme_assist() {
                     return text.replace(/(.+\.)(?! )/, '$1 ');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/улицаица/, 'улица');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(мая)( |$)/, '$1Мая$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
