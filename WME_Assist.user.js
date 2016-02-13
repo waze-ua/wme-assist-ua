@@ -315,7 +315,7 @@ function run_wme_assist() {
                     } else
 
                     // Статусы мужского рода
-                    if ( new RegExp(mStatus).test(text) ) {
+                    if ( new RegExp('(^|\\s)(' + mStatus + ')(\\s|$)').test(text) ) {
 
                         // Распространённые сокращения
                         text = text.replace(/М\.\s+(?=[^\s]+?[иоы]й( |$))/, 'Малый ');
@@ -346,6 +346,14 @@ function run_wme_assist() {
 
                         text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
                         text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$)|\\s+(' + mStatus + '|Ряд))', 'i'), '$2 $1');
+                    } else
+
+                    // Статусы среднего рода
+                    if ( new RegExp('(^|\\s)(' + nStatus + ')(\\s|$)').test(text) ) {
+
+                        // шоссе Воткинское -> Воткинское шоссе
+                        text = text.replace( new RegExp('^(' + nStatus + ')((?:\\s+)(.*ое)$'), '$2 $1');
+
                     }
 
                     // Возвращаем скобки в конце
