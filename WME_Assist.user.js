@@ -331,6 +331,8 @@ function run_wme_assist() {
 
                         // Прилагательное вперёд
                         if ( ! new RegExp(exM, 'i').test(text) ) {
+                            // переулок *** 1-й -> 1-й переулок ***
+                            text = text.replace(new RegExp('(' + mStatus + ')(.*?)((?:\\s+[^\\s]+(?:[-иоы]й|ин|[оеё]в))+)$'), '$3 $1$2');
                             text = text.replace(
                                 new RegExp('(' + mStatus + ')((?:\\s+[^\\s]+(?:[-иоы]й|ин|[оеё]в))+)$'), '$2 $1');
                             text = text.replace(
@@ -338,6 +340,9 @@ function run_wme_assist() {
                         }
 
                          // Числительное всегда вначале если оно согласовано с прилагательным
+                        // переулок 1-й Дунаевского  -> 1-й переулок Дунаевского
+                        //text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]*(?:' + exM + ')|\\s+[^\\s]+(?:[-иоы]й|ин|[оеё]в)( |$)', 'i'), '$2 $1');
+
                         text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
                         text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$)|\\s+(' + mStatus + '|Ряд))', 'i'), '$2 $1');
                     }
