@@ -312,7 +312,7 @@ function run_wme_assist() {
                         text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+(?:ая|ья|яя|яся|ка)( |$)|\\s+(' + wStatus + '|Ферма|Авеню|Пристань))', 'i'), '$2 $1');
                         // 1-я улица Лесоперевалка -> улица 1-я Лесоперевалка
                         text = text.replace(new RegExp('(\\d+-я)\\s+(' + wStatus + ')\\s+([^\\s]+ка)$'), '$2 $1 $3');
-                    }
+                    } else
 
                     // Статусы мужского рода
                     if ( new RegExp(mStatus).test(text) ) {
