@@ -351,9 +351,15 @@ function run_wme_assist() {
                     // Статусы среднего рода
                     if ( new RegExp('(^|\\s)(' + nStatus + ')(\\s|$)').test(text) ) {
 
+                        // Энтузиастов шоссе -> шоссе Энтузиастов
+                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + nStatus + ')(?=\\s+|$)'),
+                            function (all, adj, s){
+                                if ( /[а-яё]+(ое)(\s+|$)/.test(adj) ) return all;
+                                return s + ' ' + adj;
+                            });
+
                         // шоссе Воткинское -> Воткинское шоссе
                         text = text.replace( new RegExp('^(' + nStatus + ')(?:\\s+)(.*ое)$'), '$2 $1');
-
                     }
 
                     // Возвращаем скобки в конце
