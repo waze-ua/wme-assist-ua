@@ -352,7 +352,7 @@ function run_wme_assist() {
                     if ( new RegExp('(^|\\s)(' + nStatus + ')(\\s|$)').test(text) ) {
 
                         // шоссе Воткинское -> Воткинское шоссе
-                        text = text.replace( new RegExp('^(' + nStatus + ')((?:\\s+)(.*ое)$'), '$2 $1');
+                        text = text.replace( new RegExp('^(' + nStatus + ')(?:\\s+)(.*ое)$'), '$2 $1');
 
                     }
 
