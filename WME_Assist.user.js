@@ -188,6 +188,7 @@ function run_wme_assist() {
                     .replace(/^(\d{2})A-(\d)/, '$1А-$2')
                     .replace(/^(\d{2})K-(\d)/, '$1К-$2')
                     .replace(/^(\d{2})H-(\d)/, '$1Н-$2')
+                    .replace(/^(\d{2})P-(\d)/, '$1Р-$2')
                     .replace(/(\d)А(:|\s+|$)/, '$1A$2')
                     .replace(/(\d)В(:|\s+|$)/, '$1B$2');
                 }),
