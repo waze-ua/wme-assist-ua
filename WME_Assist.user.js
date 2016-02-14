@@ -78,8 +78,11 @@ function run_wme_assist() {
                 new Rule('Dash in street name', function (text) {
                     return text.replace(/\u2013/g, '-');
                 }),
-                new Rule('Add space after last dot', function (text) {
-                    return text.replace(/(.+\.)(?! )/, '$1 ');
+                new Rule('No space after the word', function (text) {
+                    return text.replace(/\.(?!\s)/g, '. ');
+                }),
+                new Rule('Garbage dot', function (text) {
+                    return text.replace(/(^|\s+)\./g, '$1');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/улицаица/, 'улица');
@@ -204,12 +207,6 @@ function run_wme_assist() {
             var exAdjW = 'Репищева|Зеленина|Карташихина|Опочинина|Остоумова|Гаврикова|Прасковьина|Усачёва|Бармалеева|Ильмянинова|Миронова|Остоумова|Перфильева|Плуталова|Подрезова|Полозова|Рашетова|Сегалева|Шамшева|Шарова|Эсперова|Замшина|Куракина|Ольгина|Опочинина|Осокина|Рюхина|Тосина|Веткина|Ильина';
 
             return rules_basicRU().concat([
-                new Rule('No space after the word', function (text) {
-                    return text.replace(/\.(?!\s)/g, '. ');
-                }),
-                new Rule('Garbage dot', function (text) {
-                    return text.replace(/(^|\s+)\./g, ' ');
-                }),
                 new Rule('Incorrect status position', function (text) {
                     // Женские статусы
                     var wStatus = 'улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба|хорда|коса|деревня|переправа|площадка';
@@ -433,6 +430,9 @@ function run_wme_assist() {
             }
 
             return rules_basicRU().concat([
+                new Rule('Delete space in initials', function (text) {
+                    return text.replace(/(^|\s+)([А-Я]\.)\s([А-Я]\.)/, '$1$2$3');
+                }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(тр-т)( |$)/, '$1тракт$3');
                 }),
