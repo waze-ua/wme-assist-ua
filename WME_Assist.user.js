@@ -166,7 +166,8 @@ function run_wme_assist() {
                     return text.replace(/(\d)(\sЛет)(\s|$)/, '$1 лет$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(№)(\d)/, '$1 $2');
+                    return text.replace(/(№)(\d)/, '$1 $2')
+                               .replace(/(Проектируемый проезд)\s+(\d+[A-Я]?)/, '$1 № $2');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/([а-яё])-\s+/, '$1 - ');
@@ -192,8 +193,8 @@ function run_wme_assist() {
                     .replace(/^(\d{2})K-(\d)/, '$1К-$2')
                     .replace(/^(\d{2})H-(\d)/, '$1Н-$2')
                     .replace(/^(\d{2})P-(\d)/, '$1Р-$2')
-                    .replace(/(\d)А(:|\s+|$)/, '$1A$2')
-                    .replace(/(\d)В(:|\s+|$)/, '$1B$2');
+                    .replace(/^(\d+)А(:|\s+|$)/, '$1A$2')
+                    .replace(/^(\d+)В(:|\s+|$)/, '$1B$2');
                 }),
             ];
         };
