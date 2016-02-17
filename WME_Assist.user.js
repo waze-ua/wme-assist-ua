@@ -275,16 +275,18 @@ function run_wme_assist() {
 
                     // Всё пишем заглавными буквами, кроме  статусов, предлогов и гидронимов
                     text = text.replace(/(^|\s+)набережная улица/, '$1Набережная улица');
-                    text = text.replace(new RegExp('(^|\\s)(' + wStatus+ '|' + mStatus + '|' + nStatus + ')(\\s.+)'),
-                        function(all, space, status, name) {
-                        name = name.replace(/([-\s])([^-\s]+)/g,
-                            function(all, space, word) {
-                            if (/^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де|ти|го)$/i.test(word) || word.length == 1 )
+                    var foundStatus = false;
+                    text = (' ' + text).replace(/([-\s])([^-\s]+)/g,
+                        function(all, space, word) {
+                            if ( ! foundStatus )
+                                if ( new RegExp('^(' + wStatus+ '|' + mStatus + '|' + nStatus + ')$').test(text) ) {
+                                    foundStatus = true;
+                                    return all;
+                                };
+                            if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де|ти|го)$/i.test(word) || word.length == 1 )
                                  return space + word.toLowerCase();
                             else return space + word.charAt(0).toUpperCase() + word.substr(1);
-                            });
-                        return space + status + name;
-                        });
+                    }).replace(/\s+(.*)/, '$1');
 
                     // Статусы женского рода
                     if ( new RegExp('(^|\\s)(' + wStatus + ')(\\s|$)').test(text) ) {
