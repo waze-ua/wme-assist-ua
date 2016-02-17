@@ -279,7 +279,7 @@ function run_wme_assist() {
                     text = (' ' + text).replace(/([-\s])([^-\s]+)/g,
                         function(all, space, word) {
                             if ( ! foundStatus )
-                                if ( new RegExp('^(' + wStatus+ '|' + mStatus + '|' + nStatus + ')$').test(text) ) {
+                                if ( new RegExp('^(' + wStatus+ '|' + mStatus + '|' + nStatus + ')$').test(word) ) {
                                     foundStatus = true;
                                     return all;
                                 };
