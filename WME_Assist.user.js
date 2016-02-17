@@ -124,6 +124,9 @@ function run_wme_assist() {
                     return text.replace(/(^| )(пр-кт)( |$)/i, '$1проспект$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(тр-т)( |$)/i, '$1тракт$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пл\.?)( |$)/i, '$1площадь$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
