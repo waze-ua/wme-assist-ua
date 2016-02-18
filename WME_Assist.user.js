@@ -342,7 +342,7 @@ function run_wme_assist() {
                         // перед статусом могут быть только прилагательные
                         text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?=\\s+|$)'),
                             function (all, adj, s){
-                                if ( /[а-яё]+([-иоы]й|ин)(\s+|$)/.test(adj) ) return all;
+                                // if ( /[а-яё]+([-иоы]й|ин)(\s+|$)/.test(adj) ) return all;
                                 if ( (! new RegExp(exM, 'i').test(adj)) &&
                                      (/^((\s+[^\s]+?([-иоы]й|ин|[оеё]в))+)$/.test(' ' + adj)) ) return all;
                                 return s + ' ' + adj;
