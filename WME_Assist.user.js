@@ -289,7 +289,9 @@ function run_wme_assist() {
                                     foundStatus = true;
                                     return all;
                                 };
-                            if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де|ти|го)$/i.test(word) || word.length == 1 )
+                            if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де|ти|го)$/i.test(word) 
+                                || word.length == 1
+                                || ( space == '-' && /лейтенант|майор|полковник/.test(word) ) )
                                  return space + word.toLowerCase();
                             else return space + word.charAt(0).toUpperCase() + word.substr(1);
                     }).replace(/\s+(.*)/, '$1').replace(/Железная дорога/, 'железная дорога');
