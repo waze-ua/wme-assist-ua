@@ -291,7 +291,7 @@ function run_wme_assist() {
                                     return all;
                                 };
                             if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|километр)$/i.test(word) 
-                                || ( word.length <= 2 && word.charAt(1) !== '.' )
+                                || word.replace(/\./, '##').length <= 2
                                 || ( space == '-' && /лейтенант|майор|полковник/.test(word) ) )
                                  return space + word.toLowerCase();
                             else return space + word.charAt(0).toUpperCase() + word.substr(1);
