@@ -290,8 +290,8 @@ function run_wme_assist() {
                                     foundStatus = true;
                                     return all;
                                 };
-                            if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|километр)$/i.test(word) 
-                                || word.replace(/\./, '##').length <= 2
+                            if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|из|от|км|километр|де|ти|го)$/i.test(word) 
+                                || word.length == 1
                                 || ( space == '-' && /лейтенант|майор|полковник/.test(word) ) )
                                  return space + word.toLowerCase();
                             else return space + word.charAt(0).toUpperCase() + word.substr(1);
