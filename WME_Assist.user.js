@@ -510,7 +510,7 @@ function run_wme_assist() {
                 countryRules = rules_BY();
                 break;
             default:
-                alert('There are not implemented rules for country: ' + name);
+                info('There are not implemented rules for country: ' + name);
                 countryRules = [];
             }
             return countryRules.concat(commonRules);
