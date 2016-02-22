@@ -1164,6 +1164,14 @@ function run_wme_assist() {
     }
 
     var Application = function (wazeapi) {
+        var scaner = new WME_Assist.Scaner(wazeapi);
+
+        this.scan = function () {
+            scaner.scan(function (data) {
+                console.log(data);
+            });
+        }
+
         var countryName = function () {
             var id = wazeapi.model.countries.top.id;
             var name = wazeapi.model.countries.objects[id].name;
