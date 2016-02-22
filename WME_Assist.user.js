@@ -315,7 +315,7 @@ function run_wme_assist() {
                             });
 
                         // Прилагательные вперёд
-                        if ( ! new RegExp(exW).test(text) ) {
+                        if ( ! new RegExp('(^|\\s)(' + exW + ')(\\s|$)').test(text) ) {
                             // улица Малая Зеленина -> Малая Зеленина улица
                             // улица Мягкая -> Мягкая улица
                             // улица Авиаконструктора Яковлева, улица Малиновая Гора
@@ -352,7 +352,7 @@ function run_wme_assist() {
                             });
 
                         // Прилагательное вперёд
-                        if ( ! new RegExp(exM, 'i').test(text) ) {
+                        if ( ! new RegExp('(^|\\s)(' + exM + ')(\\s|$)', 'i').test(text) ) {
                             // переулок *** 1-й -> 1-й переулок ***
                             text = text.replace(new RegExp('(' + mStatus + ')(.*?)((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$3 $1$2');
                             text = text.replace(
