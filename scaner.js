@@ -45,6 +45,12 @@ WME_Assist.Scaner = function (wazeapi) {
     }
 
     this.scan = function (analyze) {
+        // Disable scan for very big area
+        // TODO: revise it later
+        if (map.getZoom() < 3) {
+            return;
+        }
+
         var extent = map.getExtent();
         var boundsArray = splitExtent(extent);
 
