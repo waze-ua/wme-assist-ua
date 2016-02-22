@@ -1,7 +1,6 @@
 var WME_Assist = WME_Assist || {}
 
 WME_Assist.Scaner = function (wazeapi) {
-    var ZOOM_LEVEL = 5;
     var model = wazeapi.model;
     var map = wazeapi.map;
     var controller = wazeapi.controller;
@@ -14,7 +13,7 @@ WME_Assist.Scaner = function (wazeapi) {
     var splitExtent = function (extent, zoom) {
         var result = [];
 
-        var ratio = map.getResolution() / map.getResolutionForZoom(ZOOM_LEVEL);
+        var ratio = map.getResolution() / map.getResolutionForZoom(zoom);
         var dx = extent.getWidth() / ratio;
         var dy = extent.getHeight() / ratio;
 
@@ -44,15 +43,9 @@ WME_Assist.Scaner = function (wazeapi) {
         helper(array, 0, action);
     }
 
-    this.scan = function (analyze) {
-        // Disable scan for very big area
-        // TODO: revise it later
-        if (map.getZoom() < 3) {
-            return;
-        }
-
+    this.scan = function (analyze, zoom) {
         var extent = map.getExtent();
-        var boundsArray = splitExtent(extent);
+        var boundsArray = splitExtent(extent, zoom);
 
         iterateArray(boundsArray, function (bounds, next) {
             var peace = bounds.transform(map.getProjectionObject(), controller.segmentProjection);
@@ -60,10 +53,10 @@ WME_Assist.Scaner = function (wazeapi) {
             var e = {
                 bbox: peace.toBBOX(),
                 language: I18n.locale,
+                venueFilter: '0',
+                venueLevel: 4,
+                roadTypes: wazeapi.Config.segments.allTypes.toString(),
             };
-
-            OL.Util.extend(e, model.repos.venues.updateDataExtent(map.calculateBounds(), 1, 5));
-            OL.Util.extend(e, model.repos.segments.updateDataExtent(map.calculateBounds(), 1, 5));
 
             getData(e, function (e) {
                 analyze(e);
