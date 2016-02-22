@@ -8,7 +8,7 @@
 // @match     https://world.waze.com/map-editor/*
 // @match     https://world.waze.com/beta_editor/*
 // @match     https://www.waze.com/map-editor/*
-// @grant     GM_xmlhttpRequest
+// @grant     none
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
@@ -17,7 +17,7 @@
 // ==/UserScript==
 
 function run_wme_assist() {
-    var ver = '0.4.6';
+    var ver = '0.9.0';
 
     function debug(message) {
         if (!$('#assist_debug').is(':checked')) return;
@@ -1467,10 +1467,8 @@ function run_wme_assist() {
         app.start();
     });
 }
-var script = document.createElement("script");
-script.textContent = run_wme_assist.toString() + ' \n' + 'run_wme_assist();';
-script.setAttribute("type", "application/javascript");
-document.body.appendChild(script);
+
+run_wme_assist();
 
 //Position "right top" after resize window
 $(window).resize(function(){
