@@ -357,7 +357,7 @@ function run_wme_assist() {
                         // Прилагательное вперёд
                         if ( ! new RegExp('(^|\\s)(' + exM + ')(\\s|$)', 'i').test(text) ) {
                             // переулок *** 1-й -> 1-й переулок ***
-                            text = text.replace(new RegExp('(' + mStatus + ')(.*?)((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$3 $1$2');
+                            text = text.replace(new RegExp('(' + mStatus + ')([^\.]*?)((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$3 $1$2');
                             text = text.replace(
                                 new RegExp('(' + mStatus + ')((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$2 $1');
                             text = text.replace(
