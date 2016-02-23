@@ -740,7 +740,7 @@ function run_wme_assist() {
                         request[problem.attrName] = correctStreet.getID();
                         wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, request));
                     }
-                    deferred.resolve((obj.getID()));
+                    deferred.resolve(obj.getID());
                 } else {
                     wazeapi.model.events.register('mergeend', map, fix);
                     wazeapi.map.setCenter(problem.detectPos, problem.zoom);
@@ -1252,6 +1252,8 @@ function run_wme_assist() {
                 ui.clearfixedBtn().hide();
                 ui.resetBtn().hide();
 
+                wazeapi.model.events.unregister('mergeend', map, scan);
+
                 analyzer.fixAll(function (id) {
                     ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
                     ui.setFixedErrorNum(analyzer.fixedErrorNum());
@@ -1260,6 +1262,8 @@ function run_wme_assist() {
                     ui.fixallBtn().show();
                     ui.clearfixedBtn().show();
                     ui.resetBtn().show();
+
+                    wazeapi.model.events.register('mergeend', map, scan);
                 });
             });
 
