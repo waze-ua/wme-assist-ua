@@ -1,5 +1,24 @@
 var WME_Assist = WME_Assist || {}
 
+WME_Assist.series = function (array, start, action, alldone) {
+    var helper = function (i) {
+        action(array[i++], function () {
+            if (i < array.length) {
+                helper(i);
+            } else {
+                console.log('alldone');
+                console.log(alldone);
+                if (alldone) {
+                    console.log('alldone here');
+                    alldone();
+                }
+            }
+        });
+    }
+
+    helper(start);
+}
+
 WME_Assist.Analyzer = function (wazeapi) {
     var Exceptions = function () {
         var exceptions = [];
@@ -118,24 +137,15 @@ WME_Assist.Analyzer = function (wazeapi) {
     }
 
     this.fixAll = function (onefixed, allfixed) {
-        var arr = [];
-
-        for (var i = unresolvedIdx; i < problems.length; ++i) {
-            if (problems[i].experimental) continue;
-            if (problems[i].skip) continue;
-
-            var promise = action.fixProblem(problems[i]);
-            promise.done(function (id) {
+        WME_Assist.series(problems, unresolvedIdx, function (p, next) {
+            action.fixProblem(p).done(function (id) {
                 ++unresolvedIdx;
 
                 onefixed(id);
+
+                next();
             });
-            arr.push(promise);
-        }
-
-        var deferred = $.when.apply(null, arr);
-
-        deferred.done(allfixed);
+        }, allfixed);
     }
 
     var checkStreet = function (bounds, zoom, streets, streetID, obj, attrName, onProblemDetected) {
