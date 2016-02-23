@@ -124,7 +124,7 @@ WME_Assist.Analyzer = function (wazeapi) {
 
                 onefixed(id);
 
-                next();
+                setTimeout(next, 0);
             });
         }, allfixed);
     }
