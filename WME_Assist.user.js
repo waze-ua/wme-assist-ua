@@ -17,21 +17,27 @@
 // @namespace https://greasyfork.org/users/20609
 // ==/UserScript==
 
+var WME_Assist = WME_Assist || {}
+
+WME_Assist.debug = function (message) {
+    if (!$('#assist_debug').is(':checked')) return;
+    console.log("WME ASSIST DEBUG: " + message);
+}
+
+WME_Assist.info = function (message) {
+    console.log("WME ASSIST INFO: " + message);
+}
+
+WME_Assist.warning = function (message) {
+    console.log("WME ASSIST WARN: " + message);
+}
+
 function run_wme_assist() {
     var ver = '0.9.0';
 
-    function debug(message) {
-        if (!$('#assist_debug').is(':checked')) return;
-        console.log("WME ASSIST DEBUG: " + message);
-    }
-
-    function info(message) {
-        console.log("WME ASSIST INFO: " + message);
-    }
-
-    function warning(message) {
-        console.log("WME ASSIST WARN: " + message);
-    }
+    var debug = WME_Assist.debug;
+    var info = WME_Assist.info;
+    var warning = WME_Assist.warning;
 
     function getWazeApi() {
         var wazeapi = window.Waze;
@@ -718,7 +724,7 @@ function run_wme_assist() {
             var deferred = $.Deferred();
 
             var fix = function () {
-                var obj = type2repo(problem.type).objects[problem.id];
+                var obj = type2repo(problem.object.type).objects[problem.object.id];
                 wazeapi.model.events.unregister('mergeend', map, fix);
 
                 if (obj) {
@@ -1118,60 +1124,27 @@ function run_wme_assist() {
         }
     };
 
-    var Exceptions = function () {
-        var exceptions = [];
-
-        var onAdd = function (name) {}
-        var onDelete = function (index) {}
-
-        var save = function (exception) {
-            if (localStorage) {
-                localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
-            }
-        }
-
-        this.load = function () {
-            if (localStorage) {
-                var str = localStorage.getItem('assistExceptionsKey');
-                if (str) {
-                    var arr = JSON.parse(str);
-                    for (var i = 0; i < arr.length; ++i) {
-                        var exception = arr[i];
-                        this.add(exception);
-                    }
-                }
-            }
-        }
-
-        this.contains = function (name) {
-            if (exceptions.indexOf(name) == -1) return false;
-            return true;
-        }
-
-        this.add = function (name) {
-            exceptions.push(name);
-            save(exceptions);
-            onAdd(name);
-        }
-
-        this.remove = function (index) {
-            exceptions.splice(index, 1);
-            save(exceptions);
-            onDelete(index);
-        }
-
-        this.onAdd = function (cb) { onAdd = cb }
-        this.onDelete = function (cb) {onDelete = cb }
-    }
-
     var Application = function (wazeapi) {
         var scaner = new WME_Assist.Scaner(wazeapi);
+        var analyzer = new WME_Assist.Analyzer(wazeapi);
+
         var FULL_ZOOM_LEVEL = 5;
 
         var scanForZoom = function (zoom) {
             scaner.scan(function (data) {
                 console.log(data);
-                analyze(data);
+                analyzer.analyze(data, function (obj, title, reason) {
+                    var zoom = 5;
+
+                    ui.addProblem(obj.id, title, action.Select(obj.id, obj.type, obj.center, zoom), function () {
+                        analyzer.addException(reason, function (id) {
+                            ui.removeError(id);
+                            ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                        });
+                    }, false);
+
+                    ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                });
             }, zoom);
         }
 
@@ -1194,17 +1167,19 @@ function run_wme_assist() {
         var action = new ActionHelper(wazeapi);
         var rules = new Rules(country);
         var ui = new Ui();
-        var exceptions = new Exceptions();
 
-        exceptions.onAdd(function (name) {
+        analyzer.setRules(rules);
+        analyzer.setActionHelper(action);
+
+        analyzer.onExceptionAdd(function (name) {
             ui.addException(name, function (index) {
                 if (confirm('Delete exception for ' + name + '?')) {
-                    exceptions.remove(index);
+                    analyzer.removeException(index);
                 }
             });
         });
 
-        exceptions.onDelete(function (index) {
+        analyzer.onExceptionDelete(function (index) {
             ui.removeException(index);
         });
 
@@ -1230,138 +1205,8 @@ function run_wme_assist() {
             }
         });
 
-        exceptions.load();
+        analyzer.loadExceptions();
         rules.load();
-
-        var problems = [];
-        var unresolvedIdx = 0;
-        var skippedErrors = 0;
-        var analyzedIds = [];
-
-        var checkStreet = function (streets, streetID, obj, attrName) {
-            var street = streets[streetID];
-
-            if (!street) return;
-
-            var detected = false;
-            var title = '';
-            var reason;
-
-            if (!street.isEmpty) {
-                if (!exceptions.contains(street.name)) {
-                    var result = rules.correct(ui.variant(), street.name);
-                    var newStreetName = result.value;
-                    detected = (newStreetName != street.name);
-                    if (obj.type == 'venue') title = 'POI: ';
-                    title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
-                    reason = street.name;
-                }
-            }
-
-            var newCityID = street.cityID;
-            // if (obj.type != 'segment') {
-            //     newCityID = action.newCityID(street.cityID);
-            //     if (newCityID != street.cityID) {
-            //         detected = true;
-            //         title = 'city: ' +
-            //             wazeapi.model.cities.objects[street.cityID].name + ' -> ' +
-            //             wazeapi.model.cities.objects[newCityID].name;
-            //     }
-            // }
-
-            if (detected) {
-                var gj = new OL.Format.GeoJSON();
-                var geometry = gj.parseGeometry(obj.geometry);
-                var center = geometry.getBounds().getCenterLonLat().transform(wazeapi.controller.segmentProjection, wazeapi.map.getProjectionObject());
-                var zoom = 5;
-
-                ui.addProblem(obj.id, title, action.Select(obj.id, obj.type, center, zoom), function () {
-                    exceptions.add(reason);
-
-                    var i;
-                    for (i = 0; i < problems.length; ++i) {
-                        var problem = problems[i];
-                        if (problem.reason == reason) {
-                            problem.skip = true;
-                            ++skippedErrors;
-                            ui.removeError(problem.id);
-                        }
-                    }
-
-                    ui.setUnresolvedErrorNum(problems.length - unresolvedIdx - skippedErrors);
-                }, false);
-
-                problems.push({
-                    id: obj.id,
-                    reason: reason,
-                    type: obj.type,
-                    attrName: attrName,
-                    center: center,
-                    detectPos: wazeapi.map.getCenter(),
-                    zoom: zoom,
-                    newStreetName: newStreetName,
-                    isEmpty: street.isEmpty,
-                    cityId: newCityID,
-                    experimental: false,
-                });
-
-                ui.setUnresolvedErrorNum(problems.length - unresolvedIdx - skippedErrors);
-            }
-        }
-
-        var analyze = function (data) {
-            var permissions = new require("Waze/Permissions");
-            var startTime = new Date().getTime();
-
-            info('start analyze');
-
-            var subjects = {
-                'segment': {
-                    attr: 'primaryStreetID',
-                    name: 'segments',
-                    permissions: permissions.Segments,
-                },
-                'venue': {
-                    attr: 'streetID',
-                    name: 'venues',
-                    permissions: permissions.Landmarks,
-                }
-            };
-
-            for (var k in subjects) {
-                var subject = subjects[k];
-                var subjectData = data[subject.name];
-
-                if (!subjectData) continue;
-
-                var objects = subjectData.objects;
-
-                for (var i = 0; i < objects.length; ++i) {
-                    var obj = objects[i];
-                    var id = obj.id;
-
-                    obj.type = k;
-
-                    if (analyzedIds.indexOf(id) >= 0) continue;
-
-                    if (!(obj.permissions & subject.permissions.EDIT_PROPERTIES)) continue;
-                    if (obj.hasClosures) continue;
-
-                    if (typeof obj.approved != 'undefined' && !obj.approved) continue;
-
-                    var streetID = obj[subject.attr];
-                    var streetDict = data.streets.objects.reduce(function (dict, street, i) {
-                        dict[street.id] = street;
-                        return dict;
-                    }, {});
-                    checkStreet(streetDict, streetID, obj, subject.attr);
-
-                    analyzedIds.push(id);
-                }
-            }
-
-            info('end analyze: ' + (new Date().getTime() - startTime) + 'ms');
-        }
 
         this.start = function () {
             ui.enableCheckbox().click(function () {
@@ -1374,6 +1219,7 @@ function run_wme_assist() {
                     var savedVariant = localStorage.getItem('assist_variant');
                     if (savedVariant != null) {
                         ui.variantRadio(savedVariant).prop('checked', true);
+                        analyzer.setVariant(ui.variant());
                     }
 
                     scan();
@@ -1391,6 +1237,7 @@ function run_wme_assist() {
             ui.variantRadio().click(function () {
                 localStorage.setItem('assist_variant', this.value);
 
+                analyzer.setVariant(ui.variant());
                 ui.resetBtn().click();
             });
 
@@ -1403,26 +1250,11 @@ function run_wme_assist() {
                 ui.clearfixedBtn().hide();
                 ui.resetBtn().hide();
 
-                var arr = [];
-
-                for (var i = unresolvedIdx; i < problems.length; ++i) {
-                    if (problems[i].experimental) continue;
-                    if (problems[i].skip) continue;
-
-                    var promise = action.fixProblem(problems[i]);
-                    promise.done(function (id) {
-                        ++unresolvedIdx;
-
-                        ui.setUnresolvedErrorNum(problems.length - unresolvedIdx - skippedErrors);
-                        ui.setFixedErrorNum(unresolvedIdx);
-                        ui.moveToFixedList(id);
-                    });
-                    arr.push(promise);
-                }
-
-                var deferred = $.when.apply(null, arr);
-
-                deferred.done(function () {
+                analyzer.fixAll(function (id) {
+                    ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                    ui.setFixedErrorNum(analyzer.fixedErrorNum());
+                    ui.moveToFixedList(id);
+                }, function () {
                     ui.fixallBtn().show();
                     ui.clearfixedBtn().show();
                     ui.resetBtn().show();
@@ -1436,12 +1268,12 @@ function run_wme_assist() {
             ui.resetBtn().click(function () {
                 ui.fixedList().empty();
                 ui.unresolvedList().empty();
-                unresolvedIdx = 0;
-                skippedErrors = 0;
-                problems = [];
-                analyzedIds = [];
+
+                analyzer.reset();
+
                 ui.setUnresolvedErrorNum(0);
                 ui.setFixedErrorNum(0);
+
                 fullscan();
             });
 
