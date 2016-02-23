@@ -133,7 +133,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(пл\.?)( |$)/i, '$1площадь$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(ш\.)( |$)/, '$1шоссе$3');
+                    return text.replace(/(^| )(ш\.?)( |$)/, '$1шоссе$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(б-р)( |$)/i, '$1бульвар$3');
