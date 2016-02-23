@@ -8,7 +8,8 @@
 // @match     https://world.waze.com/map-editor/*
 // @match     https://world.waze.com/beta_editor/*
 // @match     https://www.waze.com/map-editor/*
-// @require   https://raw.githubusercontent.com/borman84/wme_assist/develop/scaner.js
+// @require   https://github.com/borman84/wme_assist/raw/develop/scaner.js
+// @require   https://github.com/borman84/wme_assist/raw/develop/analyzer.js
 // @grant     none
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
