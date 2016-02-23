@@ -33,6 +33,22 @@ WME_Assist.warning = function (message) {
     console.log("WME ASSIST WARN: " + message);
 }
 
+WME_Assist.series = function (array, start, action, alldone) {
+    var helper = function (i) {
+        action(array[i++], function () {
+            if (i < array.length) {
+                helper(i);
+            } else {
+                if (alldone) {
+                    alldone();
+                }
+            }
+        });
+    }
+
+    helper(start);
+}
+
 function run_wme_assist() {
     var ver = '0.9.0';
 

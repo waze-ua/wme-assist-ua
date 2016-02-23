@@ -31,18 +31,6 @@ WME_Assist.Scaner = function (wazeapi) {
         return result;
     }
 
-    var iterateArray = function (array, action) {
-        var helper = function (array, i, action) {
-            action(array[i++], function () {
-                if (i < array.length) {
-                    helper(array, i, action);
-                }
-            });
-        }
-
-        helper(array, 0, action);
-    }
-
     var zoomToRoadType = function (zoom) {
         var s = wazeapi.Config.segments.zoomToRoadType[zoom] || [];
         if (-1 === s) {
@@ -64,7 +52,7 @@ WME_Assist.Scaner = function (wazeapi) {
     this.scan = function (bounds, zoom, analyze) {
         var boundsArray = splitExtent(bounds, zoom);
 
-        iterateArray(boundsArray, function (bounds, next) {
+        WME_Assist.series(boundsArray, 0, function (bounds, next) {
             var peace = bounds.transform(map.getProjectionObject(), controller.segmentProjection);
 
             var e = {

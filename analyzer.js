@@ -1,24 +1,5 @@
 var WME_Assist = WME_Assist || {}
 
-WME_Assist.series = function (array, start, action, alldone) {
-    var helper = function (i) {
-        action(array[i++], function () {
-            if (i < array.length) {
-                helper(i);
-            } else {
-                console.log('alldone');
-                console.log(alldone);
-                if (alldone) {
-                    console.log('alldone here');
-                    alldone();
-                }
-            }
-        });
-    }
-
-    helper(start);
-}
-
 WME_Assist.Analyzer = function (wazeapi) {
     var Exceptions = function () {
         var exceptions = [];
