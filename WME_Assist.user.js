@@ -1270,17 +1270,19 @@ function run_wme_assist() {
 
                 wazeapi.model.events.unregister('mergeend', map, scan);
 
-                analyzer.fixAll(function (id) {
-                    ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
-                    ui.setFixedErrorNum(analyzer.fixedErrorNum());
-                    ui.moveToFixedList(id);
-                }, function () {
-                    ui.fixallBtn().show();
-                    ui.clearfixedBtn().show();
-                    ui.resetBtn().show();
+                setTimeout(function () {
+                    analyzer.fixAll(function (id) {
+                        ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                        ui.setFixedErrorNum(analyzer.fixedErrorNum());
+                        ui.moveToFixedList(id);
+                    }, function () {
+                        ui.fixallBtn().show();
+                        ui.clearfixedBtn().show();
+                        ui.resetBtn().show();
 
-                    wazeapi.model.events.register('mergeend', map, scan);
-                });
+                        wazeapi.model.events.register('mergeend', map, scan);
+                    });
+                }, 0);
             });
 
             ui.clearfixedBtn().click(function () {
