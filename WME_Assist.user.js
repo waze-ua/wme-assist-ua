@@ -1135,11 +1135,9 @@ function run_wme_assist() {
         var FULL_ZOOM_LEVEL = 5;
 
         var scanForZoom = function (zoom) {
-            scaner.scan(function (data) {
+            scaner.scan(wazeapi.map.calculateBounds(), zoom, function (bounds, zoom, data) {
                 console.log(data);
-                analyzer.analyze(data, function (obj, title, reason) {
-                    var zoom = 5;
-
+                analyzer.analyze(bounds, zoom, data, function (obj, title, reason) {
                     ui.addProblem(obj.id, title, action.Select(obj.id, obj.type, obj.center, zoom), function () {
                         analyzer.addException(reason, function (id) {
                             ui.removeError(id);
@@ -1149,7 +1147,7 @@ function run_wme_assist() {
 
                     ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
                 });
-            }, zoom);
+            });
         }
 
         var fullscan = function () {

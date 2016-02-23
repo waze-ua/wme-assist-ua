@@ -138,7 +138,7 @@ WME_Assist.Analyzer = function (wazeapi) {
         deferred.done(allfixed);
     }
 
-    var checkStreet = function (streets, streetID, obj, attrName, onProblemDetected) {
+    var checkStreet = function (bounds, zoom, streets, streetID, obj, attrName, onProblemDetected) {
         var street = streets[streetID];
 
         if (!street) return;
@@ -172,16 +172,17 @@ WME_Assist.Analyzer = function (wazeapi) {
         if (detected) {
             var gj = new OL.Format.GeoJSON();
             var geometry = gj.parseGeometry(obj.geometry);
-            var center = geometry.getBounds().getCenterLonLat().transform(wazeapi.controller.segmentProjection, wazeapi.map.getProjectionObject());
-            obj.center = center;
+            var objCenter = geometry.getBounds().getCenterLonLat().transform(wazeapi.controller.segmentProjection, wazeapi.map.getProjectionObject());
+            var boundsCenter = bounds.clone().getCenterLonLat().transform(wazeapi.controller.segmentProjection, wazeapi.map.getProjectionObject());
+            obj.center = boundsCenter;
 
             // TODO: need correct detectPos and zoom
             problems.push({
                 object: obj,
                 reason: reason,
                 attrName: attrName,
-                detectPos: wazeapi.map.getCenter(),
-                zoom: 5,
+                detectPos: boundsCenter,
+                zoom: zoom,
                 newStreetName: newStreetName,
                 isEmpty: street.isEmpty,
                 cityId: newCityID,
@@ -192,7 +193,7 @@ WME_Assist.Analyzer = function (wazeapi) {
         }
     }
 
-    this.analyze = function (data, onProblemDetected) {
+    this.analyze = function (bounds, zoom, data, onProblemDetected) {
         var permissions = new require("Waze/Permissions");
         var startTime = new Date().getTime();
 
@@ -237,7 +238,7 @@ WME_Assist.Analyzer = function (wazeapi) {
                     dict[street.id] = street;
                     return dict;
                 }, {});
-                checkStreet(streetDict, streetID, obj, subject.attr, onProblemDetected);
+                checkStreet(bounds, zoom, streetDict, streetID, obj, subject.attr, onProblemDetected);
 
                 analyzedIds.push(id);
             }

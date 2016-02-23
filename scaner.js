@@ -43,9 +43,8 @@ WME_Assist.Scaner = function (wazeapi) {
         helper(array, 0, action);
     }
 
-    this.scan = function (analyze, zoom) {
-        var extent = map.getExtent();
-        var boundsArray = splitExtent(extent, zoom);
+    this.scan = function (bounds, zoom, analyze) {
+        var boundsArray = splitExtent(bounds, zoom);
 
         iterateArray(boundsArray, function (bounds, next) {
             var peace = bounds.transform(map.getProjectionObject(), controller.segmentProjection);
@@ -54,12 +53,12 @@ WME_Assist.Scaner = function (wazeapi) {
                 bbox: peace.toBBOX(),
                 language: I18n.locale,
                 venueFilter: '0',
-                venueLevel: 4,
+                venueLevel: wazeapi.Config.venues.zoomToSize[zoom],
                 roadTypes: wazeapi.Config.segments.allTypes.toString(),
             };
 
-            getData(e, function (e) {
-                analyze(e);
+            getData(e, function (data) {
+                analyze(peace, zoom, data);
                 next();
             });
         });
