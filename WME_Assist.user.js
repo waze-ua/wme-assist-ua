@@ -157,6 +157,9 @@ function run_wme_assist() {
                     return text.replace(/(^| )(набережная р\.?)( |$)/i, '$1набережная реки$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/^На /, 'на ');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(\d)(-ая)( |$)/, '$1-я$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
