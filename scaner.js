@@ -49,8 +49,11 @@ WME_Assist.Scaner = function (wazeapi) {
         return r.isEmpty() ? null : { roadTypes: s.toString() }
     }
 
-    this.scan = function (bounds, zoom, analyze) {
+    this.scan = function (bounds, zoom, analyze, progress) {
         var boundsArray = splitExtent(bounds, zoom);
+        var completed = 0;
+
+        progress = progress || function () {}
 
         WME_Assist.series(boundsArray, 0, function (bounds, next) {
             var peace = bounds.transform(map.getProjectionObject(), controller.segmentProjection);
@@ -66,6 +69,7 @@ WME_Assist.Scaner = function (wazeapi) {
 
             getData(e, function (data) {
                 analyze(peace, zoom, data);
+                progress(++completed*100/boundsArray.length);
                 next();
             });
         });

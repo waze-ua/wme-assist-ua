@@ -1016,6 +1016,13 @@ function run_wme_assist() {
                 title: 'Number of fixed issues',
                 text: 0,
             }).css({color: 'green'}));
+        mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title').append($('<span> - </span>'));
+        mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title')
+            .append($('<span>', {
+                id: 'assist-scan-progress',
+                title: 'Scan progress',
+                text: 0,
+            }).css({color: 'blue'}));
 
         // Hack jquery ui dialog
         var icon = mainWindow.prev('.ui-dialog-titlebar').find('span.ui-icon');
@@ -1075,6 +1082,10 @@ function run_wme_assist() {
 
         this.setFixedErrorNum = function (text) {
             $('#assist-fixed-num').text(text);
+        }
+
+        this.setScanProgress = function (text) {
+            $('#assist-scan-progress').text(text);
         }
 
         var escapeId = function (id) {
@@ -1163,6 +1174,8 @@ function run_wme_assist() {
 
                     ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
                 });
+            }, function (progress) {
+                ui.setScanProgress(Math.round(progress) + '%');
             });
         }
 
