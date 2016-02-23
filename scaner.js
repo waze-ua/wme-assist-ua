@@ -43,6 +43,24 @@ WME_Assist.Scaner = function (wazeapi) {
         helper(array, 0, action);
     }
 
+    var zoomToRoadType = function (zoom) {
+        var s = wazeapi.Config.segments.zoomToRoadType[zoom] || [];
+        if (-1 === s) {
+            s = W.Config.segments.allTypes;
+        }
+
+        var r = [];
+        Object.keys(wazeapi.Config.segments.zoomToRoadType).forEach(function (t) {
+            t = parseInt(t, 10);
+            var i = s.contains(t);
+            if (i) {
+                r.push(t);
+            }
+        })
+
+        return r.isEmpty() ? null : { roadTypes: s.toString() }
+    }
+
     this.scan = function (bounds, zoom, analyze) {
         var boundsArray = splitExtent(bounds, zoom);
 
@@ -54,8 +72,9 @@ WME_Assist.Scaner = function (wazeapi) {
                 language: I18n.locale,
                 venueFilter: '0',
                 venueLevel: wazeapi.Config.venues.zoomToSize[zoom],
-                roadTypes: wazeapi.Config.segments.allTypes.toString(),
             };
+
+            OL.Util.extend(e, zoomToRoadType(zoom));
 
             getData(e, function (data) {
                 analyze(peace, zoom, data);
