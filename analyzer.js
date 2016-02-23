@@ -140,12 +140,17 @@ WME_Assist.Analyzer = function (wazeapi) {
 
         if (!street.isEmpty) {
             if (!exceptions.contains(street.name)) {
-                var result = rules.correct(variant, street.name);
-                var newStreetName = result.value;
-                detected = (newStreetName != street.name);
-                if (obj.type == 'venue') title = 'POI: ';
-                title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
-                reason = street.name;
+                try {
+                    var result = rules.correct(variant, street.name);
+                    var newStreetName = result.value;
+                    detected = (newStreetName != street.name);
+                    if (obj.type == 'venue') title = 'POI: ';
+                    title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
+                    reason = street.name;
+                } catch (err) {
+                    WME_Assist.warning('Street name "' + street.name + '" causes error in rules');
+                    return;
+                }
             }
         }
 
