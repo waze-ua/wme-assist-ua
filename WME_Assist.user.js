@@ -94,7 +94,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(мая)( |$)/, '$1Мая$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(мкр[.н]?|м-н)( |$)/, '$1микрорайон$3');
+                    return text.replace(/(^| )(мкр[.н]?|мк?р?-н)( |$)/, '$1микрорайон$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пр-т\.?)( |$)/i, '$1проспект$3');
