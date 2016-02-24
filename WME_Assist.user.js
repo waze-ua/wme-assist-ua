@@ -647,12 +647,18 @@ function run_wme_assist() {
         var WazeActionAddOrGetStreet = require("Waze/Action/AddOrGetStreet");
         var WazeActionAddOrGetCity = require("Waze/Action/AddOrGetCity");
 
+        var ui;
+
         var type2repo = function (type) {
             var map = {
                 'venue': wazeapi.model.venues,
                 'segment': wazeapi.model.segments
             };
             return map[type];
+        }
+
+        this.setUi = function (u) {
+            ui = u;
         }
 
         this.Select = function (id, type, center, zoom) {
@@ -757,6 +763,8 @@ function run_wme_assist() {
                         var request = {};
                         request[problem.attrName] = correctStreet.getID();
                         wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, request));
+                    } else {
+                        ui.updateProblem(problem.object.id, '(user fix: ' + currentValue + ')');
                     }
                     deferred.resolve(obj.getID());
                 } else {
@@ -1078,6 +1086,11 @@ function run_wme_assist() {
             }
         }
 
+        this.updateProblem = function (id, text) {
+            var a = $('li#issue-' + escapeId(id) + ' > a');
+            a.text(a.text() + ' ' + text);
+        }
+
         this.setUnresolvedErrorNum = function (text) {
             $('#assist-error-num').text(text);
         }
@@ -1203,6 +1216,8 @@ function run_wme_assist() {
 
         analyzer.setRules(rules);
         analyzer.setActionHelper(action);
+
+        action.setUi(ui);
 
         analyzer.onExceptionAdd(function (name) {
             ui.addException(name, function (index) {
