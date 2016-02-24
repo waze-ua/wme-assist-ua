@@ -120,9 +120,10 @@ WME_Assist.Analyzer = function (wazeapi) {
     this.fixAll = function (onefixed, allfixed) {
         WME_Assist.series(problems, unresolvedIdx, function (p, next) {
             action.fixProblem(p).done(function (id) {
-                ++unresolvedIdx;
-
-                onefixed(id);
+                if (!p.skip) {
+                    ++unresolvedIdx;
+                    onefixed(id);
+                }
 
                 setTimeout(next, 0);
             });
