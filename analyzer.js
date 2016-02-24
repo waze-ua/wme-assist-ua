@@ -173,7 +173,6 @@ WME_Assist.Analyzer = function (wazeapi) {
             var boundsCenter = bounds.clone().getCenterLonLat().transform(wazeapi.controller.segmentProjection, wazeapi.map.getProjectionObject());
             obj.center = boundsCenter;
 
-            // TODO: need correct detectPos and zoom
             problems.push({
                 object: obj,
                 reason: reason,
