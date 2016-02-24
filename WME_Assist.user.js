@@ -35,15 +35,15 @@ WME_Assist.warning = function (message) {
 
 WME_Assist.series = function (array, start, action, alldone) {
     var helper = function (i) {
-        action(array[i++], function () {
-            if (i < array.length) {
-                helper(i);
-            } else {
-                if (alldone) {
-                    alldone();
-                }
+        if (i < array.length) {
+            action(array[i], function () {
+                helper(i + 1);
+            });
+        } else {
+            if (alldone) {
+                alldone();
             }
-        });
+        }
     }
 
     helper(start);
