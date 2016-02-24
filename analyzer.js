@@ -119,11 +119,14 @@ WME_Assist.Analyzer = function (wazeapi) {
 
     this.fixAll = function (onefixed, allfixed) {
         WME_Assist.series(problems, unresolvedIdx, function (p, next) {
+            if (p.skip) {
+                next();
+                return;
+            }
+
             action.fixProblem(p).done(function (id) {
-                if (!p.skip) {
-                    ++unresolvedIdx;
-                    onefixed(id);
-                }
+                ++unresolvedIdx;
+                onefixed(id);
 
                 setTimeout(next, 0);
             });
