@@ -280,7 +280,8 @@ function run_wme_assist() {
                     }
 
                     // Голые числительные без склонения
-                    text = text.replace(new RegExp('(\\d)(?=(\\s+[^\\s]+(?:-я|ая|ья|яя|яся))*\\s+(' + wStatus + '))', 'g'), '$1-я'); // 1 линия
+                    if ( ! new RegExp('\\d\\s+мая(\\s|$)', 'i' ).test(text) )
+                        text = text.replace(new RegExp('(\\d)(?=(\\s+[^\\s]+(?:-я|ая|ья|яя|яся))*\\s+(' + wStatus + '))', 'g'), '$1-я'); // 1 линия
                     text = text.replace(new RegExp('(\\d)(?=(\\s+[^\\s]+[-иоы]й|ин|[оеё]в)*\\s+(' + mStatus + '))', 'g'), '$1-й'); // 2 проезд, 5 Донской проезд
 
                     // Распространённые сокращения
