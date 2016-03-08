@@ -121,7 +121,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(пр\.?|пр?-з?д\.?)( |$)/i, '$1проезд$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пр?-к?т)( |$)/i, '$1проспект$3');
+                    return text.replace(/(^| )(пр?-к?т\.?)( |$)/i, '$1проспект$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(тр-т)( |$)/i, '$1тракт$3');
