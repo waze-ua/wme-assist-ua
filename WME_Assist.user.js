@@ -302,7 +302,7 @@ function run_wme_assist() {
                                     return all;
                                 };
                             if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|за|из|от|км|километр|де|в|к|о|с|у|на|и)$/i.test(word)
-                                || ( space == '-' && /^(лейтенанта|майора|полковника|й|я|ти|го|е)$/.test(word) ) )
+                                || ( space == '-' && /^(лейтенанта|майора|полковника|й|я|ти|го|е|ей)$/.test(word) ) )
                                  return space + word.toLowerCase();
                             else return space + word.charAt(0).toUpperCase() + word.substr(1);
                     }).replace(/\s+(.*)/, '$1').replace(/Железная дорога/, 'железная дорога');
