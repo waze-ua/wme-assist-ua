@@ -264,8 +264,8 @@ function run_wme_assist() {
                                 return space + status.toLowerCase();
                             });
                         } else
-                        if ( /(^|\s+)[Оо]б[ъь]ездная$/.test(text)) {
-                            text = text.replace(/(^|\s+)[Оо]б[ъь]ездная$/, '$1Объездная дорога');
+                        if ( /(^|\s+)[Оо]б[ъь]ездная(\s+|$)/.test(text)) {
+                            text = text.replace(new RegExp('(^|\\s+)[Оо]б[ъь]ездная(\\s+|$)(?!=(' + wStatus + '))'), '$1Объездная дорога$2');
                         } else
                         if ( /(^|\s+)[Оо]кружная$/.test(text)) {
                             text = text.replace(/(^|\s+)[Оо]кружная$/, '$1Окружная дорога');
