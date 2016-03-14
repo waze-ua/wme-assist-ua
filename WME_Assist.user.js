@@ -389,8 +389,8 @@ function run_wme_assist() {
                                 return s + ' ' + adj;
                             });
 
-                        // шоссе Воткинское -> Воткинское шоссе
-                        text = text.replace( new RegExp('^(' + nStatus + ')(?:\\s+)(.*ое)$'), '$2 $1');
+                        // шоссе Воткинское -> Воткинское шоссе, Верхнее шоссе
+                        text = text.replace( new RegExp('^(' + nStatus + ')(?:\\s+)(.+[ео]е)$'), '$2 $1');
                     }
 
                     // Возвращаем скобки в конце
