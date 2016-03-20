@@ -666,6 +666,8 @@ function run_wme_assist() {
         }
 
         this.Select = function (id, type, center, zoom) {
+            var attemptNum = 10;
+
             var select = function () {
                 info('select: ' + id);
 
@@ -675,9 +677,11 @@ function run_wme_assist() {
 
                 if (obj) {
                     wazeapi.selectionManager.select([obj]);
-                } else {
+                } else if (--attemptNum > 0) {
                     wazeapi.model.events.register('mergeend', map, select);
                 }
+
+                WME_Assist.debug("Attempt number left: " + attemptNum);
 
                 wazeapi.map.setCenter(center, zoom);
             }
@@ -754,6 +758,7 @@ function run_wme_assist() {
 
         this.fixProblem = function (problem) {
             var deferred = $.Deferred();
+            var attemptNum = 10; // after that we decide that object was removed
 
             var fix = function () {
                 var obj = type2repo(problem.object.type).objects[problem.object.id];
@@ -771,10 +776,15 @@ function run_wme_assist() {
                         ui.updateProblem(problem.object.id, '(user fix: ' + currentValue + ')');
                     }
                     deferred.resolve(obj.getID());
+                } else if (--attemptNum <= 0) {
+                    ui.updateProblem(problem.object.id, '(was not fixed. Deleted?)');
+                    deferred.resolve(problem.object.id);
                 } else {
                     wazeapi.model.events.register('mergeend', map, fix);
                     wazeapi.map.setCenter(problem.detectPos, problem.zoom);
                 }
+
+                WME_Assist.debug('Attempt number left: ' + attemptNum);
             }
 
             fix();
@@ -793,7 +803,7 @@ function run_wme_assist() {
         section.id = "assist_options";
         section.innerHTML = '<b>Editor Options</b><br/>' +
             '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
-            '<label><input type="checkbox" id="assist_debug" value="0"/> Debug</label><br/>';
+            '<label><input type="checkbox" id="assist_debug" value="0" checked/> Debug</label><br/>';
         var variant = document.createElement('p');
         variant.id = 'variant_options';
         variant.innerHTML = '<b>Variants</b><br/>' +
@@ -1028,15 +1038,6 @@ function run_wme_assist() {
                 title: 'Scan progress',
                 text: 0,
             }).css({color: 'blue'}));
-
-        //Position "right top" after resize window
-        $(window).resize(function(){
-            $('#WME_AssistWindow').dialog('option', 'position', {
-                my: 'right top',
-                at: 'right top',
-                of: '#WazeMap',
-            });
-        });
 
         // Hack jquery ui dialog
         var icon = mainWindow.prev('.ui-dialog-titlebar').find('span.ui-icon');
