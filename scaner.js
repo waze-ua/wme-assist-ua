@@ -1,3 +1,21 @@
+// ==UserScript==
+// @name WME Assist Scanner
+// @author borman84 (Boris Molodenkov)
+// @description WME Assist Scanner
+// @match     https://world.waze.com/editor/*
+// @match     https://*.waze.com/editor/*
+// @match     https://*.waze.com/*/editor/*
+// @match     https://world.waze.com/map-editor/*
+// @match     https://world.waze.com/beta_editor/*
+// @match     https://www.waze.com/map-editor/*
+// @grant     none
+// @include   https://editor-beta.waze.com/*
+// @include   https://*.waze.com/editor/editor/*
+// @include   https://*.waze.com/*/editor/*
+// @version   0.5.0
+// @namespace https://greasyfork.org/users/20609
+// ==/UserScript==
+
 var WME_Assist = WME_Assist || {}
 
 WME_Assist.Scaner = function (wazeapi) {
