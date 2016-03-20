@@ -51,7 +51,7 @@ function run_wme_assist() {
     }
 
     var CustomRule = function (oldname, newname) {
-        var title = oldname + ' -> ' + newname;
+        var title = '/' + oldname + '/ ➤ ' + newname;
         this.oldname = oldname;
         this.newname = newname;
         this.custom = true;
@@ -921,14 +921,14 @@ function run_wme_assist() {
             .append($('<p>All form fields are required</p>'))
             .append($('<form>')
                     .append($('<fieldset>')
-                            .append($('<label>').prop('for', 'oldname').text('Old name'))
+                            .append($('<label>').prop('for', 'oldname').text('RegExp'))
                             .append($('<input>', {
                                 type: 'text',
                                 name: 'oldname',
                                 'class': 'text ui-widget-content ui-corner-all',
                                 id: 'oldname',
                             }))
-                            .append($('<label>').prop('for', 'newname').text('New name'))
+                            .append($('<label>').prop('for', 'newname').text('Replace text'))
                             .append($('<input>', {
                                 type: 'text',
                                 name: 'newname',
