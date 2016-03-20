@@ -46,7 +46,7 @@ WME_Assist.Scaner = function (wazeapi) {
             }
         })
 
-        return r.isEmpty() ? null : { roadTypes: s.toString() }
+        return (r.length == 0) ? null : { roadTypes: s.toString() }
     }
 
     this.scan = function (bounds, zoom, analyze, progress) {
