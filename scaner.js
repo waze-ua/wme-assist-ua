@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name WME Assist Scanner
 // @author borman84 (Boris Molodenkov)
-// @description WME Assist Scanner
+// @description Waze Map Editor Assist Scanner
 // @match     https://world.waze.com/editor/*
 // @match     https://*.waze.com/editor/*
 // @match     https://*.waze.com/*/editor/*
