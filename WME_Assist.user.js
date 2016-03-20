@@ -924,7 +924,7 @@ function run_wme_assist() {
                 padding: 10,
             })
                     .append($('<button id="assist_fixall_btn" class="btn btn-danger">Fix all</button>'))
-                    .append($('<button id="assist_reset_btn" class="btn btn-warning">Reset</button>'))
+                    .append($('<button id="assist_scanarea_btn" class="btn btn-warning">Scan area</button>'))
                     .append($('<button id="assist_clearfixed_btn" class="btn btn-success">Clear fixed</button>'))
                     .append($('<h2>Unresolved issues</h2>').css({
                         'font-size': '100%',
@@ -1121,7 +1121,7 @@ function run_wme_assist() {
 
         var fixallBtn = $('#assist_fixall_btn');
         var clearfixedBtn = $('#assist_clearfixed_btn');
-        var resetBtn = $('#assist_reset_btn');
+        var scanAreaBtn = $('#assist_scanarea_btn');
         var unresolvedList = $('#assist_unresolved_list');
         var fixedList = $('#assist_fixed_list');
         var enableCheckbox = $('#assist_enabled');
@@ -1132,7 +1132,7 @@ function run_wme_assist() {
 
         this.fixallBtn = function () { return fixallBtn }
         this.clearfixedBtn = function () { return clearfixedBtn }
-        this.resetBtn = function () { return resetBtn }
+        this.scanAreaBtn = function () { return scanAreaBtn }
 
         this.unresolvedList = function () { return unresolvedList }
         this.fixedList = function () { return fixedList }
@@ -1290,7 +1290,7 @@ function run_wme_assist() {
                 localStorage.setItem('assist_variant', this.value);
 
                 analyzer.setVariant(ui.variant());
-                ui.resetBtn().click();
+                ui.scanAreaBtn().click();
             });
 
             if (localStorage.getItem('assist_enabled') == 'true') {
@@ -1300,7 +1300,7 @@ function run_wme_assist() {
             ui.fixallBtn().click(function () {
                 ui.fixallBtn().hide();
                 ui.clearfixedBtn().hide();
-                ui.resetBtn().hide();
+                ui.scanAreaBtn().hide();
 
                 wazeapi.model.events.unregister('mergeend', map, scan);
 
@@ -1312,7 +1312,7 @@ function run_wme_assist() {
                     }, function () {
                         ui.fixallBtn().show();
                         ui.clearfixedBtn().show();
-                        ui.resetBtn().show();
+                        ui.scanAreaBtn().show();
 
                         wazeapi.model.events.register('mergeend', map, scan);
                     });
@@ -1323,7 +1323,7 @@ function run_wme_assist() {
                 ui.fixedList().empty();
             });
 
-            ui.resetBtn().click(function () {
+            ui.scanAreaBtn().click(function () {
                 ui.fixedList().empty();
                 ui.unresolvedList().empty();
 
