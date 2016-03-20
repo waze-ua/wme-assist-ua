@@ -53,6 +53,10 @@ WME_Assist.Scaner = function (wazeapi) {
         var boundsArray = splitExtent(bounds, zoom);
         var completed = 0;
 
+        if (boundsArray.length > 20 && !confirm('Script will scan ' + boundsArray.length + ' peaces. Are you OK?')) {
+            return;
+        }
+
         progress = progress || function () {}
 
         WME_Assist.series(boundsArray, 0, function (bounds, next) {
