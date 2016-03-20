@@ -998,15 +998,6 @@ function run_wme_assist() {
             width: 500,
             draggable: true,
             height: 600,
-            resize: function (event, ui) {
-                var w = ui.size.width;
-                var h = ui.size.height;
-                var dx = parseFloat($('#WME_AssistWindow').css('padding-left'));
-                var dy = parseFloat($('#WME_AssistWindow').css('padding-top'));
-                $('#WME_AssistWindow').width(w - 2*dx);
-                $('#WME_AssistWindow').height(h - 2*dy - 50);
-                $('#WME_AssistWindow').parent().css('height', 'auto');
-            },
             dragStop: function () {
                 $('#WME_AssistWindow').parent().css('height', 'auto');
             }
@@ -1037,6 +1028,15 @@ function run_wme_assist() {
                 title: 'Scan progress',
                 text: 0,
             }).css({color: 'blue'}));
+
+        //Position "right top" after resize window
+        $(window).resize(function(){
+            $('#WME_AssistWindow').dialog('option', 'position', {
+                my: 'right top',
+                at: 'right top',
+                of: '#WazeMap',
+            });
+        });
 
         // Hack jquery ui dialog
         var icon = mainWindow.prev('.ui-dialog-titlebar').find('span.ui-icon');
@@ -1408,12 +1408,3 @@ function run_wme_assist() {
 }
 
 run_wme_assist();
-
-//Position "right top" after resize window
-$(window).resize(function(){
-    $('#WME_AssistWindow').dialog('option', 'position', {
-        my: 'right top',
-        at: 'right top',
-        of: '#WazeMap',
-    });
-});
