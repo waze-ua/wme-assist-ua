@@ -157,7 +157,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(ш\.?)( |$)/, '$1шоссе$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(б-р)( |$)/i, '$1бульвар$3');
+                    return text.replace(/(^| )(б-р|бул\.?)( |$)/i, '$1бульвар$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(дор\.)( |$)/i, '$1дорога$3');
