@@ -386,8 +386,8 @@ function run_wme_assist() {
                             });
 
                         // Прилагательное вперёд
-                        if ( ! new RegExp('(^|\\s)(' + exM + ')(\\s|$)', 'i').test(text) ) &&
-                           ( ! new RegExp('^(проезд|переулок)([^\.]*?)((?:\\s+[^\\s]+ой)+)$').test(text) ) {
+                        if (( ! new RegExp('(^|\\s)(' + exM + ')(\\s|$)', 'i').test(text) ) &&
+                            ( ! new RegExp('^(проезд|переулок)([^\.]*?)((?:\\s+[^\\s]+ой)+)$').test(text) ) ) {
                             // переулок *** 1-й -> 1-й переулок ***
                             text = text.replace(new RegExp('^(' + mStatus + ')([^\.]*?)((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$3 $1$2');
                             text = text.replace(
