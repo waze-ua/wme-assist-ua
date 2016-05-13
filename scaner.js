@@ -83,7 +83,7 @@ WME_Assist.Scaner = function (wazeapi) {
             var e = {
                 bbox: peace.toBBOX(),
                 language: I18n.locale,
-                venueFilter: '0',
+                venueFilter: '1',
                 venueLevel: wazeapi.Config.venues.zoomToSize[zoom],
             };
 
