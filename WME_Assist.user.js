@@ -97,7 +97,7 @@ function run_wme_assist() {
                     return text.replace(/\s+/g, ' ');
                 }),
                 new Rule('ACUTE ACCENT in street name', function (text) {
-                    return text.replace(/\u0301/g, '');
+                    return text.replace(/\u0301|\u0300/g, '');
                 }),
                 new Rule('Dash in street name', function (text) {
                     return text.replace(/\u2010|\u2011|\u2012|\u2013|\u2014|\u2015|\u2043|\u2212|\u2796/g, '-');
