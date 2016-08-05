@@ -115,6 +115,9 @@ function run_wme_assist() {
                     return text.replace(/скя( |$)/, 'ская$1'); // Волгостроевскя набережная
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/олодеж/, 'олодёж'); // Молодёжная
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(мая)( |$)/, '$1Мая$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
