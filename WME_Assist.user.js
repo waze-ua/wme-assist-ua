@@ -543,6 +543,9 @@ function run_wme_assist() {
             case 'Russia':
                 countryRules = rules_RU();
                 break;
+            case 'Ukraine':
+                countryRules = rules_RU();
+                break;
             case 'Belarus':
                 countryRules = rules_BY();
                 break;
