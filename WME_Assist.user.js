@@ -142,6 +142,9 @@ function run_wme_assist() {
                     return text.replace(/(^| )(р-д)( |$)/i, '$1разъезд$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(з-д)( |$)/i, '$1заезд$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(пер\.?)( |$)/i, '$1переулок$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
