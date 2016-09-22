@@ -124,6 +124,9 @@ function run_wme_assist() {
                     return text.replace(/(^| )(мкрн?\.?|мк?р?-н)( |$)/, '$1микрорайон$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(р-о?н)( |$)/, '$1район$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(им\.?)( |$)/, '$1имени$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
