@@ -635,7 +635,7 @@ function run_wme_assist() {
                         return p1 + '-' + p2;
                     });
                 }),
-                new Rule('Incorrect street name', replaceParts),
+                //new Rule('Incorrect street name', replaceParts),
             ]);
         };
 
