@@ -18,20 +18,20 @@
 // @namespace https://greasyfork.org/users/20609
 // ==/UserScript==
 
-var WME_Assist = WME_Assist || {}
+var WME_Assist = WME_Assist || {};
 
 WME_Assist.debug = function (message) {
     if (!$('#assist_debug').is(':checked')) return;
     console.log("WME ASSIST DEBUG: " + message);
-}
+};
 
 WME_Assist.info = function (message) {
     console.log("WME ASSIST INFO: " + message);
-}
+};
 
 WME_Assist.warning = function (message) {
     console.log("WME ASSIST WARN: " + message);
-}
+};
 
 WME_Assist.series = function (array, start, action, alldone) {
     var helper = function (i) {
@@ -44,10 +44,10 @@ WME_Assist.series = function (array, start, action, alldone) {
                 alldone();
             }
         }
-    }
+    };
 
     helper(start);
-}
+};
 
 function run_wme_assist() {
     var ver = '0.5.2';
@@ -72,7 +72,7 @@ function run_wme_assist() {
         this.comment = comment;
         this.correct = func;
         this.variant = variant;
-    }
+    };
 
     var CustomRule = function (oldname, newname) {
         var title = '/' + oldname + '/ ➤ ' + newname;
@@ -82,16 +82,16 @@ function run_wme_assist() {
         $.extend(this, new Rule(title, function (text) {
             return text.replace(new RegExp(oldname), newname);
         }));
-    }
+    };
 
     var ExperimentalRule = function (comment,  func) {
         this.comment = comment;
         this.correct = func;
         this.experimental = true;
-    }
+    };
 
     var Rules = function (countryName) {
-        var rules_basicRU = function () {
+        var rules_basicCommon = function () {
             return [
                 new Rule('Unbreak space in street name', function (text) {
                     return text.replace(/\s+/g, ' ');
@@ -108,6 +108,11 @@ function run_wme_assist() {
                 new Rule('Garbage dot', function (text) {
                     return text.replace(/(^|\s+)\./g, '$1');
                 }),
+            ];
+        };
+        
+        var rules_basicRU = function () {
+            return rules_basicCommon().concat([
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/улицаица/, 'улица');
                 }),
@@ -241,7 +246,7 @@ function run_wme_assist() {
                     .replace(/^(\d+)А(:|\s+|$)/, '$1A$2')
                     .replace(/^(\d+)В(:|\s+|$)/, '$1B$2');
                 }),
-            ];
+            ]);
         };
 
         var rules_RU = function () {
@@ -333,7 +338,7 @@ function run_wme_assist() {
                                 if ( new RegExp('^(' + wStatus+ '|' + mStatus + '|' + nStatus + ')$').test(word) ) {
                                     foundStatus = true;
                                     return all;
-                                };
+                                }
                             if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|за|из|от|км|километр|де|в|к|о|с|у|на|и)$/i.test(word)
                                 || ( space == '-' && /^(лейтенанта|майора|полковника|й|я|ти|го|е|ей|х)$/.test(word) ) )
                                  return space + word.toLowerCase();
@@ -367,7 +372,7 @@ function run_wme_assist() {
                             text = text.replace(new RegExp('(' + wStatus + ')(.*?)((?:\\s+[^\\s]+(?:-я|ая|ья|яя|яся))+)$'), '$3 $1$2');
                             // улица Мягкая 1-й Проезд -> Мягкая улица 1-й Проезд
                             text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)([^\\s]+(?:-я|ая|ья|яя|яся))(?=\\s+\\d+-й\\s+Проезд|\\s+\\d+-я\\s+Линия)'), '$2 $1');
-                        };
+                        }
 
                         // Числительное всегда вначале если оно согласовано с прилагательным
                         // Мягкая 1-я -> 1-я Мягкая
@@ -447,17 +452,17 @@ function run_wme_assist() {
                             'праспект', 'праезд', 'плошча', 'шаша'];
                 if (list.indexOf(str) > -1) return true;
                 return false;
-            }
+            };
 
             var isPseudoStatus = function (str) {
                 var list = ['шоссе', 'тракт', 'площадь', 'шаша', 'плошча', 'спуск'];
                 if (list.indexOf(str) > -1) return true;
                 return false;
-            }
+            };
 
             var isNumber = function (str) {
                 return /([0-9])-[іыйя]/.test(str);
-            }
+            };
 
             var replaceParts = function (text) {
                 var arr = text.split(' ');
@@ -489,7 +494,7 @@ function run_wme_assist() {
                 }
 
                 return result.join(' ');
-            }
+            };
 
             return rules_basicRU().concat([
                 new Rule('Delete space in initials', function (text) {
@@ -527,7 +532,112 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect street name', replaceParts),
             ]);
-        }
+        };
+
+        var rules_UA = function () {
+            var isStatus = function (str) {
+                var list = ['вулиця', 'провулок', 'проспект', 'проїзд',
+                            'площа', 'шосе', 'бульвар', 'тракт'];
+                if (list.indexOf(str) > -1) return true;
+                return false;
+            };
+
+            var isPseudoStatus = function (str) {
+                var list = ['шосе', 'тракт', 'площа', 'спуск'];
+                if (list.indexOf(str) > -1) return true;
+                return false;
+            };
+
+            var isNumber = function (str) {
+                return /([0-9])-[еай]/.test(str);
+            };
+
+            var replaceParts = function (text) {
+                var arr = text.split(' ');
+                var result = [];
+                var status;
+                var number;
+
+                var previousPart = '';
+                for (var i = 0; i < arr.length; ++i) {
+                    var part = arr[i];
+
+                    if (isStatus(part) && !isPseudoStatus(part)) {
+                        status = part;
+                    } else if (isNumber(part) && previousPart.toLowerCase() != 'героїв') {
+                        number = part;
+                    } else {
+                        result.push(part);
+                    }
+
+                    previousPart = part;
+                }
+
+                if (status) {
+                    result.splice(0, 0, status);
+                }
+
+                if (number) {
+                    result.push(number);
+                }
+
+                return result.join(' ');
+            };
+
+            return rules_basicCommon().concat([
+                new Rule('Delete space in initials', function (text) {
+                    return text.replace(/(^|\s+)([А-Я]\.)\s([А-Я]\.)/, '$1$2$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(тр-т)( |$)/, '$1тракт$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(вулиця)( |$)/, '$1вул.$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(провулок)( |$)/, '$1пров.$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(проспект)( |$)/, '$1просп.$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(улица)( |$)/, '$1вул.$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(ул\.?)( |$)/, '$1вул.$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(вул\,?)( |$)/, '$1вул.$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(площа)( |$)/, '$1пл.$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(бульвар)( |$)/, '$1б-р$3');
+                }),
+
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/-ая/, '-а').replace(/-ий/, '-й');
+                }),
+                new Rule('Incorrect highway name', function (text) {
+                    return text.replace(/([TтРрНнМмPpHM])-?([0-9])/, function (a, p1, p2) {
+                        p1 = p1
+                            .replace('т', 'Т')
+                            .replace('T', 'Т')
+                            .replace('р', 'Р')
+                            .replace('н', 'Н')
+                            .replace('м', 'М')
+                            .replace('P', 'Р')
+                            .replace('p', 'Р')
+                            .replace('H', 'Н')
+                            .replace('M', 'М');
+
+                        return p1 + '-' + p2;
+                    });
+                }),
+                new Rule('Incorrect street name', replaceParts),
+            ]);
+        };
 
         var getCountryRules = function (name) {
             var commonRules = [
@@ -549,39 +659,39 @@ function run_wme_assist() {
             case 'Russia':
                 countryRules = rules_RU();
                 break;
-            case 'Ukraine':
-                countryRules = rules_RU();
-                break;
             case 'Belarus':
                 countryRules = rules_BY();
+                break;
+            case 'Ukraine':
+                countryRules = rules_UA();
                 break;
             default:
                 info('There are not implemented rules for country: ' + name);
                 countryRules = [];
             }
             return countryRules.concat(commonRules);
-        }
+        };
 
         var rules = [];
         var customRulesNumber = 0;
 
-        var onAdd = function (rule) {}
-        var onEdit = function (index, rule) {}
-        var onDelete = function (index) {}
+        var onAdd = function (rule) {};
+        var onEdit = function (index, rule) {};
+        var onDelete = function (index) {};
 
-        this.onAdd = function (cb) { onAdd = cb }
-        this.onEdit = function (cb) { onEdit = cb }
-        this.onDelete = function (cb) { onDelete = cb }
+        this.onAdd = function (cb) { onAdd = cb; };
+        this.onEdit = function (cb) { onEdit = cb; };
+        this.onDelete = function (cb) { onDelete = cb; };
 
         this.onCountryChange = function (name) {
             info('Country was changed to ' + name);
             rules.splice(customRulesNumber, rules.length - customRulesNumber);
             rules = rules.concat(getCountryRules(name));
-        }
+        };
 
         this.get = function (index) {
             return rules[index];
-        }
+        };
 
         this.correct = function (variant, text) {
             var newtext = text;
@@ -611,13 +721,13 @@ function run_wme_assist() {
                 value: newtext,
                 experimental: experimental
             };
-        }
+        };
 
         var save = function (rules) {
             if (localStorage) {
                 localStorage.setItem('assistRulesKey', JSON.stringify(rules.slice(0, customRulesNumber)));
             }
-        }
+        };
 
         this.load = function () {
             if (localStorage) {
@@ -632,7 +742,7 @@ function run_wme_assist() {
             }
 
             rules = rules.concat(getCountryRules(countryName));
-        }
+        };
 
         this.push = function (oldname, newname) {
             var rule = new CustomRule(oldname, newname);
@@ -640,7 +750,7 @@ function run_wme_assist() {
             onAdd(rule);
 
             save(rules);
-        }
+        };
 
         this.update = function (index, oldname, newname) {
             var rule = new CustomRule(oldname, newname);
@@ -648,7 +758,7 @@ function run_wme_assist() {
             onEdit(index, rule);
 
             save(rules);
-        }
+        };
 
         this.remove = function (index) {
             rules.splice(index, 1);
@@ -656,8 +766,8 @@ function run_wme_assist() {
             onDelete(index);
 
             save(rules);
-        }
-    }
+        };
+    };
 
     var ActionHelper = function (wazeapi) {
         var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
@@ -672,11 +782,11 @@ function run_wme_assist() {
                 'segment': wazeapi.model.segments
             };
             return map[type];
-        }
+        };
 
         this.setUi = function (u) {
             ui = u;
-        }
+        };
 
         this.Select = function (id, type, center, zoom) {
             var attemptNum = 10;
@@ -697,17 +807,17 @@ function run_wme_assist() {
                 WME_Assist.debug("Attempt number left: " + attemptNum);
 
                 wazeapi.map.setCenter(center, zoom);
-            }
+            };
 
             return select;
-        }
+        };
 
         this.isObjectVisible = function (obj) {
             if (!onlyVisible) return true;
             if (obj.geometry)
                 return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
             return false;
-        }
+        };
 
         var addOrGetStreet = function (cityId, name, isEmpty) {
             var foundStreets = wazeapi.model.streets.getByAttributes({
@@ -723,7 +833,7 @@ function run_wme_assist() {
             wazeapi.model.actionManager.add(a);
 
             return a.street;
-        }
+        };
 
         var addOrGetCity = function (countryID, stateID, cityName) {
             var foundCities = Waze.model.cities.getByAttributes({
@@ -740,7 +850,7 @@ function run_wme_assist() {
             var a = new WazeActionAddOrGetCity(state, country, cityName);
             Waze.model.actionManager.add(a);
             return a.city;
-        }
+        };
 
         var cityMap = {};
         var onlyVisible = false;
@@ -749,12 +859,12 @@ function run_wme_assist() {
             var newid = cityMap[id];
             if (newid) return newid;
             return id;
-        }
+        };
 
         this.renameCity = function (oldname, newname) {
             var oldcity = wazeapi.model.cities.getByAttributes({name: oldname});
 
-            if (oldcity.length == 0) {
+            if (oldcity.length === 0) {
                 console.log('City not found: ' + oldname);
                 return false;
             }
@@ -767,7 +877,7 @@ function run_wme_assist() {
 
             console.log('Do not forget press reset button and re-enable script');
             return true;
-        }
+        };
 
         this.fixProblem = function (problem) {
             var deferred = $.Deferred();
@@ -798,13 +908,13 @@ function run_wme_assist() {
                 }
 
                 WME_Assist.debug('Attempt number left: ' + attemptNum);
-            }
+            };
 
             fix();
 
             return deferred.promise();
-        }
-    }
+        };
+    };
 
     var Ui = function () {
         var addon = document.createElement('section');
@@ -858,7 +968,7 @@ function run_wme_assist() {
 
         this.selectedCustomRule = function () {
             return selectedCustomRule;
-        }
+        };
 
         this.addCustomRule = function (title) {
             var thisrule = $('<li>').addClass('result').click(function () {
@@ -885,16 +995,16 @@ function run_wme_assist() {
             })
                 .append($('<p>').addClass('additional-info clearfix').text(title))
                 .appendTo($('#assist_custom_rules ul.result-list'));
-        }
+        };
 
         this.updateCustomRule = function (index, title) {
             $('#assist_custom_rules li.result').eq(index).find('p.additional-info').text(title);
-        }
+        };
 
         this.removeCustomRule = function (index) {
             $('#assist_custom_rules li.result').eq(index).remove();
             selectedCustomRule = -1;
-        }
+        };
 
         this.addException = function (name, del) {
             var thisrule = $('<li>').addClass('result').click(function () {
@@ -917,11 +1027,11 @@ function run_wme_assist() {
             })
                 .append($('<p>').addClass('additional-info clearfix').text(name))
                 .appendTo($('#assist_exceptions ul.result-list'));
-        }
+        };
 
         this.removeException = function (index) {
             $('#assist_exceptions li.result').eq(index).remove();
-        }
+        };
 
         this.showMainWindow = function () {
             $('#WazeMap').css('overflow', 'hidden');
@@ -933,11 +1043,11 @@ function run_wme_assist() {
             });
             // Minimize window
             mainWindow.prev('.ui-dialog-titlebar').find('button').click();
-        }
+        };
 
         this.hideMainWindow = function () {
             mainWindow.dialog('close');
-        }
+        };
 
         $('<div>', {
             id: 'WME_AssistWindow',
@@ -998,7 +1108,7 @@ function run_wme_assist() {
         $('#assist_custom_rule_dialog label').css({display: 'block'});
         $('#assist_custom_rule_dialog input').css({display: 'block', width: '100%'});
 
-        var customRuleDialog_Ok = function () {}
+        var customRuleDialog_Ok = function () {};
         var customRuleDialog = $('#assist_custom_rule_dialog').dialog({
             autoOpen: false,
             height: 300,
@@ -1078,7 +1188,7 @@ function run_wme_assist() {
                 icon.addClass('ui-icon-minusthick');
                 icon.removeClass('ui-icon-arrow-4-diag');
             }
-        })
+        });
 
         var self = this;
 
@@ -1102,36 +1212,36 @@ function run_wme_assist() {
             if (experimental) {
                 problem.children().css({color: 'red'}).prop('title', 'Experimental rule');
             }
-        }
+        };
 
         this.updateProblem = function (id, text) {
             var a = $('li#issue-' + escapeId(id) + ' > a');
             a.text(a.text() + ' ' + text);
-        }
+        };
 
         this.setUnresolvedErrorNum = function (text) {
             $('#assist-error-num').text(text);
-        }
+        };
 
         this.setFixedErrorNum = function (text) {
             $('#assist-fixed-num').text(text);
-        }
+        };
 
         this.setScanProgress = function (text) {
             $('#assist-scan-progress').text(text);
-        }
+        };
 
         var escapeId = function (id) {
             return String(id).replace(/\./g, "\\.");
-        }
+        };
 
         this.moveToFixedList = function (id) {
             $("#issue-" + escapeId(id)).appendTo($('#assist_fixed_list'));
-        }
+        };
 
         this.removeError = function (id) {
             $("#issue-" + escapeId(id)).remove();
-        }
+        };
 
         var fixallBtn = $('#assist_fixall_btn');
         var clearfixedBtn = $('#assist_clearfixed_btn');
@@ -1144,25 +1254,25 @@ function run_wme_assist() {
         var editCustomRuleBtn = $('#assist_edit_custom_rule');
         var delCustomRuleBtn = $('#assist_del_custom_rule');
 
-        this.fixallBtn = function () { return fixallBtn }
-        this.clearfixedBtn = function () { return clearfixedBtn }
-        this.scanAreaBtn = function () { return scanAreaBtn }
+        this.fixallBtn = function () { return fixallBtn; };
+        this.clearfixedBtn = function () { return clearfixedBtn; };
+        this.scanAreaBtn = function () { return scanAreaBtn; };
 
-        this.unresolvedList = function () { return unresolvedList }
-        this.fixedList = function () { return fixedList }
+        this.unresolvedList = function () { return unresolvedList; };
+        this.fixedList = function () { return fixedList; };
 
-        this.enableCheckbox = function () { return enableCheckbox }
+        this.enableCheckbox = function () { return enableCheckbox; };
         this.variantRadio = function (value) {
             if (!value) {
                 return $('[name=assist_variant]');
             }
 
             return $('[name=assist_variant][value=' + value + ']');
-        }
+        };
 
-        this.addCustomRuleBtn = function () { return addCustomRuleBtn }
-        this.editCustomRuleBtn = function () { return editCustomRuleBtn }
-        this.delCustomRuleBtn = function () { return delCustomRuleBtn }
+        this.addCustomRuleBtn = function () { return addCustomRuleBtn; };
+        this.editCustomRuleBtn = function () { return editCustomRuleBtn; };
+        this.delCustomRuleBtn = function () { return delCustomRuleBtn; };
         this.customRuleDialog = function (title, params) {
             var deferred = $.Deferred();
 
@@ -1176,16 +1286,16 @@ function run_wme_assist() {
                     oldname: customRuleDialog.find('#oldname').val(),
                     newname: customRuleDialog.find('#newname').val(),
                 });
-            }
+            };
 
             customRuleDialog.dialog('option', 'title', title);
             customRuleDialog.dialog('open');
 
             return deferred.promise();
-        }
+        };
         this.variant = function () {
             return $('[name=assist_variant]:checked')[0].value;
-        }
+        };
     };
 
     var Application = function (wazeapi) {
@@ -1210,21 +1320,21 @@ function run_wme_assist() {
             }, function (progress) {
                 ui.setScanProgress(Math.round(progress) + '%');
             });
-        }
+        };
 
         var fullscan = function () {
             scanForZoom(FULL_ZOOM_LEVEL);
-        }
+        };
 
         var scan = function () {
             scanForZoom(wazeapi.map.getZoom());
-        }
+        };
 
         var countryName = function () {
             var id = wazeapi.model.countries.top.id;
             var name = wazeapi.model.countries.objects[id].name;
             return name;
-        }
+        };
 
         var country = countryName();
 
@@ -1283,7 +1393,7 @@ function run_wme_assist() {
                     info('enabled');
 
                     var savedVariant = localStorage.getItem('assist_variant');
-                    if (savedVariant != null) {
+                    if (savedVariant !== null) {
                         ui.variantRadio(savedVariant).prop('checked', true);
                         analyzer.setVariant(ui.variant());
                     }
@@ -1382,7 +1492,7 @@ function run_wme_assist() {
             });
 
             window.assist = this;
-        }
+        };
 
         this.renameCity = action.renameCity;
     };
@@ -1392,7 +1502,7 @@ function run_wme_assist() {
 
         // Does not get jQuery.ui
         // Relies on WME Toolbox plugin
-        if (wazeapi == null || !jQuery.ui) {
+        if (wazeapi === null || !jQuery.ui) {
             console.log("WME ASSIST: waiting for Waze");
             setTimeout(function () {
                 waitForWaze(done);
