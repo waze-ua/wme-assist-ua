@@ -78,7 +78,7 @@ WME_Assist.Scaner = function (wazeapi) {
         progress = progress || function () {}
 
         WME_Assist.series(boundsArray, 0, function (bounds, next) {
-            var peace = bounds.transform(map.getProjectionObject(), controller.segmentProjection);
+            var peace = bounds.transform(map.getProjectionObject(), map.projection);
 
             var e = {
                 bbox: peace.toBBOX(),
