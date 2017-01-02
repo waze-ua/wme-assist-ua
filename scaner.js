@@ -12,8 +12,8 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.0
-// @namespace https://greasyfork.org/users/20609
+// @version   0.5.0.1 (ua)
+// @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {}
@@ -78,7 +78,7 @@ WME_Assist.Scaner = function (wazeapi) {
         progress = progress || function () {}
 
         WME_Assist.series(boundsArray, 0, function (bounds, next) {
-            var peace = bounds.transform(map.getProjectionObject(), map.projection);
+            var peace = bounds.transform(map.getProjectionObject(), map.displayProjection);
 
             var e = {
                 bbox: peace.toBBOX(),
