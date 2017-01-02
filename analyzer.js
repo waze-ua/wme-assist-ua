@@ -12,7 +12,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.0.1 (ua)
+// @version   0.5.0.2 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -190,8 +190,8 @@ WME_Assist.Analyzer = function (wazeapi) {
         if (detected) {
             var gj = new OL.Format.GeoJSON();
             var geometry = gj.parseGeometry(obj.geometry);
-            var objCenter = geometry.getBounds().getCenterLonLat().transform(wazeapi.controller.segmentProjection, wazeapi.map.getProjectionObject());
-            var boundsCenter = bounds.clone().getCenterLonLat().transform(wazeapi.controller.segmentProjection, wazeapi.map.getProjectionObject());
+            var objCenter = geometry.getBounds().getCenterLonLat().transform(wazeapi.map.displayProjection, wazeapi.map.getProjectionObject());
+            var boundsCenter = bounds.clone().getCenterLonLat().transform(wazeapi.map.displayProjection, wazeapi.map.getProjectionObject());
             obj.center = objCenter;
 
             problems.push({
