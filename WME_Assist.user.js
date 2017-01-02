@@ -1038,7 +1038,7 @@ function run_wme_assist() {
             mainWindow.dialog('open');
             mainWindow.dialog('option', 'position', {
                 my: 'right top',
-                at: 'right top',
+                at: 'right-50 top',
                 of: '#WazeMap',
             });
             // Minimize window
