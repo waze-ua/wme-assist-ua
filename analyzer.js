@@ -12,8 +12,8 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.0
-// @namespace https://greasyfork.org/users/20609
+// @version   0.5.0.1 (ua)
+// @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {}
@@ -211,7 +211,7 @@ WME_Assist.Analyzer = function (wazeapi) {
     }
 
     this.analyze = function (bounds, zoom, data, onProblemDetected) {
-        var permissions = new require("Waze/Permissions");
+        //var permissions = new require("Waze/Permissions");
         var startTime = new Date().getTime();
 
         WME_Assist.info('start analyze');
@@ -220,12 +220,12 @@ WME_Assist.Analyzer = function (wazeapi) {
             'segment': {
                 attr: 'primaryStreetID',
                 name: 'segments',
-                permissions: permissions.Segments,
+                //permissions: permissions.Segments,
             },
             'venue': {
                 attr: 'streetID',
                 name: 'venues',
-                permissions: permissions.Landmarks,
+                //permissions: permissions.Landmarks,
             }
         };
 
@@ -245,7 +245,8 @@ WME_Assist.Analyzer = function (wazeapi) {
 
                 if (analyzedIds.indexOf(id) >= 0) continue;
 
-                if (!(obj.permissions & subject.permissions.EDIT_PROPERTIES)) continue;
+                // fixme
+				//if (!(obj.permissions & subject.permissions.EDIT_PROPERTIES)) continue;
                 if (obj.hasClosures) continue;
 
                 if (typeof obj.approved != 'undefined' && !obj.approved) continue;
