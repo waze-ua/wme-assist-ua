@@ -12,7 +12,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.0.2 (ua)
+// @version   0.5.0.3 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -151,12 +151,13 @@ WME_Assist.Analyzer = function (wazeapi) {
         }, allfixed);
     }
 
-    var checkStreet = function (bounds, zoom, streets, streetID, obj, attrName, onProblemDetected) {
-        var street = streets[streetID];
+    var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
+        var street = wazeapi.model.streets.get(streetID);
 
         if (!street) return;
 
         var detected = false;
+		var skip = false;
         var title = '';
         var reason;
 
@@ -167,6 +168,10 @@ WME_Assist.Analyzer = function (wazeapi) {
                     var newStreetName = result.value;
                     detected = (newStreetName != street.name);
                     if (obj.type == 'venue') title = 'POI: ';
+                    if (attrName == 'streetIDs') {
+						title = 'ALT: ';
+						skip = true;
+					}
                     title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
                     reason = street.name;
                 } catch (err) {
@@ -204,6 +209,7 @@ WME_Assist.Analyzer = function (wazeapi) {
                 isEmpty: street.isEmpty,
                 cityId: newCityID,
                 experimental: false,
+				skip: skip,
             });
 
             onProblemDetected(obj, title, reason);
@@ -251,13 +257,15 @@ WME_Assist.Analyzer = function (wazeapi) {
 
                 if (typeof obj.approved != 'undefined' && !obj.approved) continue;
 
-                var streetID = obj[subject.attr];
-                var streetDict = data.streets.objects.reduce(function (dict, street, i) {
-                    dict[street.id] = street;
-                    return dict;
-                }, {});
-                checkStreet(bounds, zoom, streetDict, streetID, obj, subject.attr, onProblemDetected);
-
+				checkStreet(bounds, zoom, obj[subject.attr], obj, subject.attr, onProblemDetected);
+				
+				// add ugly support for alternative names
+				if (subject.name == 'segments')
+				{
+					for (var j = 0, n = obj.streetIDs.length; j < n; j++) {
+						checkStreet(bounds, zoom, obj.streetIDs[j], obj, 'streetIDs', onProblemDetected);
+					}
+				}
                 analyzedIds.push(id);
             }
         }
