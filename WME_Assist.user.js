@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.3 (ua)
+// @version   0.5.2.4 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.3 (ua)';
+    var ver = '0.5.2.4 (ua)';
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -642,6 +642,17 @@ function run_wme_assist() {
                             .replace('е', 'E')
                             .replace('Е', 'E');
                         return p1 + p2;
+                    });
+                }),
+                new Rule('Incorrect local road name', function (text) {
+                    return text.replace(/([OoCcОоСс])[-\s]*([0-9]+)[-\s]*([0-9]+)[-\s]*([0-9]+)/, function (a, p1, p2, p3, p4) {
+                        p1 = p1
+                            .replace('o', 'О')
+                            .replace('O', 'О')
+                            .replace('c', 'С')
+                            .replace('C', 'С');
+
+                        return p1 + p2 + p3 + p4;
                     });
                 }),
                 //new Rule('Incorrect street name', replaceParts),
