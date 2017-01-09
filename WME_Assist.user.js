@@ -636,7 +636,7 @@ function run_wme_assist() {
                     });
                 }),
                 new Rule('Incorrect international highway name', function (text) {
-                    return text.replace(/([EeЕе])[-\s]*([0-9]+)/, function (a, p1, p2) {
+                    return text.replace(/^[\s]*([EeЕе])[-\s]*([0-9]+)/, function (a, p1, p2) {
                         p1 = p1
                             .replace('e', 'E')
                             .replace('е', 'E')
