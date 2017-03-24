@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.5 (ua)
+// @version   0.5.2.6 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.5 (ua)';
+    var ver = '0.5.2.6 (ua)';
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -620,7 +620,7 @@ function run_wme_assist() {
                     return text.replace(/-ая/, '-а').replace(/-ий/, '-й');
                 }),
                 new Rule('Incorrect highway name', function (text) {
-                    return text.replace(/([ТтРрНнМмPpHMT])[-\s]*([0-9]{2})[-\s]*([0-9]*)/, function (a, p1, p2, p3) {
+                    return text.replace(/([ТтРрНнМмPpHMT])[-\s]*([0-9]{2})(-+\s*([0-9]+))*/, function (a, p1, p2, p3, p4) {
                         p1 = p1
                             .replace('т', 'Т')
                             .replace('T', 'Т')
@@ -632,7 +632,7 @@ function run_wme_assist() {
                             .replace('H', 'Н')
                             .replace('M', 'М');
 
-                        return p1 + '-' + p2 + (!p3 ? '' : '-' + p3);
+                        return p1 + '-' + p2 + (!p4 ? '' : '-' + p4);
                     });
                 }),
                 new Rule('Incorrect international highway name', function (text) {
