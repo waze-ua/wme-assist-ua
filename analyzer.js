@@ -12,7 +12,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.0.3 (ua)
+// @version   0.5.0.4 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -219,7 +219,8 @@ WME_Assist.Analyzer = function (wazeapi) {
     this.analyze = function (bounds, zoom, data, onProblemDetected) {
         //var permissions = new require("Waze/Permissions");
         var startTime = new Date().getTime();
-
+		var analyzeAlt = true;
+		
         WME_Assist.info('start analyze');
 
         var subjects = {
@@ -235,6 +236,12 @@ WME_Assist.Analyzer = function (wazeapi) {
             }
         };
 
+		if (localStorage) {
+			if (localStorage.getItem('assist_skip_alt') == 'true') {
+                analyzeAlt = false;
+            }
+		}
+		
         for (var k in subjects) {
             var subject = subjects[k];
             var subjectData = data[subject.name];
@@ -260,7 +267,7 @@ WME_Assist.Analyzer = function (wazeapi) {
 				checkStreet(bounds, zoom, obj[subject.attr], obj, subject.attr, onProblemDetected);
 				
 				// add ugly support for alternative names
-				if (subject.name == 'segments')
+				if (subject.name == 'segments' && analyzeAlt)
 				{
 					for (var j = 0, n = obj.streetIDs.length; j < n; j++) {
 						checkStreet(bounds, zoom, obj.streetIDs[j], obj, 'streetIDs', onProblemDetected);
