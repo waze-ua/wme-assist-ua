@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.6 (ua)
+// @version   0.5.2.7 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.6 (ua)';
+    var ver = '0.5.2.7 (ua)';
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -946,6 +946,7 @@ function run_wme_assist() {
         section.id = "assist_options";
         section.innerHTML = '<b>Editor Options</b><br/>' +
             '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
+            '<label><input type="checkbox" id="assist_skip_alt" value="0"/> Do not check alternative names</label><br/>' +
             '<label><input type="checkbox" id="assist_debug" value="0" checked/> Debug</label><br/>';
         var variant = document.createElement('p');
         variant.id = 'variant_options';
@@ -1269,6 +1270,8 @@ function run_wme_assist() {
         var unresolvedList = $('#assist_unresolved_list');
         var fixedList = $('#assist_fixed_list');
         var enableCheckbox = $('#assist_enabled');
+        var skipAltCheckbox = $('#assist_skip_alt');
+        var debugCheckbox = $('#assist_debug');
 
         var addCustomRuleBtn = $('#assist_add_custom_rule');
         var editCustomRuleBtn = $('#assist_edit_custom_rule');
@@ -1282,6 +1285,8 @@ function run_wme_assist() {
         this.fixedList = function () { return fixedList; };
 
         this.enableCheckbox = function () { return enableCheckbox; };
+        this.skipAltCheckbox = function () { return skipAltCheckbox; };
+        this.debugCheckbox = function () { return debugCheckbox; };
         this.variantRadio = function (value) {
             if (!value) {
                 return $('[name=assist_variant]');
@@ -1430,6 +1435,22 @@ function run_wme_assist() {
                 }
             });
 
+            ui.skipAltCheckbox().click(function () {
+                if (ui.skipAltCheckbox().is(':checked')) {
+                    localStorage.setItem('assist_skip_alt', true);
+                } else {
+                    localStorage.setItem('assist_skip_alt', false);
+                }
+            });
+
+            ui.debugCheckbox().click(function () {
+                if (ui.debugCheckbox().is(':checked')) {
+                    localStorage.setItem('assist_debug', true);
+                } else {
+                    localStorage.setItem('assist_debug', false);
+                }
+            });
+
             ui.variantRadio().click(function () {
                 localStorage.setItem('assist_variant', this.value);
 
@@ -1439,6 +1460,12 @@ function run_wme_assist() {
 
             if (localStorage.getItem('assist_enabled') == 'true') {
                 ui.enableCheckbox().click();
+            }
+            if (localStorage.getItem('assist_skip_alt') == 'true') {
+                ui.skipAltCheckbox().click();
+            }
+            if (localStorage.getItem('assist_debug') == 'true') {
+                ui.debugCheckbox().click();
             }
 
             ui.fixallBtn().click(function () {
