@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.8 (ua)
+// @version   0.5.2.9 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.8 (ua)';
+    var ver = '0.5.2.9 (ua)';
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -671,7 +671,8 @@ function run_wme_assist() {
                 }),
                 
                 new Rule('Add missing status', function (text) {
-                    if (! new RegExp('(.*)(вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз)(.*)', 'i').test(text)) {
+					var excludeStatus = 'вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз|[РНТМ]-[0-9]+|[EОС][0-9]+|міст|в\'їзд|виїзд|въізд|розворот|трамвай|залізниця';
+                    if (! new RegExp(excludeStatus).test(text)) {
                         text = 'вул. ' + text;
                     }
                     
