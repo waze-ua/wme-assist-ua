@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.7 (ua)
+// @version   0.5.2.8 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.7 (ua)';
+    var ver = '0.5.2.8 (ua)';
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -620,7 +620,21 @@ function run_wme_assist() {
                     return text.replace(/-ая/, '-а').replace(/-ий/, '-й');
                 }),
                 new Rule('Incorrect highway name', function (text) {
-                    return text.replace(/([ТтРрНнМмPpHMT])[-\s]*([0-9]{2})(-+\s*([0-9]+))*/, function (a, p1, p2, p3, p4) {
+                    return text.replace(/([РрНнМмPpHM])[-\s]*([0-9]{2})/, function (a, p1, p2) {
+                        p1 = p1
+                            .replace('р', 'Р')
+                            .replace('н', 'Н')
+                            .replace('м', 'М')
+                            .replace('P', 'Р')
+                            .replace('p', 'Р')
+                            .replace('H', 'Н')
+                            .replace('M', 'М');
+
+                        return p1 + '-' + p2;
+                    });
+                }),
+                new Rule('Incorrect local street name', function (text) {
+                    return text.replace(/([ТтT])[-\s]*([0-9]{2})[-\s]*([0-9]{2})/, function (a, p1, p2, p3) {
                         p1 = p1
                             .replace('т', 'Т')
                             .replace('T', 'Т')
@@ -632,7 +646,7 @@ function run_wme_assist() {
                             .replace('H', 'Н')
                             .replace('M', 'М');
 
-                        return p1 + '-' + p2 + (!p4 ? '' : '-' + p4);
+                        return p1 + '-' + p2 + '-' + p3;
                     });
                 }),
                 new Rule('Incorrect international highway name', function (text) {
@@ -655,6 +669,19 @@ function run_wme_assist() {
                         return p1 + p2 + p3 + p4;
                     });
                 }),
+                
+                new Rule('Add missing status', function (text) {
+                    if (! new RegExp('(.*)(вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз)(.*)', 'i').test(text)) {
+                        text = 'вул. ' + text;
+                    }
+                    
+                    return text;
+                }, 'Moscow'),
+
+                new Rule('Move status to begin of name', function (text) {
+                    return text.replace(/(.*)(вул\.)(.*)/, '$2 $1 $3');
+                }, 'Moscow'),
+
                 //new Rule('Incorrect street name', replaceParts),
             ]);
         };
@@ -936,7 +963,7 @@ function run_wme_assist() {
         };
     };
 
-    var Ui = function () {
+    var Ui = function (countryName) {
         var addon = document.createElement('section');
         addon.innerHTML = '<b>WME Assist</b> v' + ver;
 
@@ -950,9 +977,16 @@ function run_wme_assist() {
             '<label><input type="checkbox" id="assist_debug" value="0" checked/> Debug</label><br/>';
         var variant = document.createElement('p');
         variant.id = 'variant_options';
-        variant.innerHTML = '<b>Variants</b><br/>' +
-            '<label><input type="radio" name="assist_variant" value="Moscow" checked/> Moscow</label><br/>' +
-            '<label><input type="radio" name="assist_variant" value="Tula"/> Tula</label><br/>';
+        // adopt city names for Ukraine
+        if (countryName == 'Ukraine') {
+            variant.innerHTML = '<b>Variants</b><br/>' +
+                '<label><input type="radio" name="assist_variant" value="Moscow" checked/> Kyiv</label><br/>' +
+                '<label><input type="radio" name="assist_variant" value="Tula"/> Lviv</label><br/>';
+        } else {
+            variant.innerHTML = '<b>Variants</b><br/>' +
+                '<label><input type="radio" name="assist_variant" value="Moscow" checked/> Moscow</label><br/>' +
+                '<label><input type="radio" name="assist_variant" value="Tula"/> Tula</label><br/>';
+        }
         section.appendChild(variant);
         addon.appendChild(section);
 
@@ -1365,7 +1399,7 @@ function run_wme_assist() {
 
         var action = new ActionHelper(wazeapi);
         var rules = new Rules(country);
-        var ui = new Ui();
+        var ui = new Ui(country);
 
         analyzer.setRules(rules);
         analyzer.setActionHelper(action);
