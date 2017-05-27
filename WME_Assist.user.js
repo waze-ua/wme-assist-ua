@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.9 (ua)
+// @version   0.5.2.10 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.9 (ua)';
+    var ver = '0.5.2.10 (ua)';
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -586,7 +586,7 @@ function run_wme_assist() {
 
             return rules_basicCommon().concat([
                 new Rule('Delete space in initials', function (text) {
-                    return text.replace(/(^|\s+)([А-Я]\.)\s([А-Я]\.)/, '$1$2$3');
+                    return text.replace(/(^|\s+)([А-ЯІЇЄ]\.)\s([А-ЯІЇЄ]\.)/, '$1$2$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(тр-т)( |$)/i, '$1тракт$3');
@@ -613,7 +613,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(площа)( |$)/, '$1пл.$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(бульвар)( |$)/i, '$1б-р$3');
+                    return text.replace(/(^| )(бульвар|бул\.|бул,?)( |$)/i, '$1б-р$3');
                 }),
 
                 new Rule('Incorrect street name', function (text) {
