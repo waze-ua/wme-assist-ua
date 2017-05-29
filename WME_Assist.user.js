@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.10 (ua)
+// @version   0.5.2.11 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.10 (ua)';
+    var ver = '0.5.2.11 (ua)';
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -589,10 +589,10 @@ function run_wme_assist() {
                     return text.replace(/(^|\s+)([А-ЯІЇЄ]\.)\s([А-ЯІЇЄ]\.)/, '$1$2$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(тр-т)( |$)/i, '$1тракт$3');
+                    return text.replace(/(^| )(тр-т|тракт\.)( |$)/i, '$1тракт$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(вулиця)( |$)/i, '$1вул.$3');
+                    return text.replace(/(^| )(вулиця|вул,?)( |$)/i, '$1вул.$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(провулок)( |$)/i, '$1пров.$3');
@@ -601,13 +601,10 @@ function run_wme_assist() {
                     return text.replace(/(^| )(проспект)( |$)/i, '$1просп.$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(улица)( |$)/i, '$1вул.$3');
+                    return text.replace(/(^| )(улица|ул\.?|ул,)( |$)/i, '$1вул.$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(ул\.?)( |$)/i, '$1вул.$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(вул\,?)( |$)/i, '$1вул.$3');
+                    return text.replace(/(^| )(шоссе)( |$)/i, '$1шосе$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(площа)( |$)/, '$1пл.$3');
@@ -615,7 +612,6 @@ function run_wme_assist() {
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(бульвар|бул\.|бул,?)( |$)/i, '$1б-р$3');
                 }),
-
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/-ая/, '-а').replace(/-ий/, '-й');
                 }),
@@ -671,7 +667,7 @@ function run_wme_assist() {
                 }),
                 
                 new Rule('Add missing status', function (text) {
-					var excludeStatus = 'вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз|[РНТМ]-[0-9]+|[EОС][0-9]+|міст|в\'їзд|виїзд|въізд|розворот|трамвай|залізниця';
+					var excludeStatus = 'вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз|[РНТМ]-[0-9]+|[EОС][0-9]+|міст|в\'їзд|виїзд|въізд|розворот|трамвай|залізниця|[Шш]осе|[Дд]орога|[Мм]айдан|проїзд';
                     if (! new RegExp(excludeStatus).test(text)) {
                         text = 'вул. ' + text;
                     }
