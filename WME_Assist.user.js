@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.12 (ua)
+// @version   0.5.2.13 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.12 (ua)';
+    var ver = '0.5.2.13 (ua)';
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -598,7 +598,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(провулок)( |$)/i, '$1пров.$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(тупік)( |$)/i, '$1тупик$3');
+                    return text.replace(/(^| )(тупік|туп[\.,])( |$)/i, '$1тупик$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(проспект)( |$)/i, '$1просп.$3');
@@ -670,7 +670,7 @@ function run_wme_assist() {
                 }),
 
                 new Rule('Add missing status', function (text) {
-                    var excludeStatus = /вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз|[РНТМ]-[0-9]+|[EОС][0-9]+|міст|в\'їзд|виїзд|въізд|розворот|трамвай|залізниця|[Шш]осе|[Дд]орога|[Мм]айдан|проїзд|тупик|(?: |^)до |(?: |^)на |шлях|спуск/;
+                    var excludeStatus = /вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз|[РНТМ]-[0-9]+|[EОС][0-9]+|міст|в\'їзд|виїзд|въізд|розворот|трамвай|залізниця|[Шш]осе|[Дд]орога|[Мм]айдан|проїзд|заїзд|тупик|(?: |^)до |(?: |^)на |шлях|спуск|алея|[Сс]танція|завулок/;
                     if (! new RegExp(excludeStatus).test(text)) {
                         text = 'вул. ' + text;
                     }
