@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name WME Assist
-// @author borman84 (Boris Molodenkov)
+// @name      WME Assist
+// @author    borman84 (Boris Molodenkov), madnut + (add yourself here)
 // @description This script checks and fixes street name for POI and segments
 // @match     https://world.waze.com/editor/*
 // @match     https://*.waze.com/editor/*
@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.13 (ua)
+// @version   0.5.2.14 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,7 +50,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = '0.5.2.13 (ua)';
+    var ver = GM_info.script.version;
 
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
@@ -592,16 +592,19 @@ function run_wme_assist() {
                     return text.replace(/(^| )(тр-т|тракт\.)( |$)/i, '$1тракт$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(вулиця|вул,?)( |$)/i, '$1вул.$3');
+                    return text.replace(/(^| )(вулиц[ая]|вул,?)( |$)/i, '$1вул.$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(провулок)( |$)/i, '$1пров.$3');
+                    return text.replace(/(^| )(провулок|пр\.|пер.|переулок)( |$)/i, '$1пров.$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(тупік|туп[\.,])( |$)/i, '$1тупик$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(проспект)( |$)/i, '$1просп.$3');
+                    return text.replace(/(^| )(проспект|пр-т\.?)( |$)/i, '$1просп.$3');
+                }),
+                new Rule('Incorrect street name', function (text) {
+                    return text.replace(/(^| )(пр-д\.?)( |$)/i, '$1проїзд$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(улица|ул\.?|ул,)( |$)/i, '$1вул.$3');
@@ -670,7 +673,7 @@ function run_wme_assist() {
                 }),
 
                 new Rule('Add missing status', function (text) {
-                    var excludeStatus = /вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз|[РНТМ]-[0-9]+|[EОС][0-9]+|міст|в\'їзд|виїзд|въізд|розворот|трамвай|залізниця|[Шш]осе|[Дд]орога|[Мм]айдан|проїзд|заїзд|тупик|(?: |^)до |(?: |^)на |шлях|спуск|алея|[Сс]танція|завулок/;
+                    var excludeStatus = /вул\.|просп\.|б-р|мкрн\.|наб\.|пл\.|пров\.|тракт|узвіз|[РНТМ]-[0-9]+|[EОС][0-9]+|міст|в\'їзд|виїзд|въізд|розворот|трамвай|залізниця|[Шш]осе|[Дд]орога|[Мм]айдан|проїзд|заїзд|тупик|(?: |^)до |(?: |^)на |шлях|спуск|алея|[Сс]танція|завулок|квартал/;
                     if (! new RegExp(excludeStatus).test(text)) {
                         text = 'вул. ' + text;
                     }
