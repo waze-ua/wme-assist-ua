@@ -152,12 +152,13 @@ WME_Assist.Analyzer = function (wazeapi) {
     }
 
     var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
+        var userlevel = wazeapi.loginManager.user.normalizedLevel;
         var street = wazeapi.model.streets.get(streetID);
 
         if (!street) return;
 
         var detected = false;
-		var skip = false;
+        var skip = false;
         var title = '';
         var reason;
 
@@ -169,9 +170,13 @@ WME_Assist.Analyzer = function (wazeapi) {
                     detected = (newStreetName != street.name);
                     if (obj.type == 'venue') title = 'POI: ';
                     if (attrName == 'streetIDs') {
-						title = 'ALT: ';
-						skip = true;
-					}
+                        title = 'ALT: ';
+                        skip = true;
+                    }
+                    if (obj.lockRank && obj.lockRank >= userlevel) {
+                        title = '(L' + (obj.lockRank + 1) + ') ' + title;
+                        skip = true;
+                    }
                     title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
                     reason = street.name;
                 } catch (err) {
@@ -209,7 +214,7 @@ WME_Assist.Analyzer = function (wazeapi) {
                 isEmpty: street.isEmpty,
                 cityId: newCityID,
                 experimental: false,
-				skip: skip,
+                skip: skip,
             });
 
             onProblemDetected(obj, title, reason);
@@ -219,29 +224,27 @@ WME_Assist.Analyzer = function (wazeapi) {
     this.analyze = function (bounds, zoom, data, onProblemDetected) {
         //var permissions = new require("Waze/Permissions");
         var startTime = new Date().getTime();
-		var analyzeAlt = true;
-		
+        var analyzeAlt = true;
+        
         WME_Assist.info('start analyze');
 
         var subjects = {
             'segment': {
                 attr: 'primaryStreetID',
-                name: 'segments',
-                //permissions: permissions.Segments,
+                name: 'segments'
             },
             'venue': {
                 attr: 'streetID',
-                name: 'venues',
-                //permissions: permissions.Landmarks,
+                name: 'venues'
             }
         };
 
-		if (localStorage) {
-			if (localStorage.getItem('assist_skip_alt') == 'true') {
+        if (localStorage) {
+            if (localStorage.getItem('assist_skip_alt') == 'true') {
                 analyzeAlt = false;
             }
-		}
-		
+        }
+        
         for (var k in subjects) {
             var subject = subjects[k];
             var subjectData = data[subject.name];
@@ -258,21 +261,19 @@ WME_Assist.Analyzer = function (wazeapi) {
 
                 if (analyzedIds.indexOf(id) >= 0) continue;
 
-                // fixme
-				//if (!(obj.permissions & subject.permissions.EDIT_PROPERTIES)) continue;
                 if (obj.hasClosures) continue;
 
                 if (typeof obj.approved != 'undefined' && !obj.approved) continue;
 
-				checkStreet(bounds, zoom, obj[subject.attr], obj, subject.attr, onProblemDetected);
-				
-				// add ugly support for alternative names
-				if (subject.name == 'segments' && analyzeAlt)
-				{
-					for (var j = 0, n = obj.streetIDs.length; j < n; j++) {
-						checkStreet(bounds, zoom, obj.streetIDs[j], obj, 'streetIDs', onProblemDetected);
-					}
-				}
+                checkStreet(bounds, zoom, obj[subject.attr], obj, subject.attr, onProblemDetected);
+                
+                // add ugly support for alternative names
+                if (subject.name == 'segments' && analyzeAlt)
+                {
+                    for (var j = 0, n = obj.streetIDs.length; j < n; j++) {
+                        checkStreet(bounds, zoom, obj.streetIDs[j], obj, 'streetIDs', onProblemDetected);
+                    }
+                }
                 analyzedIds.push(id);
             }
         }

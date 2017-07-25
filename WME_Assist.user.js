@@ -14,8 +14,10 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.15 (ua)
+// @version   0.5.2.16 (ua)
 // @namespace https://greasyfork.org/users/66819
+// @updateURL    https://github.com/madnut-ua/wme_assist/raw/develop/WME_Assist.user.js
+// @downloadURL  https://github.com/madnut-ua/wme_assist/raw/develop/WME_Assist.user.js
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -104,6 +106,9 @@ function run_wme_assist() {
                 }),
                 new Rule('No space after the word', function (text) {
                     return text.replace(/\.(?!\s)/g, '. ');
+                }),
+                new Rule('No space after the >', function (text) {
+                    return text.replace(/>(?!\s)/g, '> ');
                 }),
                 new Rule('Garbage dot', function (text) {
                     return text.replace(/(^|\s+)\./g, '$1');
@@ -616,7 +621,7 @@ function run_wme_assist() {
                     return text.replace(/(^| )(площа)( |$)/, '$1пл.$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(бульвар|бул\.|бул,?)( |$)/i, '$1б-р$3');
+                    return text.replace(/(^| )(бульвар|бульв\.|бул\.|бул,?)( |$)/i, '$1б-р$3');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/-ая/, '-а').replace(/-ий/, '-й');
