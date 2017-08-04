@@ -14,7 +14,7 @@
 // @include   https://editor-beta.waze.com/*
 // @include   https://*.waze.com/editor/editor/*
 // @include   https://*.waze.com/*/editor/*
-// @version   0.5.2.16 (ua)
+// @version   0.5.2.17 (ua)
 // @namespace https://greasyfork.org/users/66819
 // @updateURL    https://github.com/madnut-ua/wme_assist/raw/develop/WME_Assist.user.js
 // @downloadURL  https://github.com/madnut-ua/wme_assist/raw/develop/WME_Assist.user.js
@@ -115,7 +115,7 @@ function run_wme_assist() {
                 }),
             ];
         };
-        
+
         var rules_basicRU = function () {
             return rules_basicCommon().concat([
                 new Rule('Incorrect street name', function (text) {
@@ -222,7 +222,7 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(№)(\d)/, '$1 $2')
-                               .replace(/(Проектируемый проезд)\s+(\d+[A-Я]?)/, '$1 № $2');
+                        .replace(/(Проектируемый проезд)\s+(\d+[A-Я]?)/, '$1 № $2');
                 }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/([а-яё])-\s+/, '$1 - ');
@@ -241,15 +241,15 @@ function run_wme_assist() {
                 }),
                 new Rule('Incorrect highway name', function (text) {
                     return text.replace(/^M-?(\d)/, 'М$1')
-                    .replace(/^A-?(\d)/, 'А$1')
-                    .replace(/^P-?(\d)/, 'Р$1')
-                    .replace(/^([МАР])-(\d)/, '$1$2')
-                    .replace(/^(\d{2})A-(\d)/, '$1А-$2')
-                    .replace(/^(\d{2})K-(\d)/, '$1К-$2')
-                    .replace(/^(\d{2})H-(\d)/, '$1Н-$2')
-                    .replace(/^(\d{2})P-(\d)/, '$1Р-$2')
-                    .replace(/^(\d+)А(:|\s+|$)/, '$1A$2')
-                    .replace(/^(\d+)В(:|\s+|$)/, '$1B$2');
+                        .replace(/^A-?(\d)/, 'А$1')
+                        .replace(/^P-?(\d)/, 'Р$1')
+                        .replace(/^([МАР])-(\d)/, '$1$2')
+                        .replace(/^(\d{2})A-(\d)/, '$1А-$2')
+                        .replace(/^(\d{2})K-(\d)/, '$1К-$2')
+                        .replace(/^(\d{2})H-(\d)/, '$1Н-$2')
+                        .replace(/^(\d{2})P-(\d)/, '$1Р-$2')
+                        .replace(/^(\d+)А(:|\s+|$)/, '$1A$2')
+                        .replace(/^(\d+)В(:|\s+|$)/, '$1B$2');
                 }),
             ]);
         };
@@ -285,9 +285,9 @@ function run_wme_assist() {
                     // Отделить примечания в скобках (дублёр)
                     var brackets = '';
                     text = text.replace(/\s*(.*?)\s*(\(.*\))/,
-                        function (all, s, b) {
-                            brackets = b;
-                            return s;
+                                        function (all, s, b) {
+                        brackets = b;
+                        return s;
                     });
 
                     // Игнорируем исключения
@@ -301,25 +301,25 @@ function run_wme_assist() {
                         if ( text == 'Набережная') {
                             text = 'Набережная улица';
                         } else
-                        if ( new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(\\s+|$)', 'i' ).test(text) ) {
-                            // Если статус есть, но записан с заглавной буквы
-                            text = text.replace( new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(?=\\s+|$)', 'i' ), function (all, space, status) {
-                                return space + status.toLowerCase();
-                            });
-                        } else
-                        if ( /(^|\s+)[Оо]б[ъь]ездная(\s+|$)/.test(text)) {
-                            text = text.replace(new RegExp('(^|\\s+)[Оо]б[ъь]ездная(\\s+|$)(?!=(' + wStatus + '))'), '$1Объездная дорога$2');
-                        } else
-                        if ( /(^|\s+)[Оо]кружная$/.test(text)) {
-                            text = text.replace(/(^|\s+)[Оо]кружная$/, '$1Окружная дорога');
-                        } else
-                        if ( /[-аяь]я$/.test(text)) { // Прилагательное без статуса (Русско-Полянская)
-                            text = text + ' улица';
-                        } else
-                        if (/[а-я]-[А-Я]/.test(text)) { // Не хватает пробелов вокруг тире (Москва-Петушки)
-                            text = text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
-                        } else
-                        text = 'улица ' + text;
+                            if ( new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(\\s+|$)', 'i' ).test(text) ) {
+                                // Если статус есть, но записан с заглавной буквы
+                                text = text.replace( new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(?=\\s+|$)', 'i' ), function (all, space, status) {
+                                    return space + status.toLowerCase();
+                                });
+                            } else
+                                if ( /(^|\s+)[Оо]б[ъь]ездная(\s+|$)/.test(text)) {
+                                    text = text.replace(new RegExp('(^|\\s+)[Оо]б[ъь]ездная(\\s+|$)(?!=(' + wStatus + '))'), '$1Объездная дорога$2');
+                                } else
+                                    if ( /(^|\s+)[Оо]кружная$/.test(text)) {
+                                        text = text.replace(/(^|\s+)[Оо]кружная$/, '$1Окружная дорога');
+                                    } else
+                                        if ( /[-аяь]я$/.test(text)) { // Прилагательное без статуса (Русско-Полянская)
+                                            text = text + ' улица';
+                                        } else
+                                            if (/[а-я]-[А-Я]/.test(text)) { // Не хватает пробелов вокруг тире (Москва-Петушки)
+                                                text = text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
+                                            } else
+                                                text = 'улица ' + text;
                     }
 
                     // Голые числительные без склонения
@@ -338,16 +338,16 @@ function run_wme_assist() {
                     text = text.replace(/(^|\s+)набережная улица/, '$1Набережная улица');
                     var foundStatus = false;
                     text = (' ' + text).replace(/([-\s])([^-\s]+)/g,
-                        function(all, space, word) {
-                            if ( ! foundStatus )
-                                if ( new RegExp('^(' + wStatus+ '|' + mStatus + '|' + nStatus + ')$').test(word) ) {
-                                    foundStatus = true;
-                                    return all;
-                                }
-                            if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|за|из|от|км|километр|де|в|к|о|с|у|на|и)$/i.test(word)
-                                || ( space == '-' && /^(лейтенанта|майора|полковника|й|я|ти|го|е|ей|х)$/.test(word) ) )
-                                 return space + word.toLowerCase();
-                            else return space + word.charAt(0).toUpperCase() + word.substr(1);
+                                                function(all, space, word) {
+                        if ( ! foundStatus )
+                            if ( new RegExp('^(' + wStatus+ '|' + mStatus + '|' + nStatus + ')$').test(word) ) {
+                                foundStatus = true;
+                                return all;
+                            }
+                        if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|за|из|от|км|километр|де|в|к|о|с|у|на|и)$/i.test(word) ||
+                            ( space == '-' && /^(лейтенанта|майора|полковника|й|я|ти|го|е|ей|х)$/.test(word) ) )
+                            return space + word.toLowerCase();
+                        else return space + word.charAt(0).toUpperCase() + word.substr(1);
                     }).replace(/\s+(.*)/, '$1').replace(/Железная дорога/, 'железная дорога');
 
                     // Статусы женского рода
@@ -360,12 +360,12 @@ function run_wme_assist() {
                         // перед статусом могут быть только прилагательные
                         // Строителей 1-я улица -> улица Строителей 1-я
                         text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + wStatus + ')(?=\\s+|$)'),
-                            function (all, adj, s) {
-                                if ( new RegExp(exAdjW).test(adj) ) return all;
-                                if ( (! new RegExp(exW).test(adj)) &&
-                                     (/^((\s+[^\s]+?(-я|ая|ья|яя|яся))+)$/.test(' ' + adj)) ) return all;
-                                return s + ' ' + adj;
-                            });
+                                            function (all, adj, s) {
+                            if ( new RegExp(exAdjW).test(adj) ) return all;
+                            if ( (! new RegExp(exW).test(adj)) &&
+                                (/^((\s+[^\s]+?(-я|ая|ья|яя|яся))+)$/.test(' ' + adj)) ) return all;
+                            return s + ' ' + adj;
+                        });
 
                         // Прилагательные вперёд
                         if ( ! new RegExp('(^|\\s|-)(' + exW + ')(-|\\s|$)').test(text) ) {
@@ -388,54 +388,54 @@ function run_wme_assist() {
                         text = text.replace(new RegExp('(\\d+-я)\\s+(' + wStatus + ')\\s+([^\\s]+(?:лка|ель|аза))$'), '$2 $1 $3');
                     } else
 
-                    // Статусы мужского рода
-                    if ( new RegExp('(^|\\s)(' + mStatus + ')(\\s|$)').test(text) ) {
+                        // Статусы мужского рода
+                        if ( new RegExp('(^|\\s)(' + mStatus + ')(\\s|$)').test(text) ) {
 
-                        // Распространённые сокращения
-                        text = text.replace(/М\.\s+(?=[^\s]+?(?:[-иоы]й|ин|[оеё]в)( |$))/, 'Малый ');
-                        text = text.replace(/Б\.\s+(?=[^\s]+?(?:[-иоы]й|ин|[оеё]в)( |$))/, 'Большой ');
+                            // Распространённые сокращения
+                            text = text.replace(/М\.\s+(?=[^\s]+?(?:[-иоы]й|ин|[оеё]в)( |$))/, 'Малый ');
+                            text = text.replace(/Б\.\s+(?=[^\s]+?(?:[-иоы]й|ин|[оеё]в)( |$))/, 'Большой ');
 
-                        // перед статусом могут быть только прилагательные
-                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?=\\s+|$)'),
-                            function (all, adj, s){
+                            // перед статусом могут быть только прилагательные
+                            text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?=\\s+|$)'),
+                                                function (all, adj, s){
                                 // if ( /[а-яё]+([-иоы]й|ин)(\s+|$)/.test(adj) ) return all;
                                 if ( (! new RegExp(exM, 'i').test(adj)) &&
-                                     (/^((\s+[^\s]+?([-иоы]й|ин|[оеё]в))+)$/.test(' ' + adj)) ) return all;
+                                    (/^((\s+[^\s]+?([-иоы]й|ин|[оеё]в))+)$/.test(' ' + adj)) ) return all;
                                 return s + ' ' + adj;
                             });
 
-                        // Прилагательное вперёд
-                        if (( ! new RegExp('(^|\\s)(' + exM + ')(\\s|$)', 'i').test(text) ) &&
-                            ( ! new RegExp('^(проезд|переулок)([^\.]*?)((?:\\s+[^\\s]+ой)+)$').test(text) ) ) {
-                            // переулок *** 1-й -> 1-й переулок ***
-                            text = text.replace(new RegExp('^(' + mStatus + ')([^\.]*?)((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$3 $1$2');
-                            text = text.replace(
-                                new RegExp('^(' + mStatus + ')((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$2 $1');
-                            text = text.replace(
-                                new RegExp('^(' + mStatus + ')(?:\\s+)([^\\s]+(?:[-иоы]й|ин))(?=\\s+\\d+-й\\s+Проезд|\\s+\\d+-я\\s+Линия)'), '$2 $1');
-                        }
+                            // Прилагательное вперёд
+                            if (( ! new RegExp('(^|\\s)(' + exM + ')(\\s|$)', 'i').test(text) ) &&
+                                ( ! new RegExp('^(проезд|переулок)([^\.]*?)((?:\\s+[^\\s]+ой)+)$').test(text) ) ) {
+                                // переулок *** 1-й -> 1-й переулок ***
+                                text = text.replace(new RegExp('^(' + mStatus + ')([^\.]*?)((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$3 $1$2');
+                                text = text.replace(
+                                    new RegExp('^(' + mStatus + ')((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$2 $1');
+                                text = text.replace(
+                                    new RegExp('^(' + mStatus + ')(?:\\s+)([^\\s]+(?:[-иоы]й|ин))(?=\\s+\\d+-й\\s+Проезд|\\s+\\d+-я\\s+Линия)'), '$2 $1');
+                            }
 
-                         // Числительное всегда вначале если оно согласовано с прилагательным
-                        // переулок 1-й Дунаевского  -> 1-й переулок Дунаевского
-                        //text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]*(?:' + exM + ')|\\s+[^\\s]+(?:[-иоы]й|ин|[оеё]в)( |$)', 'i'), '$2 $1');
+                            // Числительное всегда вначале если оно согласовано с прилагательным
+                            // переулок 1-й Дунаевского  -> 1-й переулок Дунаевского
+                            //text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]*(?:' + exM + ')|\\s+[^\\s]+(?:[-иоы]й|ин|[оеё]в)( |$)', 'i'), '$2 $1');
 
-                        text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
-                        text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$)|\\s+(' + mStatus + '|Ряд|км))', 'i'), '$2 $1');
-                    } else
+                            text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
+                            text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$)|\\s+(' + mStatus + '|Ряд|км))', 'i'), '$2 $1');
+                        } else
 
-                    // Статусы среднего рода
-                    if ( new RegExp('(^|\\s)(' + nStatus + ')(\\s|$)').test(text) ) {
+                            // Статусы среднего рода
+                            if ( new RegExp('(^|\\s)(' + nStatus + ')(\\s|$)').test(text) ) {
 
-                        // Энтузиастов шоссе -> шоссе Энтузиастов
-                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + nStatus + ')(?=\\s+|$)'),
-                            function (all, adj, s){
-                                if ( /[а-яё]+(ое)(\s+|$)/.test(adj) ) return all;
-                                return s + ' ' + adj;
-                            });
+                                // Энтузиастов шоссе -> шоссе Энтузиастов
+                                text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + nStatus + ')(?=\\s+|$)'),
+                                                    function (all, adj, s){
+                                    if ( /[а-яё]+(ое)(\s+|$)/.test(adj) ) return all;
+                                    return s + ' ' + adj;
+                                });
 
-                        // шоссе Воткинское -> Воткинское шоссе, Верхнее шоссе
-                        text = text.replace( new RegExp('^(' + nStatus + ')(?:\\s+)(.+[ео]е)$'), '$2 $1');
-                    }
+                                // шоссе Воткинское -> Воткинское шоссе, Верхнее шоссе
+                                text = text.replace( new RegExp('^(' + nStatus + ')(?:\\s+)(.+[ео]е)$'), '$2 $1');
+                            }
 
                     // Возвращаем скобки в конце
                     return text + ' ' + brackets;
@@ -714,18 +714,18 @@ function run_wme_assist() {
             var countryRules;
             info('Get rules for country: ' + name);
             switch (name) {
-            case 'Russia':
-                countryRules = rules_RU();
-                break;
-            case 'Belarus':
-                countryRules = rules_BY();
-                break;
-            case 'Ukraine':
-                countryRules = rules_UA();
-                break;
-            default:
-                info('There are not implemented rules for country: ' + name);
-                countryRules = [];
+                case 'Russia':
+                    countryRules = rules_RU();
+                    break;
+                case 'Belarus':
+                    countryRules = rules_BY();
+                    break;
+                case 'Ukraine':
+                    countryRules = rules_UA();
+                    break;
+                default:
+                    info('There are not implemented rules for country: ' + name);
+                    countryRules = [];
             }
             return countryRules.concat(commonRules);
         };
@@ -1007,9 +1007,10 @@ function run_wme_assist() {
         section.id = "assist_custom_rules";
         $(section)
             .append($('<p>').addClass('message').css({'font-weight': 'bold'}).text('Custom rules'))
+            .append($('<div>').addClass('btn-toolbar')
             .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text('Add'))
             .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text('Edit'))
-            .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text('Del'))
+            .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text('Del')))
             .append($('<ul>').addClass('result-list'));
         addon.appendChild(section);
 
@@ -1059,8 +1060,8 @@ function run_wme_assist() {
                     });
                 }
             })
-                .append($('<p>').addClass('additional-info clearfix').text(title))
-                .appendTo($('#assist_custom_rules ul.result-list'));
+            .append($('<p>').addClass('additional-info clearfix').text(title))
+            .appendTo($('#assist_custom_rules ul.result-list'));
         };
 
         this.updateCustomRule = function (index, title) {
@@ -1091,8 +1092,8 @@ function run_wme_assist() {
                     });
                 }
             })
-                .append($('<p>').addClass('additional-info clearfix').text(name))
-                .appendTo($('#assist_exceptions ul.result-list'));
+            .append($('<p>').addClass('additional-info clearfix').text(name))
+            .appendTo($('#assist_exceptions ul.result-list'));
         };
 
         this.removeException = function (index) {
@@ -1120,32 +1121,32 @@ function run_wme_assist() {
             title: 'WME Assist',
         })
             .append($('<div>').css({
-                padding: 10,
-            })
+            padding: 10,
+        })
                     .append($('<button id="assist_fixall_btn" class="btn btn-danger">Fix all</button>'))
                     .append($('<button id="assist_scanarea_btn" class="btn btn-warning">Scan area</button>'))
                     .append($('<button id="assist_clearfixed_btn" class="btn btn-success">Clear fixed</button>'))
                     .append($('<h2>Unresolved issues</h2>').css({
-                        'font-size': '100%',
-                        'font-weight': 'bold',
-                    }))
+            'font-size': '100%',
+            'font-weight': 'bold',
+        }))
                     .append($('<ol id="assist_unresolved_list"></ol>').css({
-                        border: '1px solid lightgrey',
-                        'padding-top': 2,
-                        'padding-bottom': 2,
-                    })))
+            border: '1px solid lightgrey',
+            'padding-top': 2,
+            'padding-bottom': 2,
+        })))
             .append($('<div>').css({
-                padding: 10,
-            })
+            padding: 10,
+        })
                     .append($('<h2>Fixed issues</h2>').css({
-                        'font-size': '100%',
-                        'font-weight': 'bold',
-                    }))
+            'font-size': '100%',
+            'font-weight': 'bold',
+        }))
                     .append($('<ol id="assist_fixed_list"></ol>').css({
-                        border: '1px solid lightgrey',
-                        'padding-top': 2,
-                        'padding-bottom': 2,
-                    })))
+            border: '1px solid lightgrey',
+            'padding-top': 2,
+            'padding-bottom': 2,
+        })))
             .appendTo($('#WazeMap'));
 
         $('<div>').prop('id', 'assist_custom_rule_dialog')
@@ -1154,18 +1155,18 @@ function run_wme_assist() {
                     .append($('<fieldset>')
                             .append($('<label>').prop('for', 'oldname').text('RegExp'))
                             .append($('<input>', {
-                                type: 'text',
-                                name: 'oldname',
-                                'class': 'text ui-widget-content ui-corner-all',
-                                id: 'oldname',
-                            }))
+            type: 'text',
+            name: 'oldname',
+            'class': 'text ui-widget-content ui-corner-all',
+            id: 'oldname',
+        }))
                             .append($('<label>').prop('for', 'newname').text('Replace text'))
                             .append($('<input>', {
-                                type: 'text',
-                                name: 'newname',
-                                'class': 'text ui-widget-content ui-corner-all',
-                                id: 'newname',
-                            }))
+            type: 'text',
+            name: 'newname',
+            'class': 'text ui-widget-content ui-corner-all',
+            id: 'newname',
+        }))
                            )
                    )
             .appendTo($('#map'));
@@ -1209,24 +1210,24 @@ function run_wme_assist() {
         mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title').append($('<span> - </span>'));
         mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title')
             .append($('<span>', {
-                id: 'assist-error-num',
-                title: 'Number of unresolved issues',
-                text: 0,
-            }).css({color: 'red'}));
+            id: 'assist-error-num',
+            title: 'Number of unresolved issues',
+            text: 0,
+        }).css({color: 'red'}));
         mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title').append($('<span> / </span>'));
         mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title')
             .append($('<span>', {
-                id: 'assist-fixed-num',
-                title: 'Number of fixed issues',
-                text: 0,
-            }).css({color: 'green'}));
+            id: 'assist-fixed-num',
+            title: 'Number of fixed issues',
+            text: 0,
+        }).css({color: 'green'}));
         mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title').append($('<span> - </span>'));
         mainWindow.prev('.ui-dialog-titlebar').find('.ui-dialog-title')
             .append($('<span>', {
-                id: 'assist-scan-progress',
-                title: 'Scan progress',
-                text: 0,
-            }).css({color: 'blue'}));
+            id: 'assist-scan-progress',
+            title: 'Scan progress',
+            text: 0,
+        }).css({color: 'blue'}));
 
         // Hack jquery ui dialog
         var icon = mainWindow.prev('.ui-dialog-titlebar').find('span.ui-icon');
@@ -1260,20 +1261,20 @@ function run_wme_assist() {
 
         this.addProblem = function (id, text, func, exception, experimental) {
             var problem = $('<li>')
-                .prop('id', 'issue-' + id)
-                .append($('<a>', {
-                    href: "javascript:void(0)",
-                    text: text,
-                    click: function (event) {
-                        func(event);
-                    },
-                    contextmenu: function (event) {
-                        exception(event);
-                        event.preventDefault();
-                        event.stopPropagation();
-                    },
-                }))
-                .appendTo($('#assist_unresolved_list'));
+            .prop('id', 'issue-' + id)
+            .append($('<a>', {
+                href: "javascript:void(0)",
+                text: text,
+                click: function (event) {
+                    func(event);
+                },
+                contextmenu: function (event) {
+                    exception(event);
+                    event.preventDefault();
+                    event.stopPropagation();
+                },
+            }))
+            .appendTo($('#assist_unresolved_list'));
 
             if (experimental) {
                 problem.children().css({color: 'red'}).prop('title', 'Experimental rule');
@@ -1429,7 +1430,7 @@ function run_wme_assist() {
             ui.removeException(index);
         });
 
-//        rules.experimental = true;
+        //        rules.experimental = true;
 
         rules.onAdd(function (rule) {
             ui.addCustomRule(rule.comment);
