@@ -7,7 +7,7 @@
 // @grant        none
 // @include      https://*waze.com/*editor*
 // @exclude      https://*waze.com/*user/editor*
-// @version      0.5.2.18 (ua)
+// @version      0.5.2.19 (ua)
 // @namespace    https://greasyfork.org/users/66819
 // @updateURL    https://github.com/madnut-ua/wme_assist/raw/develop/WME_Assist.user.js
 // @downloadURL  https://github.com/madnut-ua/wme_assist/raw/develop/WME_Assist.user.js
@@ -586,6 +586,9 @@ function run_wme_assist() {
                 new Rule('Delete space in initials', function (text) {
                     return text.replace(/(^|\s+)([А-ЯІЇЄ]\.)\s([А-ЯІЇЄ]\.)/, '$1$2$3');
                 }),
+                new Rule('Incorrect apostrophe', function (text) {
+                    return text.replace(/[`’]/g, '\'');
+                }),
                 new Rule('Incorrect street name', function (text) {
                     return text.replace(/(^| )(тр-т|тракт\.)( |$)/i, '$1тракт$3');
                 }),
@@ -637,14 +640,7 @@ function run_wme_assist() {
                     return text.replace(/([ТтT])[-\s]*([0-9]{2})[-\s]*([0-9]{2})/, function (a, p1, p2, p3) {
                         p1 = p1
                             .replace('т', 'Т')
-                            .replace('T', 'Т')
-                            .replace('р', 'Р')
-                            .replace('н', 'Н')
-                            .replace('м', 'М')
-                            .replace('P', 'Р')
-                            .replace('p', 'Р')
-                            .replace('H', 'Н')
-                            .replace('M', 'М');
+                            .replace('T', 'Т');
 
                         return p1 + '-' + p2 + '-' + p3;
                     });
