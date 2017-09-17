@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name         WME Assist
-// @author       borman84 (Boris Molodenkov), madnut + (add yourself here)
+// @name         WME Assist UA
+// @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @description  This script checks and fixes street name for POI and segments
-// @require      https://github.com/madnut-ua/wme_assist/raw/develop/scaner.js
-// @require      https://github.com/madnut-ua/wme_assist/raw/develop/analyzer.js
+// @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scaner.js
+// @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.2.19 (ua)
+// @version      0.5.3
 // @namespace    https://greasyfork.org/users/66819
-// @updateURL    https://github.com/madnut-ua/wme_assist/raw/develop/WME_Assist.user.js
-// @downloadURL  https://github.com/madnut-ua/wme_assist/raw/develop/WME_Assist.user.js
+// @updateURL    https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
+// @downloadURL  https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
