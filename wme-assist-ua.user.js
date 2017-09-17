@@ -6,7 +6,7 @@
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.4
+// @version      0.5.5
 // @namespace    https://greasyfork.org/users/66819
 // @updateURL    https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
 // @downloadURL  https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
@@ -741,7 +741,7 @@ function run_wme_assist() {
                             'y': 'у'
                         }[c];
                     });
-                }, 'Ukraine'),
+                }),
             ]);
         };
 
