@@ -1,8 +1,6 @@
-### WME Assist - script for Waze map editor
+### WME Assist UA
 
-It is dedicated for Russia only because other countries street rules are not implemented.
-
-Relies on [WME_Toolbox](https://wiki.waze.com/wiki/Scripts/WME_Toolbox)
+Fork of WME Assist script for Waze map editor. Modified for Ukraine. Script relies on [WME_Toolbox](https://wiki.waze.com/wiki/Scripts/WME_Toolbox), so you must install to work.
 
 #### Features:
 * Checks map regions where you work
