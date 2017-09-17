@@ -6,7 +6,7 @@
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.3
+// @version      0.5.4
 // @namespace    https://greasyfork.org/users/66819
 // @updateURL    https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
 // @downloadURL  https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
@@ -533,8 +533,8 @@ function run_wme_assist() {
 
         var rules_UA = function () {
             var hasCyrillic = function(s) {return s.search(/[а-яії]/i) != -1;}
-            var hasShortStatus = function(s) { return s.search(/ |^(вул\.|просп\.|мкрн\.|наб\.|пл\.|пров\.|ал\.|ст\.|пр\.|ш\.|дор\.|туп\.|б-р|р-н) |$/i) != -1; };
-            var hasLongStatus = function(s) { return s.search(/ |^(тракт|узвіз|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|шляхопровід|шлях|завулок|квартал) |$/i) != -1; };
+            var hasShortStatus = function(s) { return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пл\.|пров\.|ал\.|ст\.|пр\.|ш\.|дор\.|туп\.|б-р|р-н)( |$)/i) != -1; };
+            var hasLongStatus = function(s) { return s.search(/( |^)(тракт|узвіз|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|шляхопровід|шлях|завулок|квартал)( |$)/i) != -1; };
             var hasSpecialStatus = function(s) { return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)( |$)|^(|до|на|>) /i) != -1; };
             var hasStatus = function(s) { return (hasShortStatus(s) || hasLongStatus(s) || hasSpecialStatus(s)); };
 
