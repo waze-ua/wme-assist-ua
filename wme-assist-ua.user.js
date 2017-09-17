@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
-// @description  This script checks and fixes street name for POI and segments
+// @description  Check and fix street names for POI and segments. UA fork of original WME Assist
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scaner.js
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        none
