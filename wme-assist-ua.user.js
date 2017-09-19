@@ -6,7 +6,7 @@
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.7
+// @version      0.5.8
 // @namespace    https://greasyfork.org/users/66819
 // @updateURL    https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
 // @downloadURL  https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
@@ -576,7 +576,7 @@ function run_wme_assist() {
                 new Rule('Disallowed character in street name', function (t) {
                     // This rule should be before renaming rules or they couldn't see some errors
                     return t
-                        .replace(/[@#№$,^!:;*"?<]/, '')
+                        .replace(/[@#№$,^!:;*"?<]/, ' ').replace(/ {2,}/, ' ')
                         .replace(/[`’]/g, '\'');
                 }),
                 new Rule('Incorrect language', function (t) {
@@ -602,7 +602,7 @@ function run_wme_assist() {
                 new Rule('Mistake in short status', function (t) {
                     return t
                         .replace(/(^| )(буль?в?\.?|б-р\.)( |$)/i, '$1б-р$3')
-                        .replace(/(^| )пр-к?т\.?( |$)/i, '$1просп.$2')
+                        .replace(/(^| )(?:пр-к?т|п(?:р|о)?сп)\.?( |$)/i, '$1просп.$2')
                         .replace(/(^| )пр-з?д\.?( |$)/i, '$1пр.$2')
                         .replace(/(^| )ул\.?( |$)/i, '$1вул.$2')
                         .replace(/(^| )р-н\.( |$)/i, '$1р-н$2')
