@@ -975,7 +975,7 @@ function run_wme_assist() {
 
     var Ui = function (countryName) {
         var addon = document.createElement('section');
-        addon.innerHTML = '<b>WME Assist</b> v' + ver;
+        addon.innerHTML = '<b>WME Assist UA</b> v' + ver;
 
         var section = document.createElement('p');
         section.style.paddingTop = "8px";
