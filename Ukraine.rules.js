@@ -1,4 +1,4 @@
-var WME_Assist = WME_Assisst || {};
+var WME_Assist = WME_Assist || {};
 WME_Assist.countryCode = 'UA';
 WME_Assist.rulesVersion = '2017.09.23';
 WME_Assist.rulesVariants = ['Ukraine', 'Lviv'];
