@@ -6,7 +6,7 @@
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.8
+// @version      0.5.9
 // @namespace    https://greasyfork.org/users/66819
 // @updateURL    https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
 // @downloadURL  https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
@@ -533,8 +533,8 @@ function run_wme_assist() {
 
         var rules_UA = function () {
             var hasCyrillic = function(s) {return s.search(/[а-яіїєґ]/i) != -1;}
-            var hasShortStatus = function(s) { return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пл\.|пров\.|ал\.|ст\.|пр\.|ш\.|дор\.|б-р|р-н)( |$)/i) != -1; };
-            var hasLongStatus = function(s) { return s.search(/( |^)(тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|шляхопровід|шлях|завулок|квартал)( |$)/i) != -1; };
+            var hasShortStatus = function(s) { return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пров\.|ст\.|пр\.|дор\.|б-р|р-н)( |$)/i) != -1; };
+            var hasLongStatus = function(s) { return s.search(/( |^)(площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|шляхопровід|шлях|завулок|квартал)( |$)/i) != -1; };
             var hasSpecialStatus = function(s) { return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)( |$)|^(|до|на|>) /i) != -1; };
             var hasInternationalName = function(s) {return s.search(/^E[0-9]+$/i) != -1; };
             var hasStatus = function(s) { return (hasShortStatus(s) || hasLongStatus(s) || hasSpecialStatus(s)); };
@@ -542,7 +542,6 @@ function run_wme_assist() {
             // ATTENTION: Rule order is important!
             return rules_basicCommon().concat([
                 new Rule('Fix english characters in name', function (t) {
-                    // This rule must be applied after all other rules done
                     return !hasCyrillic(t) || hasInternationalName(t) ? t : t.replace(/[AaBCcEeHIiKkMOoPpTXxYy]/g, function (c) {
                         return {
                             'A': 'А',
@@ -573,7 +572,7 @@ function run_wme_assist() {
                 new Rule('Delete space in initials', function (text) {
                     return text.replace(/(^| +)([А-ЯІЇЄ]\.) ([А-ЯІЇЄ]\.)/, '$1$2$3');
                 }),
-                new Rule('Disallowed character in street name', function (t) {
+                new Rule('Incorrect characters in street name', function (t) {
                     // This rule should be before renaming rules or they couldn't see some errors
                     return t
                         .replace(/[@#№$,^!:;*"?<]/, ' ').replace(/ {2,}/, ' ')
@@ -607,7 +606,7 @@ function run_wme_assist() {
                         .replace(/(^| )ул\.?( |$)/i, '$1вул.$2')
                         .replace(/(^| )р-н\.( |$)/i, '$1р-н$2')
                         .replace(/(^| )пер\.?( |$)/i, '$1пров.$2')
-                        .replace(/(^| )(пров|просп|пр|вул|ш|пл|ст|ал|мкрн|наб|дор)( |$)/i, '$1$2.$3')
+                        .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор)( |$)/i, '$1$2.$3')
                 }),
                 new Rule('Long status must be short', function (t) {
                     // Do short status only if there no other shorten statuses in name
@@ -618,10 +617,7 @@ function run_wme_assist() {
                         .replace(/(^| )проспект( |$)/i, '$1просп.$2')
                         .replace(/(^| )проїзд( |$)/i, '$1пр.$2')
                         .replace(/(^| )вулиця( |$)/i, '$1вул.$2')
-                        .replace(/(^| )шосе( |$)/i, '$1ш.$2')
-                        .replace(/(^| )площа( |$)/i, '$1пл.$2')
                         .replace(/(^| )станція( |$)/i, '$1ст.$2')
-                        .replace(/(^| )алея( |$)/i, '$1ал.$2')
                         .replace(/(^| )мікрорайон( |$)/i, '$1мкрн.$2')
                         .replace(/(^| )набережна( |$)/i, '$1наб.$2')
                         .replace(/(^| )дорог[аи]( |$)/i, '$1дор.$2')
@@ -631,6 +627,9 @@ function run_wme_assist() {
                         .replace(/(^| )туп\.?( |$)/i, '$1тупик$2')
                         .replace(/(^| )тр-т\.?( |$)/i, '$1тракт$2')
                         .replace(/(^| )(сп\.?|узв\.?|узвоз)( |$)/i, '$1узвіз$3')
+                        .replace(/(^| )пл\.?( |$)/i, '$1площа$2')
+                        .replace(/(^| )ал\.?( |$)/i, '$1алея$2')
+                        .replace(/(^| )ш\.?( |$)/i, '$1шосе$2')
                         .replace(/(^| )ген\.?( |$)/i, '$1Генерала$2')
                         .replace(/(^| )див\.?( |$)/i, '$1Дивізії$2')
                         .replace(/(^| )ак\.?( |$)/i, '$1Академіка$2')
