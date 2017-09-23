@@ -1,5 +1,6 @@
 // ==UserScript==
 // @name         WME Assist UA
+// @version      0.6
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
@@ -7,13 +8,8 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @grant        unsafeWindow
-// @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scaner.js
-// @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.9
-// @namespace    https://greasyfork.org/users/66819
-// @updateURL    https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
-// @downloadURL  https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
+// @namespace    https://github.com/waze-ua/wme-assist-ua
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -21,15 +17,15 @@ GM_addStyle(GM_getResourceText("customCSS"));
 
 WME_Assist.debug = function (message) {
     if (!$('#assist_debug').is(':checked')) return;
-    console.log("WME ASSIST DEBUG: " + message);
+    console.log("%cWME ASSIST UA (D):", 'color: #808080; font-weight: bold', message);
 };
 
 WME_Assist.info = function (message) {
-    console.log("WME ASSIST INFO: " + message);
+    console.log("%cWME ASSIST UA (I):", 'color: #10bc01; font-weight: bold', message);
 };
 
 WME_Assist.warning = function (message) {
-    console.log("WME ASSIST WARN: " + message);
+    console.log("%cWME ASSIST UA (W):", 'color: #e52f02; font-weight: bold', message);
 };
 
 WME_Assist.series = function (array, start, action, alldone) {
@@ -54,18 +50,6 @@ function run_wme_assist() {
     var debug = WME_Assist.debug;
     var info = WME_Assist.info;
     var warning = WME_Assist.warning;
-
-    function getWazeApi() {
-        var wazeapi = unsafeWindow.Waze;
-
-        if (!wazeapi) return null;
-        if (!wazeapi.map) return null;
-        if (!wazeapi.model) return null;
-        if (!wazeapi.model.countries) return null;
-        if (!wazeapi.model.countries.top) return null;
-
-        return wazeapi;
-    }
 
     var Rule = function (comment, func, variant) {
         this.comment = comment;
@@ -113,431 +97,8 @@ function run_wme_assist() {
             ];
         };
 
-        var rules_basicRU = function () {
-            return rules_basicCommon().concat([
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/улицаица/, 'улица');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/скя( |$)/, 'ская$1'); // Волгостроевскя набережная
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/олодеж/, 'олодёж'); // Молодёжная
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(мая)( |$)/, '$1Мая$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(мкрн?\.?|мк?р?-н)( |$)/, '$1микрорайон$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(р-о?н)( |$)/, '$1район$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(им\.?)( |$)/, '$1имени$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пос\.?)( |$)/i, '$1посёлок$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(д\.?)( |$)/, '$1деревня$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(просп\.?)( |$)/i, '$1проспект$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(ул\.?)( |$)/i, '$1улица$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(р-д)( |$)/i, '$1разъезд$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(з-д)( |$)/i, '$1заезд$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пер\.?)( |$)/i, '$1переулок$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пр\.?|пр?-з?д\.?)( |$)/i, '$1проезд$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пр?-к?т\.?)( |$)/i, '$1проспект$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(тр-т)( |$)/i, '$1тракт$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(пл\.?)( |$)/i, '$1площадь$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(ш\.?)( |$)/, '$1шоссе$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(б-р|бул\.?)( |$)/i, '$1бульвар$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(дор\.)( |$)/i, '$1дорога$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(о\.?)( |$)/, '$1остров$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(наб\.?)( |$)/i, '$1набережная$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(туп\.?)( |$)/i, '$1тупик$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(кв\.?)( |$)/i, '$1квартал$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(набережная р\.?)( |$)/i, '$1набережная реки$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/^На /, 'на ');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)(-ая)( |$)/, '$1-я$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)(-ого|-ое)( |$)/, '$1$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)(-[оыи]й)( |$)/, '$1-й$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)(-ти)( |$)/, '$1-и$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)й/, '$1-й');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)я/, '$1-я');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(\d)(\sЛет)(\s|$)/, '$1 лет$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(№)(\d)/, '$1 $2')
-                        .replace(/(Проектируемый проезд)\s+(\d+[A-Я]?)/, '$1 № $2');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/([а-яё])-\s+/, '$1 - ');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/\s+км\./i, ' км');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/\[([^P]+)\]/, '$1');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/^СНТ\s(.*)/, '$1 снт');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/^ЖД$/i, 'ж/д');
-                }),
-                new Rule('Incorrect highway name', function (text) {
-                    return text.replace(/^M-?(\d)/, 'М$1')
-                        .replace(/^A-?(\d)/, 'А$1')
-                        .replace(/^P-?(\d)/, 'Р$1')
-                        .replace(/^([МАР])-(\d)/, '$1$2')
-                        .replace(/^(\d{2})A-(\d)/, '$1А-$2')
-                        .replace(/^(\d{2})K-(\d)/, '$1К-$2')
-                        .replace(/^(\d{2})H-(\d)/, '$1Н-$2')
-                        .replace(/^(\d{2})P-(\d)/, '$1Р-$2')
-                        .replace(/^(\d+)А(:|\s+|$)/, '$1A$2')
-                        .replace(/^(\d+)В(:|\s+|$)/, '$1B$2');
-                }),
-            ]);
-        };
-
-        var rules_RU = function () {
-            return rules_basicRU().concat([
-                new Rule('Incorrect status position', function (text) {
-                    // Неоднозначные улицы, требуется проверка на город
-                    // Москва: Козлова, Мишина
-                    // Питер: Абросимова, Гусева, Комарова, Панфилова, Тарасова, Старцева, Крюкова, Миронова, Перфильева, Шарова, Зеленина
-                    // Великий Новгород: Яковлева, Ильина
-                    // Краткие притяжательные прилагательные похожие на фамилии
-                    var exAdjW = 'Репищева|Малая Зеленина|Карташихина|Опочинина|Остоумова|Гаврикова|Прасковьина|Усачёва|Бармалеева|Ильмянинова|Остоумова|Плуталова|Подрезова|Полозова|Рашетова|Сегалева|Шамшева|Эсперова|Замшина|Куракина|Ольгина|Опочинина|Осокина|Рюхина|Тосина|Веткина|Жукова|Абросимова';
-
-                    // Женские статусы
-                    var wStatus = 'улица|набережная|дорога|линия|аллея|площадь|просека|автодорога|эстакада|магистраль|дамба|хорда|коса|деревня|переправа|площадка|дорожка|трасса';
-
-                    // Мужские статусы
-                    var mStatus = 'проспект|переулок|проезд|тупик|бульвар|тракт|просек|взвоз|спуск|разъезд|переезд|квартал|путепровод|мост|сад|сквер|тоннель|туннель|парк|проток|канал|остров|микрорайон|район|городок|посёлок|поселок|вал|проулок';
-
-                    // Средние статусы
-                    var nStatus = 'шоссе|кольцо';
-
-                    // Не нужно добавлять статус или изменять порядок слов
-                    var exStatus = 'лестница|зимник|объезд|заезд|съезд|обвод|обход|подъезд|дцать\\s|десят\\s|сорок\\s|closed|^\\d+(:|$)|[Дд]убл[её]р|\\d+[AB]|[МАР]\\d|\\d{2}[АКНР]-|Rail|грунтовка|[Тт]ропа|[Тт]рек|[Пп]лотина|метро|монорельс|ворота|шлагбаум|трамвай|пути$|Транссиб|Мост|подход|подъезд|обход|въезд|выезд|разворот|шлагбаум|слобода|Грейдер|брод|(?: |^)на |(?: |^)в |(?: |^)к |(?: |^)под |(?: |^)с |(?: |^)от |(?: |^)во |(?: |^)из |(?: |^)по |(?: |^)об |(?: |^)у |(?: |^)о |(?: |^)над |(?: |^)около |(?: |^)при |(?: |^)перед |(?: |^)про |(?: |^)до |(?: |^)без |(?: |^)за |(?: |^)через |ж\\/д|ТТК|КАД|ЗСД|АГ?ЗС|^$| - |\\/|,|плотина|снт|станция|:|[Пп]ромзона|паркинг|парковка|Козлова|Абросимова|Гусева|Комарова|Панфилова|Тарасова|Яковлева|Мишина|Старцева|Крюкова|Ильина|Миронова|Перфильева|Шарова|Зеленина|Жукова';
-
-                    // Названия улиц похожие на прилагательные
-                    var exW = 'Нехая|Тукая|Мая|Барклая|Батырая|Маклая|Бикбая|Амантая|Нечая|Эшпая|Орая|Прикамья|Алтая|Ухсая|Хузангая|Галлая|Николая|Гая|Эркая|Камая|Пченушая|Здоровья|Палантая|Ярвенпяя|Гулая|Заполярья|Крылья|Приморья|Калина Красная|Краснолесья|Мазая';
-
-                    // Названия проспектов похожие на прилагательные
-                    var exM = 'Расковой|Дуровой|Космодемьянской|.+?строй|Ковалевской|Борисовой|Давлетшиной|Крупской|Шевцовой|Чайкиной|Богомоловой|Савиной|Попковой|Петровой|Ангелиной|Терешковой|Новоселовой|Красноармейской|Гризодубовой|Красноярский рабочий|Цеткин|Молдагуловой|Чайкиной|Цветаевой|Тимофеевой|Дубровиной|Ульяны Громовой|[Нн]абережной|Давлетшиной|Перовской|Шпаковой|Ульяновой|Гачхой|Исаевой|Бой|Плевицкой';
-
-                    // Отделить примечания в скобках (дублёр)
-                    var brackets = '';
-                    text = text.replace(/\s*(.*?)\s*(\(.*\))/,
-                                        function (all, s, b) {
-                        brackets = b;
-                        return s;
-                    });
-
-                    // Игнорируем исключения
-                    if ( new RegExp(exStatus).test(text) ) return text + ' ' + brackets;
-
-                    // коттеджный, дачный, клубный посёлок в начало
-                    text = text.replace(/(.*?)(?:\s+)((?:.*ый )посёлок)/, '$2 $1');
-
-                    // Добавляем пропущенный статус
-                    if ( ! new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(\\s+|$)').test(text) ) {
-                        if ( text == 'Набережная') {
-                            text = 'Набережная улица';
-                        } else
-                            if ( new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(\\s+|$)', 'i' ).test(text) ) {
-                                // Если статус есть, но записан с заглавной буквы
-                                text = text.replace( new RegExp('(^|\\s+)(' + wStatus + '|' + mStatus + '|' + nStatus + ')(?=\\s+|$)', 'i' ), function (all, space, status) {
-                                    return space + status.toLowerCase();
-                                });
-                            } else
-                                if ( /(^|\s+)[Оо]б[ъь]ездная(\s+|$)/.test(text)) {
-                                    text = text.replace(new RegExp('(^|\\s+)[Оо]б[ъь]ездная(\\s+|$)(?!=(' + wStatus + '))'), '$1Объездная дорога$2');
-                                } else
-                                    if ( /(^|\s+)[Оо]кружная$/.test(text)) {
-                                        text = text.replace(/(^|\s+)[Оо]кружная$/, '$1Окружная дорога');
-                                    } else
-                                        if ( /[-аяь]я$/.test(text)) { // Прилагательное без статуса (Русско-Полянская)
-                                            text = text + ' улица';
-                                        } else
-                                            if (/[а-я]-[А-Я]/.test(text)) { // Не хватает пробелов вокруг тире (Москва-Петушки)
-                                                text = text.replace(/([а-я])-([А-Я])/g, '$1 - $2');
-                                            } else
-                                                text = 'улица ' + text;
-                    }
-
-                    // Голые числительные без склонения
-                    if ( ! new RegExp('\\d\\s+мая(\\s|$)', 'i' ).test(text) )
-                        text = text.replace(new RegExp('(\\d)(?=(\\s+[^\\s]+(?:-я|ая|ья|яя|яся))*\\s+(' + wStatus + ')(\\s|$))', 'g'), '$1-я'); // 1 линия
-                    text = text.replace(new RegExp('(\\d)(?=(\\s+[^\\s]+[-иоы]й|ин|[оеё]в)*\\s+(' + mStatus + ')(\\s|$))', 'g'), '$1-й'); // 2 проезд, 5 Донской проезд
-
-                    // Распространённые сокращения
-                    text = text.replace(/М\.\s+(?=Горького)/, 'Максима ');
-                    text = text.replace(/К\.\s+(?=Маркса|Либкнехта)/, 'Карла ');
-                    text = text.replace(/Р\.\s+(?=Люксембург)/, 'Розы ');
-                    text = text.replace(/А\.\s+(?=Невского)/, 'Александра ');
-                    text = text.replace(/Б\.\s+(?=Хмельницкого)/, 'Богдана ');
-
-                    // Всё пишем заглавными буквами, кроме статусов, предлогов и гидронимов
-                    text = text.replace(/(^|\s+)набережная улица/, '$1Набережная улица');
-                    var foundStatus = false;
-                    text = (' ' + text).replace(/([-\s])([^-\s]+)/g,
-                                                function(all, space, word) {
-                        if ( ! foundStatus )
-                            if ( new RegExp('^(' + wStatus+ '|' + mStatus + '|' + nStatus + ')$').test(word) ) {
-                                foundStatus = true;
-                                return all;
-                            }
-                        if ( /^(летия|лет|года|реч?к[аи]|канала?|острова?|стороны|год|съезда|имени|ручей|канавки|за|из|от|км|километр|де|в|к|о|с|у|на|и)$/i.test(word) ||
-                            ( space == '-' && /^(лейтенанта|майора|полковника|й|я|ти|го|е|ей|х)$/.test(word) ) )
-                            return space + word.toLowerCase();
-                        else return space + word.charAt(0).toUpperCase() + word.substr(1);
-                    }).replace(/\s+(.*)/, '$1').replace(/Железная дорога/, 'железная дорога');
-
-                    // Статусы женского рода
-                    if ( new RegExp('(^|\\s)(' + wStatus + ')(\\s|$)').test(text) ) {
-
-                        // Распространённые сокращения
-                        text = text.replace(/М\.\s+(?=[^\s]+?(?:ая|ья|яя|яся)( |$))/, 'Малая ');
-                        text = text.replace(/Б\.\s+(?=[^\s]+?(?:ая|ья|яя|яся)( |$))/, 'Большая ');
-
-                        // перед статусом могут быть только прилагательные
-                        // Строителей 1-я улица -> улица Строителей 1-я
-                        text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + wStatus + ')(?=\\s+|$)'),
-                                            function (all, adj, s) {
-                            if ( new RegExp(exAdjW).test(adj) ) return all;
-                            if ( (! new RegExp(exW).test(adj)) &&
-                                (/^((\s+[^\s]+?(-я|ая|ья|яя|яся))+)$/.test(' ' + adj)) ) return all;
-                            return s + ' ' + adj;
-                        });
-
-                        // Прилагательные вперёд
-                        if ( ! new RegExp('(^|\\s|-)(' + exW + ')(-|\\s|$)').test(text) ) {
-                            // улица Малая Зеленина -> Малая Зеленина улица
-                            // улица Мягкая -> Мягкая улица
-                            // улица Авиаконструктора Яковлева, улица Малиновая Гора
-                            text = text.replace(new RegExp('(' + wStatus + ')((?:\\s+(?:' + exAdjW + ')|\\s+[^\\s]+(?:-я|ая|ья|яя|яся))+)$'), '$2 $1');
-                            // улица *** Малая Набережная -> Малая Набережная улица ***
-                            text = text.replace(new RegExp('(' + wStatus + ')(.*?)((?:\\s+[^\\s]+(?:-я|ая|ья|яя|яся))+)$'), '$3 $1$2');
-                            // улица Мягкая 1-й Проезд -> Мягкая улица 1-й Проезд
-                            text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)([^\\s]+(?:-я|ая|ья|яя|яся))(?=\\s+\\d+-й\\s+Проезд|\\s+\\d+-я\\s+Линия)'), '$2 $1');
-                        }
-
-                        // Числительное всегда вначале если оно согласовано с прилагательным
-                        // Мягкая 1-я -> 1-я Мягкая
-                        text = text.replace(/(.+(?:ая|ья|яя|яся))(?:\s+)(\d+-я)(?! Линия| Ферма| Рота)/, '$2 $1');
-                        // улица 1-я Строителей -> 1-я улица Строителей
-                        text = text.replace(new RegExp('(' + wStatus + ')(?:\\s+)(\\d+-я)(?!\\s+[^\\s]+(?:ая|ья|яя|яся|ка)( |$)|\\s+(' + wStatus + '|Ферма|Авеню|Пристань|Рота|Слобода))', 'i'), '$2 $1');
-                        // 1-я улица Лесоперевалка -> улица 1-я Лесоперевалка
-                        text = text.replace(new RegExp('(\\d+-я)\\s+(' + wStatus + ')\\s+([^\\s]+(?:лка|ель|аза))$'), '$2 $1 $3');
-                    } else
-
-                        // Статусы мужского рода
-                        if ( new RegExp('(^|\\s)(' + mStatus + ')(\\s|$)').test(text) ) {
-
-                            // Распространённые сокращения
-                            text = text.replace(/М\.\s+(?=[^\s]+?(?:[-иоы]й|ин|[оеё]в)( |$))/, 'Малый ');
-                            text = text.replace(/Б\.\s+(?=[^\s]+?(?:[-иоы]й|ин|[оеё]в)( |$))/, 'Большой ');
-
-                            // перед статусом могут быть только прилагательные
-                            text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + mStatus + ')(?=\\s+|$)'),
-                                                function (all, adj, s){
-                                // if ( /[а-яё]+([-иоы]й|ин)(\s+|$)/.test(adj) ) return all;
-                                if ( (! new RegExp(exM, 'i').test(adj)) &&
-                                    (/^((\s+[^\s]+?([-иоы]й|ин|[оеё]в))+)$/.test(' ' + adj)) ) return all;
-                                return s + ' ' + adj;
-                            });
-
-                            // Прилагательное вперёд
-                            if (( ! new RegExp('(^|\\s)(' + exM + ')(\\s|$)', 'i').test(text) ) &&
-                                ( ! new RegExp('^(проезд|переулок)([^\.]*?)((?:\\s+[^\\s]+ой)+)$').test(text) ) ) {
-                                // переулок *** 1-й -> 1-й переулок ***
-                                text = text.replace(new RegExp('^(' + mStatus + ')([^\.]*?)((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$3 $1$2');
-                                text = text.replace(
-                                    new RegExp('^(' + mStatus + ')((?:\\s+[^\\s]+(?:[-иоы]й|ин))+)$'), '$2 $1');
-                                text = text.replace(
-                                    new RegExp('^(' + mStatus + ')(?:\\s+)([^\\s]+(?:[-иоы]й|ин))(?=\\s+\\d+-й\\s+Проезд|\\s+\\d+-я\\s+Линия)'), '$2 $1');
-                            }
-
-                            // Числительное всегда вначале если оно согласовано с прилагательным
-                            // переулок 1-й Дунаевского  -> 1-й переулок Дунаевского
-                            //text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]*(?:' + exM + ')|\\s+[^\\s]+(?:[-иоы]й|ин|[оеё]в)( |$)', 'i'), '$2 $1');
-
-                            text = text.replace(/(.+[иоы]й)(?:\s+)(\d+-й)/, '$2 $1');
-                            text = text.replace(new RegExp('(' + mStatus + ')(?:\\s+)(\\d+-й)(?!\\s+[^\\s]+[иоык][ий]( |$)|\\s+(' + mStatus + '|Ряд|км))', 'i'), '$2 $1');
-                        } else
-
-                            // Статусы среднего рода
-                            if ( new RegExp('(^|\\s)(' + nStatus + ')(\\s|$)').test(text) ) {
-
-                                // Энтузиастов шоссе -> шоссе Энтузиастов
-                                text = text.replace(new RegExp('(?:\\s*)(.+?)(?:\\s+)(' + nStatus + ')(?=\\s+|$)'),
-                                                    function (all, adj, s){
-                                    if ( /[а-яё]+(ое)(\s+|$)/.test(adj) ) return all;
-                                    return s + ' ' + adj;
-                                });
-
-                                // шоссе Воткинское -> Воткинское шоссе, Верхнее шоссе
-                                text = text.replace( new RegExp('^(' + nStatus + ')(?:\\s+)(.+[ео]е)$'), '$2 $1');
-                            }
-
-                    // Возвращаем скобки в конце
-                    return text + ' ' + brackets;
-                }),
-                new Rule('Move status to begin of name', function (text) {
-                    return text.replace(/(.*)(улица)(.*)/, '$2 $1 $3');
-                }, 'Tula'),
-                new ExperimentalRule('Experimental', function (text) {
-                    return text.replace(/experimental/, 'corrected_experimental');
-                }),
-            ]);
-        };
-
-        var rules_BY = function () {
-            var isStatus = function (str) {
-                var list = ['улица', 'переулок', 'проспект', 'проезд',
-                            'площадь', 'шоссе', 'бульвар', 'тракт',
-                            'тупик', 'спуск', 'вуліца', 'завулак',
-                            'праспект', 'праезд', 'плошча', 'шаша'];
-                if (list.indexOf(str) > -1) return true;
-                return false;
-            };
-
-            var isPseudoStatus = function (str) {
-                var list = ['шоссе', 'тракт', 'площадь', 'шаша', 'плошча', 'спуск'];
-                if (list.indexOf(str) > -1) return true;
-                return false;
-            };
-
-            var isNumber = function (str) {
-                return /([0-9])-[іыйя]/.test(str);
-            };
-
-            var replaceParts = function (text) {
-                var arr = text.split(' ');
-                var result = [];
-                var status;
-                var number;
-
-                var previousPart = '';
-                for (var i = 0; i < arr.length; ++i) {
-                    var part = arr[i];
-
-                    if (isStatus(part) && !isPseudoStatus(part)) {
-                        status = part;
-                    } else if (isNumber(part) && previousPart.toLowerCase() != 'героев') {
-                        number = part;
-                    } else {
-                        result.push(part);
-                    }
-
-                    previousPart = part;
-                }
-
-                if (status) {
-                    result.splice(0, 0, status);
-                }
-
-                if (number) {
-                    result.push(number);
-                }
-
-                return result.join(' ');
-            };
-
-            return rules_basicRU().concat([
-                new Rule('Delete space in initials', function (text) {
-                    return text.replace(/(^|\s+)([А-Я]\.)\s([А-Я]\.)/, '$1$2$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(тр-т)( |$)/, '$1тракт$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(вул\.?)( |$)/, '$1вуліца$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(зав)( |$)/, '$1завулак$3');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/(^| )(прасп)( |$)/, '$1праспект$3');
-                }),
-
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/-ая/, '-я').replace(/-ой/, '-й');
-                }),
-                new Rule('Incorrect street name', function (text) {
-                    return text.replace(/([РрНнМмPpHM])-?([0-9])/, function (a, p1, p2) {
-                        p1 = p1
-                            .replace('р', 'Р')
-                            .replace('н', 'Н')
-                            .replace('м', 'М')
-                            .replace('P', 'Р')
-                            .replace('p', 'Р')
-                            .replace('H', 'Н')
-                            .replace('M', 'М');
-
-                        return p1 + '-' + p2;
-                    });
-                }),
-                new Rule('Incorrect street name', replaceParts),
-            ]);
-        };
-
         var rules_UA = function () {
-            var hasCyrillic = function(s) {return s.search(/[а-яіїєґ]/i) != -1;}
+            var hasCyrillic = function(s) {return s.search(/[а-яіїєґ]/i) != -1;};
             var hasShortStatus = function(s) { return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пров\.|ст\.|пр\.|дор\.|б-р|р-н)( |$)/i) != -1; };
             var hasLongStatus = function(s) { return s.search(/( |^)(площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|шляхопровід|шлях|завулок|квартал)( |$)/i) != -1; };
             var hasSpecialStatus = function(s) { return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)( |$)|^(|до|на|>) /i) != -1; };
@@ -611,7 +172,7 @@ function run_wme_assist() {
                         .replace(/(^| )ул\.?( |$)/i, '$1вул.$2')
                         .replace(/(^| )р-н\.( |$)/i, '$1р-н$2')
                         .replace(/(^| )пер\.?( |$)/i, '$1пров.$2')
-                        .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор)( |$)/i, '$1$2.$3')
+                        .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор)( |$)/i, '$1$2.$3');
                 }),
                 new Rule('Long status must be short', function (t) {
                     // Do short status only if there no other shorten statuses in name
@@ -625,7 +186,7 @@ function run_wme_assist() {
                         .replace(/(^| )станція( |$)/i, '$1ст.$2')
                         .replace(/(^| )мікрорайон( |$)/i, '$1мкрн.$2')
                         .replace(/(^| )набережна( |$)/i, '$1наб.$2')
-                        .replace(/(^| )дорог[аи]( |$)/i, '$1дор.$2')
+                        .replace(/(^| )дорог[аи]( |$)/i, '$1дор.$2');
                 }),
                 new Rule('Shorten street name or status must be long', function (t) {
                     return t
@@ -639,14 +200,14 @@ function run_wme_assist() {
                         .replace(/(^| )див\.?( |$)/i, '$1Дивізії$2')
                         .replace(/(^| )ак\.?( |$)/i, '$1Академіка$2')
                         .replace(/(^| )марш\.?( |$)/i, '$1Маршала$2')
-                        .replace(/(^| )адм\.?( |$)/i, '$1Адмірала$2')
+                        .replace(/(^| )адм\.?( |$)/i, '$1Адмірала$2');
                 }),
                 new Rule('Incorrect number ending', function (t) {
                     return t
                         .replace(/-[гштм]а/, '-а')
                         .replace(/-[ыоиі]й/, '-й')
                         .replace(/-тя/, '-я')
-                        .replace(/-ая/, '-а')
+                        .replace(/-ая/, '-а');
                 }),
                 new Rule('Incorrect highway name', function (text) {
                     return text.replace(/([РрНнМмPpHM])[-\s]*([0-9]{2})/, function (a, p1, p2) {
@@ -717,12 +278,6 @@ function run_wme_assist() {
             var countryRules;
             info('Get rules for country: ' + name);
             switch (name) {
-                case 'Russia':
-                    countryRules = rules_RU();
-                    break;
-                case 'Belarus':
-                    countryRules = rules_BY();
-                    break;
                 case 'Ukraine':
                     countryRules = rules_UA();
                     break;
@@ -830,7 +385,7 @@ function run_wme_assist() {
         };
     };
 
-    var ActionHelper = function (wazeapi) {
+    var ActionHelper = function () {
         var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
         var WazeActionAddOrGetStreet = require("Waze/Action/AddOrGetStreet");
         var WazeActionAddOrGetCity = require("Waze/Action/AddOrGetCity");
@@ -839,8 +394,8 @@ function run_wme_assist() {
 
         var type2repo = function (type) {
             var map = {
-                'venue': wazeapi.model.venues,
-                'segment': wazeapi.model.segments
+                'venue': Waze.model.venues,
+                'segment': Waze.model.segments
             };
             return map[type];
         };
@@ -857,17 +412,17 @@ function run_wme_assist() {
 
                 var obj = type2repo(type).objects[id];
 
-                wazeapi.model.events.unregister('mergeend', map, select);
+                Waze.model.events.unregister('mergeend', map, select);
 
                 if (obj) {
-                    wazeapi.selectionManager.select([obj]);
+                    Waze.selectionManager.select([obj]);
                 } else if (--attemptNum > 0) {
-                    wazeapi.model.events.register('mergeend', map, select);
+                    Waze.model.events.register('mergeend', map, select);
                 }
 
                 WME_Assist.debug("Attempt number left: " + attemptNum);
 
-                wazeapi.map.setCenter(center, zoom);
+                Waze.map.setCenter(center, zoom);
             };
 
             return select;
@@ -876,12 +431,12 @@ function run_wme_assist() {
         this.isObjectVisible = function (obj) {
             if (!onlyVisible) return true;
             if (obj.geometry)
-                return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
+                return Waze.map.getExtent().intersectsBounds(obj.geometry.getBounds());
             return false;
         };
 
         var addOrGetStreet = function (cityId, name, isEmpty) {
-            var foundStreets = wazeapi.model.streets.getByAttributes({
+            var foundStreets = Waze.model.streets.getByAttributes({
                 cityID: cityId,
                 name: name,
             });
@@ -889,9 +444,9 @@ function run_wme_assist() {
             if (foundStreets.length == 1)
                 return foundStreets[0];
 
-            var city = wazeapi.model.cities.objects[cityId];
+            var city = Waze.model.cities.objects[cityId];
             var a = new WazeActionAddOrGetStreet(name, city, isEmpty);
-            wazeapi.model.actionManager.add(a);
+            Waze.model.actionManager.add(a);
 
             return a.street;
         };
@@ -923,7 +478,7 @@ function run_wme_assist() {
         };
 
         this.renameCity = function (oldname, newname) {
-            var oldcity = wazeapi.model.cities.getByAttributes({name: oldname});
+            var oldcity = Waze.model.cities.getByAttributes({name: oldname});
 
             if (oldcity.length === 0) {
                 console.log('City not found: ' + oldname);
@@ -946,16 +501,16 @@ function run_wme_assist() {
 
             var fix = function () {
                 var obj = type2repo(problem.object.type).objects[problem.object.id];
-                wazeapi.model.events.unregister('mergeend', map, fix);
+                Waze.model.events.unregister('mergeend', map, fix);
 
                 if (obj) {
                     // protect user manual fix
-                    var currentValue = wazeapi.model.streets.objects[obj.attributes[problem.attrName]].name;
+                    var currentValue = Waze.model.streets.objects[obj.attributes[problem.attrName]].name;
                     if (problem.reason == currentValue) {
                         var correctStreet = addOrGetStreet(problem.cityId, problem.newStreetName, problem.isEmpty);
                         var request = {};
                         request[problem.attrName] = correctStreet.getID();
-                        wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, request));
+                        Waze.model.actionManager.add(new WazeActionUpdateObject(obj, request));
                     } else {
                         ui.updateProblem(problem.object.id, '(user fix: ' + currentValue + ')');
                     }
@@ -964,8 +519,8 @@ function run_wme_assist() {
                     ui.updateProblem(problem.object.id, '(was not fixed. Deleted?)');
                     deferred.resolve(problem.object.id);
                 } else {
-                    wazeapi.model.events.register('mergeend', map, fix);
-                    wazeapi.map.setCenter(problem.detectPos, problem.zoom);
+                    Waze.model.events.register('mergeend', map, fix);
+                    Waze.map.setCenter(problem.detectPos, problem.zoom);
                 }
 
                 WME_Assist.debug('Attempt number left: ' + attemptNum);
@@ -1372,14 +927,14 @@ function run_wme_assist() {
         };
     };
 
-    var Application = function (wazeapi) {
-        var scaner = new WME_Assist.Scaner(wazeapi);
-        var analyzer = new WME_Assist.Analyzer(wazeapi);
+    var Application = function () {
+        var scaner = new WME_Assist.Scaner();
+        var analyzer = new WME_Assist.Analyzer();
 
         var FULL_ZOOM_LEVEL = 5;
 
         var scanForZoom = function (zoom) {
-            scaner.scan(wazeapi.map.calculateBounds(), zoom, function (bounds, zoom, data) {
+            scaner.scan(Waze.map.calculateBounds(), zoom, function (bounds, zoom, data) {
                 console.log(data);
                 analyzer.analyze(bounds, zoom, data, function (obj, title, reason) {
                     ui.addProblem(obj.id, title, action.Select(obj.id, obj.type, obj.center, zoom), function () {
@@ -1401,18 +956,18 @@ function run_wme_assist() {
         };
 
         var scan = function () {
-            scanForZoom(wazeapi.map.getZoom());
+            scanForZoom(Waze.map.getZoom());
         };
 
         var countryName = function () {
-            var id = wazeapi.model.countries.top.id;
-            var name = wazeapi.model.countries.objects[id].name;
+            var id = Waze.model.countries.top.id;
+            var name = Waze.model.countries.objects[id].name;
             return name;
         };
 
         var country = countryName();
 
-        var action = new ActionHelper(wazeapi);
+        var action = new ActionHelper();
         var rules = new Rules(country);
         var ui = new Ui(country);
 
@@ -1447,7 +1002,7 @@ function run_wme_assist() {
             ui.removeCustomRule(index);
         });
 
-        wazeapi.model.events.register('mergeend', map, function () {
+        Waze.model.events.register('mergeend', map, function () {
             var name = countryName();
             if (name != country) {
                 rules.onCountryChange(name);
@@ -1473,14 +1028,14 @@ function run_wme_assist() {
                     }
 
                     scan();
-                    wazeapi.model.events.register('mergeend', map, scan);
+                    Waze.model.events.register('mergeend', map, scan);
                 } else {
                     localStorage.setItem('assist_enabled', false);
                     ui.hideMainWindow();
 
                     info('disabled');
 
-                    wazeapi.model.events.unregister('mergeend', map, scan);
+                    Waze.model.events.unregister('mergeend', map, scan);
                 }
             });
 
@@ -1522,7 +1077,7 @@ function run_wme_assist() {
                 ui.clearfixedBtn().hide();
                 ui.scanAreaBtn().hide();
 
-                wazeapi.model.events.unregister('mergeend', map, scan);
+                Waze.model.events.unregister('mergeend', map, scan);
 
                 setTimeout(function () {
                     analyzer.fixAll(function (id) {
@@ -1534,7 +1089,7 @@ function run_wme_assist() {
                         ui.clearfixedBtn().show();
                         ui.scanAreaBtn().show();
 
-                        wazeapi.model.events.register('mergeend', map, scan);
+                        Waze.model.events.register('mergeend', map, scan);
                     });
                 }, 0);
             });
@@ -1593,20 +1148,19 @@ function run_wme_assist() {
         this.renameCity = action.renameCity;
     };
 
-    function waitForWaze(done) {
-        var wazeapi = getWazeApi();
+    function isWazeReady() {
+        if (!Waze || !Waze.map || !Waze.model || !Waze.model.countries || !Waze.model.countries.top)
+            return false;
+        return true;
+    }
 
-        // Does not get jQuery.ui
-        // Relies on WME Toolbox plugin
-        if (wazeapi === null || !jQuery.ui) {
-            console.log("WME ASSIST: waiting for Waze");
-            setTimeout(function () {
-                waitForWaze(done);
-            }, 500);
+    function waitForWaze(done) {
+        if (!isWazeReady() || !jQuery.ui) {
+            setTimeout(function () { waitForWaze(done); }, 500);
             return;
         }
 
-        done(wazeapi);
+        done();
     }
 
     function getByAttr(obj, attr) {
@@ -1621,10 +1175,358 @@ function run_wme_assist() {
         });
     }
 
-    waitForWaze(function (wazeapi) {
-        var app = new Application(wazeapi);
+    WME_Assist.info("Waiting for Waze");
+
+    waitForWaze(function () {
+        WME_Assist.info("Ready to work!");
+        var app = new Application();
         app.start();
     });
 }
 
+WME_Assist.Analyzer = function () {
+    var Exceptions = function () {
+        var exceptions = [];
+
+        var onAdd = function (name) {}
+        var onDelete = function (index) {}
+
+        var save = function (exception) {
+            if (localStorage) {
+                localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
+            }
+        }
+
+        this.load = function () {
+            if (localStorage) {
+                var str = localStorage.getItem('assistExceptionsKey');
+                if (str) {
+                    var arr = JSON.parse(str);
+                    for (var i = 0; i < arr.length; ++i) {
+                        var exception = arr[i];
+                        this.add(exception);
+                    }
+                }
+            }
+        }
+
+        this.contains = function (name) {
+            if (exceptions.indexOf(name) == -1) return false;
+            return true;
+        }
+
+        this.add = function (name) {
+            exceptions.push(name);
+            save(exceptions);
+            onAdd(name);
+        }
+
+        this.remove = function (index) {
+            exceptions.splice(index, 1);
+            save(exceptions);
+            onDelete(index);
+        }
+
+        this.onAdd = function (cb) { onAdd = cb }
+        this.onDelete = function (cb) {onDelete = cb }
+    }
+
+    var analyzedIds = [];
+    var problems = [];
+    var unresolvedIdx = 0;
+    var skippedErrors = 0;
+    var variant;
+    var exceptions = new Exceptions();
+    var rules;
+    var action;
+
+    var getUnresolvedErrorNum = function () {
+        return problems.length - unresolvedIdx - skippedErrors;
+    }
+
+    var getFixedErrorNum = function () {
+        return unresolvedIdx;
+    }
+
+    this.unresolvedErrorNum = getUnresolvedErrorNum;
+    this.fixedErrorNum = getFixedErrorNum;
+
+    this.setRules = function (r) {
+        rules = r;
+    }
+
+    this.setActionHelper = function (a) {
+        action = a;
+    }
+
+    this.loadExceptions = function () {
+        exceptions.load();
+    }
+
+    this.onExceptionAdd = function (cb) {
+        exceptions.onAdd(cb);
+    }
+
+    this.onExceptionDelete = function (cb) {
+        exceptions.onDelete(cb);
+    }
+
+    this.addException = function (reason, cb) {
+        exceptions.add(reason);
+
+        var i;
+        for (i = 0; i < problems.length; ++i) {
+            var problem = problems[i];
+            if (problem.reason == reason) {
+                problem.skip = true;
+                ++skippedErrors;
+
+                cb(problem.object.id);
+            }
+        }
+    }
+
+    this.removeException = function (i) {
+        exceptions.remove(i);
+    }
+
+    this.setVariant = function (v) {
+        variant = v;
+    }
+
+    this.reset = function () {
+        analyzedIds = [];
+        problems = [];
+        unresolvedIdx = 0;
+        skippedErrors = 0;
+    }
+
+    this.fixAll = function (onefixed, allfixed) {
+        WME_Assist.series(problems, unresolvedIdx, function (p, next) {
+            if (p.skip) {
+                next();
+                return;
+            }
+
+            action.fixProblem(p).done(function (id) {
+                ++unresolvedIdx;
+                onefixed(id);
+
+                setTimeout(next, 0);
+            });
+        }, allfixed);
+    }
+
+    var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
+        var userlevel = Waze.loginManager.user.normalizedLevel;
+        var street = Waze.model.streets.get(streetID);
+
+        if (!street) return;
+
+        var detected = false;
+        var skip = false;
+        var title = '';
+        var reason;
+
+        if (!street.isEmpty) {
+            if (!exceptions.contains(street.name)) {
+                try {
+                    var result = rules.correct(variant, street.name);
+                    var newStreetName = result.value;
+                    detected = (newStreetName != street.name);
+                    if (obj.type == 'venue') title = 'POI: ';
+                    if (attrName == 'streetIDs') {
+                        title = 'ALT: ';
+                        skip = true;
+                    }
+                    if (obj.lockRank && obj.lockRank >= userlevel) {
+                        title = '(L' + (obj.lockRank + 1) + ') ' + title;
+                        skip = true;
+                    }
+                    title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
+                    reason = street.name;
+                } catch (err) {
+                    WME_Assist.warning('Street name "' + street.name + '" causes error in rules');
+                    return;
+                }
+            }
+        }
+
+        var newCityID = street.cityID;
+        // if (obj.type != 'segment') {
+        //     newCityID = action.newCityID(street.cityID);
+        //     if (newCityID != street.cityID) {
+        //         detected = true;
+        //         title = 'city: ' +
+        //             Waze.model.cities.objects[street.cityID].name + ' -> ' +
+        //             Waze.model.cities.objects[newCityID].name;
+        //     }
+        // }
+
+        if (detected) {
+            var gj = new OL.Format.GeoJSON();
+            var geometry = gj.parseGeometry(obj.geometry);
+            var objCenter = geometry.getBounds().getCenterLonLat().transform(Waze.map.displayProjection, Waze.map.getProjectionObject());
+            var boundsCenter = bounds.clone().getCenterLonLat().transform(Waze.map.displayProjection, Waze.map.getProjectionObject());
+            obj.center = objCenter;
+
+            problems.push({
+                object: obj,
+                reason: reason,
+                attrName: attrName,
+                detectPos: boundsCenter,
+                zoom: zoom,
+                newStreetName: newStreetName,
+                isEmpty: street.isEmpty,
+                cityId: newCityID,
+                experimental: false,
+                skip: skip,
+            });
+
+            onProblemDetected(obj, title, reason);
+        }
+    }
+
+    this.analyze = function (bounds, zoom, data, onProblemDetected) {
+        //var permissions = new require("Waze/Permissions");
+        var startTime = new Date().getTime();
+        var analyzeAlt = true;
+
+        WME_Assist.info('start analyze');
+
+        var subjects = {
+            'segment': {
+                attr: 'primaryStreetID',
+                name: 'segments'
+            },
+            'venue': {
+                attr: 'streetID',
+                name: 'venues'
+            }
+        };
+
+        if (localStorage) {
+            if (localStorage.getItem('assist_skip_alt') == 'true') {
+                analyzeAlt = false;
+            }
+        }
+
+        for (var k in subjects) {
+            var subject = subjects[k];
+            var subjectData = data[subject.name];
+
+            if (!subjectData) continue;
+
+            var objects = subjectData.objects;
+
+            for (var i = 0; i < objects.length; ++i) {
+                var obj = objects[i];
+                var id = obj.id;
+
+                obj.type = k;
+
+                if (analyzedIds.indexOf(id) >= 0) continue;
+
+                if (obj.hasClosures) continue;
+
+                if (typeof obj.approved != 'undefined' && !obj.approved) continue;
+
+                checkStreet(bounds, zoom, obj[subject.attr], obj, subject.attr, onProblemDetected);
+
+                // add ugly support for alternative names
+                if (subject.name == 'segments' && analyzeAlt)
+                {
+                    for (var j = 0, n = obj.streetIDs.length; j < n; j++) {
+                        checkStreet(bounds, zoom, obj.streetIDs[j], obj, 'streetIDs', onProblemDetected);
+                    }
+                }
+                analyzedIds.push(id);
+            }
+        }
+
+        WME_Assist.info('end analyze: ' + (new Date().getTime() - startTime) + 'ms');
+    }
+};
+
+WME_Assist.Scaner = function () {
+    var model = Waze.model;
+    var map = Waze.map;
+    var controller = Waze.controller;
+
+    var getData = function (e, cb) {
+        console.log(e);
+        $.get(Waze.Config.paths.features, e).done(cb);
+    }
+
+    var splitExtent = function (extent, zoom) {
+        var result = [];
+
+        var ratio = map.getResolution() / map.getResolutionForZoom(zoom);
+        var dx = extent.getWidth() / ratio;
+        var dy = extent.getHeight() / ratio;
+
+        var x, y;
+        for (x = extent.left; x < extent.right; x += dx) {
+            for (y = extent.bottom; y < extent.top; y += dy) {
+                var bounds = new OpenLayers.Bounds();
+                bounds.extend(new OpenLayers.LonLat(x, y));
+                bounds.extend(new OpenLayers.LonLat(x + dx, y + dy));
+
+                result.push(bounds);
+            }
+        }
+
+        return result;
+    }
+
+    var zoomToRoadType = function (zoom) {
+        var s = Waze.Config.segments.zoomToRoadType[zoom] || [];
+        if (-1 === s) {
+            s = W.Config.segments.allTypes;
+        }
+
+        var r = [];
+        Object.keys(Waze.Config.segments.zoomToRoadType).forEach(function (t) {
+            t = parseInt(t, 10);
+            var i = s.contains(t);
+            if (i) {
+                r.push(t);
+            }
+        })
+
+        return (r.length == 0) ? null : { roadTypes: s.toString() }
+    }
+
+    this.scan = function (bounds, zoom, analyze, progress) {
+        var boundsArray = splitExtent(bounds, zoom);
+        var completed = 0;
+
+        if (boundsArray.length > 20 && !confirm('Script will scan ' + boundsArray.length + ' peaces. Are you OK?')) {
+            return;
+        }
+
+        progress = progress || function () {}
+
+        WME_Assist.series(boundsArray, 0, function (bounds, next) {
+            var peace = bounds.transform(map.getProjectionObject(), map.displayProjection);
+
+            var e = {
+                bbox: peace.toBBOX(),
+                language: I18n.locale,
+                venueFilter: '1',
+                venueLevel: Waze.Config.venues.zoomToSize[zoom],
+            };
+
+            OL.Util.extend(e, zoomToRoadType(zoom));
+
+            getData(e, function (data) {
+                analyze(peace, zoom, data);
+                progress(++completed*100/boundsArray.length);
+                next();
+            });
+        });
+    }
+};
+
 run_wme_assist();
+
