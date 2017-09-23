@@ -1,8 +1,7 @@
-module.exports.version = '2017.09.23';
-
-module.exports.variants = ['Ukraine', 'Lviv'];
-
-module.exports.rules = function () {
+WME_Assist.countryCode = 'UA';
+WME_Assist.rulesVersion = '2017.09.23';
+WME_Assist.rulesVariants = ['Ukraine', 'Lviv'];
+WME_Assist.rules = function () {
     var hasCyrillic = function(s) {return s.search(/[а-яіїєґ]/i) != -1;};
     var hasShortStatus = function(s) { return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пров\.|ст\.|пр\.|дор\.|б-р|р-н)( |$)/i) != -1; };
     var hasLongStatus = function(s) { return s.search(/( |^)(площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|шляхопровід|шлях|завулок|квартал)( |$)/i) != -1; };
