@@ -11,8 +11,11 @@
 // @namespace    https://github.com/waze-ua/wme-assist-ua
 // ==/UserScript==
 
-var rulesBaseUrl = 'https://github.com/waze-ua/wme-assist-ua/raw/master'
+// Use rawgit.com for github files, since it returns correct MIME types for js files
+//var rulesBaseUrl = 'https://rawgit.com/waze-ua/wme-assist-ua/master';
+var rulesBaseUrl = 'https://rawgit.com/waze-ua/wme-assist-ua/feature/independent-script';
 var WME_Assist = WME_Assist || {};
+var WME_Assist_Country = WME_Assist_Country || {};
 
 GM_addStyle(GM_getResourceText("customCSS"));
 
@@ -52,72 +55,84 @@ function run_wme_assist() {
     var info = WME_Assist.info;
     var warning = WME_Assist.warning;
 
-    var Rule = function (comment, func, variant) {
-        this.comment = comment;
-        this.correct = func;
+    var loadCountryRules = function (done) {
+        var id = Waze.model.countries.top.id;
+        var country = Waze.model.countries.objects[id].name;
+        var countryRulesUrl = rulesBaseUrl + '/' + country + '.rules.js';
+        var xhr = new XMLHttpRequest();
+        WME_Assist.info("Loading rules for " + country);
+        xhr.open("GET", countryRulesUrl);
+        xhr.onload = function(e) {
+            // Run received code with Country pointing to WME_Assist_Country
+            (new Function('Country', 'Rule', this.response))(WME_Assist_Country, Rule);
+            done();
+        };
+        xhr.onerror = function(e) {
+            WME_Assist.warning("Failed to load country rules!");
+        };
+        xhr.send();
+    };
+
+    var Rule = function (func, variant) {
+        this.process = func;
         this.variant = variant;
     };
 
     var CustomRule = function (oldname, newname) {
-        var title = '/' + oldname + '/ ➤ ' + newname;
+        this.title = '/' + oldname + '/ ➤ ' + newname;
         this.oldname = oldname;
         this.newname = newname;
         this.custom = true;
-        $.extend(this, new Rule(title, function (text) {
+        $.extend(this, new Rule(function (text) {
             return text.replace(new RegExp(oldname), newname);
         }));
     };
 
-    var ExperimentalRule = function (comment,  func) {
-        this.comment = comment;
-        this.correct = func;
+    var ExperimentalRule = function (func) {
+        this.process = func;
         this.experimental = true;
     };
 
     var Rules = function (countryName) {
-        var commonRules = function () {
-            return [
-                new Rule('Unbreak space in street name', function (text) {
+
+        var getCountryRules = function () {
+            var commonRules = [
+                new Rule(function (text) { // Unbreak space in street name
                     return text.replace(/\s+/g, ' ');
                 }),
-                new Rule('ACUTE ACCENT in street name', function (text) {
+                new Rule(function (text) { // ACUTE ACCENT in street name
                     return text.replace(/\u0301|\u0300/g, '');
                 }),
-                new Rule('Dash in street name', function (text) {
+                new Rule(function (text) { // Dash in street name
                     return text.replace(/\u2010|\u2011|\u2012|\u2013|\u2014|\u2015|\u2043|\u2212|\u2796/g, '-');
                 }),
-                new Rule('No space after the word', function (text) {
+                new Rule(function (text) { // No space after the word
                     return text.replace(/\.(?!\s)/g, '. ');
                 }),
-                new Rule('No space after the >', function (text) {
+                new Rule(function (text) { // No space after the >
                     return text.replace(/>(?!\s)/g, '> ');
                 }),
-                new Rule('Garbage dot', function (text) {
+                new Rule(function (text) { // Garbage dot
                     return text.replace(/(^|\s+)\./g, '$1');
-                }),
+                })
             ];
-        };
 
-        // Following rules must be at the end because
-        // previous rules might insert additional spaces
-        var postRules = [
-            new Rule('Redundant space in street name', function (text) {
-                return text.replace(/[ ]+/g, ' ');
-            }),
-            new Rule('Space at the begin of street name', function (text) {
-                return text.replace(/^[ ]*/, '');
-            }),
-            new Rule('Space at the end of street name', function (text) {
-                return text.replace(/[ ]*$/, '');
-            }),
-        ];
-        
-        var getCountryRules = function (name) {
-            info('Getting rules for ' + name);
-            var CountryRules = require(rulesBaseUrl + '/' + name + '.rules');
-            return commonRules.concat(CountryRules.rules()).concat(postRules);
+            // Following rules must be at the end because
+            // previous rules might insert additional spaces
+            var postRules = [
+                new Rule(function (text) { // Redundant space in street name
+                    return text.replace(/[ ]+/g, ' ');
+                }),
+                new Rule(function (text) { // Space at the begin of street name
+                    return text.replace(/^[ ]*/, '');
+                }),
+                new Rule(function (text) { // Space at the end of street name
+                    return text.replace(/[ ]*$/, '');
+                })
+            ];
+
+            return commonRules.concat(WME_Assist_Country.rules()).concat(postRules);
         };
-        // TODO: get rules version and variants
 
         var rules = [];
         var customRulesNumber = 0;
@@ -140,7 +155,7 @@ function run_wme_assist() {
             return rules[index];
         };
 
-        this.correct = function (variant, text) {
+        this.processAll = function (variant, text) {
             var newtext = text;
             var experimental = false;
 
@@ -152,16 +167,12 @@ function run_wme_assist() {
                 if (rule.variant && rule.variant != variant) continue;
 
                 var previous = newtext;
-                newtext = rule.correct(newtext);
-                var changed = (previous != newtext);
+                newtext = rule.process(newtext);
+
                 if (rule.experimental && previous != newtext) {
                     experimental = true;
                 }
                 previous = newtext;
-                // if (rule.custom && changed) {
-                //     // prevent result overwriting by common rules
-                //     break;
-                // }
             }
 
             return {
@@ -170,13 +181,13 @@ function run_wme_assist() {
             };
         };
 
-        var save = function (rules) {
+        var saveCustomRules = function (rules) {
             if (localStorage) {
                 localStorage.setItem('assistRulesKey', JSON.stringify(rules.slice(0, customRulesNumber)));
             }
         };
 
-        this.load = function () {
+        this.loadCustomRules = function () {
             if (localStorage) {
                 var str = localStorage.getItem('assistRulesKey');
                 if (str) {
@@ -196,7 +207,7 @@ function run_wme_assist() {
             rules.splice(customRulesNumber++, 0, rule);
             onAdd(rule);
 
-            save(rules);
+            saveCustomRules(rules);
         };
 
         this.update = function (index, oldname, newname) {
@@ -204,7 +215,7 @@ function run_wme_assist() {
             rules[index] = rule;
             onEdit(index, rule);
 
-            save(rules);
+            saveCustomRules(rules);
         };
 
         this.remove = function (index) {
@@ -212,7 +223,7 @@ function run_wme_assist() {
             --customRulesNumber;
             onDelete(index);
 
-            save(rules);
+            saveCustomRules(rules);
         };
     };
 
@@ -397,9 +408,9 @@ function run_wme_assist() {
         $(section)
             .append($('<p>').addClass('message').css({'font-weight': 'bold'}).text('Custom rules'))
             .append($('<div>').addClass('btn-toolbar')
-            .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text('Add'))
-            .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text('Edit'))
-            .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text('Del')))
+                    .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text('Add'))
+                    .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text('Edit'))
+                    .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text('Del')))
             .append($('<ul>').addClass('result-list'));
         addon.appendChild(section);
 
@@ -822,11 +833,11 @@ function run_wme_assist() {
         //        rules.experimental = true;
 
         rules.onAdd(function (rule) {
-            ui.addCustomRule(rule.comment);
+            ui.addCustomRule(rule.title);
         });
 
         rules.onEdit(function (index, rule) {
-            ui.updateCustomRule(index, rule.comment);
+            ui.updateCustomRule(index, rule.title);
         });
 
         rules.onDelete(function (index) {
@@ -842,7 +853,7 @@ function run_wme_assist() {
         });
 
         analyzer.loadExceptions();
-        rules.load();
+        rules.loadCustomRules();
 
         this.start = function () {
             ui.enableCheckbox().click(function () {
@@ -994,24 +1005,15 @@ function run_wme_assist() {
         done();
     }
 
-    function getByAttr(obj, attr) {
-        return obj.getByAttributes().filter(function (e) {
-            for (var key in attr) {
-                if (e.attributes[key] != attr[key]) {
-                    return false;
-                }
-            }
-
-            return true;
-        });
-    }
-
     WME_Assist.info("Waiting for Waze");
 
-    waitForWaze(function () {
+    waitForWaze(function() {
         WME_Assist.info("Ready to work!");
-        var app = new Application();
-        app.start();
+        loadCountryRules(function(){
+            WME_Assist.info("Country rules loaded");
+            var app = new Application();
+            app.start();
+        });
     });
 }
 
@@ -1019,14 +1021,14 @@ WME_Assist.Analyzer = function () {
     var Exceptions = function () {
         var exceptions = [];
 
-        var onAdd = function (name) {}
-        var onDelete = function (index) {}
+        var onAdd = function (name) {};
+        var onDelete = function (index) {};
 
         var save = function (exception) {
             if (localStorage) {
                 localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
             }
-        }
+        };
 
         this.load = function () {
             if (localStorage) {
@@ -1039,28 +1041,28 @@ WME_Assist.Analyzer = function () {
                     }
                 }
             }
-        }
+        };
 
         this.contains = function (name) {
             if (exceptions.indexOf(name) == -1) return false;
             return true;
-        }
+        };
 
         this.add = function (name) {
             exceptions.push(name);
-            save(exceptions);
+            saveCustomRules(exceptions);
             onAdd(name);
-        }
+        };
 
         this.remove = function (index) {
             exceptions.splice(index, 1);
-            save(exceptions);
+            saveCustomRules(exceptions);
             onDelete(index);
-        }
+        };
 
-        this.onAdd = function (cb) { onAdd = cb }
-        this.onDelete = function (cb) {onDelete = cb }
-    }
+        this.onAdd = function (cb) { onAdd = cb; };
+        this.onDelete = function (cb) {onDelete = cb; };
+    };
 
     var analyzedIds = [];
     var problems = [];
@@ -1073,34 +1075,34 @@ WME_Assist.Analyzer = function () {
 
     var getUnresolvedErrorNum = function () {
         return problems.length - unresolvedIdx - skippedErrors;
-    }
+    };
 
     var getFixedErrorNum = function () {
         return unresolvedIdx;
-    }
+    };
 
     this.unresolvedErrorNum = getUnresolvedErrorNum;
     this.fixedErrorNum = getFixedErrorNum;
 
     this.setRules = function (r) {
         rules = r;
-    }
+    };
 
     this.setActionHelper = function (a) {
         action = a;
-    }
+    };
 
     this.loadExceptions = function () {
         exceptions.load();
-    }
+    };
 
     this.onExceptionAdd = function (cb) {
         exceptions.onAdd(cb);
-    }
+    };
 
     this.onExceptionDelete = function (cb) {
         exceptions.onDelete(cb);
-    }
+    };
 
     this.addException = function (reason, cb) {
         exceptions.add(reason);
@@ -1115,22 +1117,22 @@ WME_Assist.Analyzer = function () {
                 cb(problem.object.id);
             }
         }
-    }
+    };
 
     this.removeException = function (i) {
         exceptions.remove(i);
-    }
+    };
 
     this.setVariant = function (v) {
         variant = v;
-    }
+    };
 
     this.reset = function () {
         analyzedIds = [];
         problems = [];
         unresolvedIdx = 0;
         skippedErrors = 0;
-    }
+    };
 
     this.fixAll = function (onefixed, allfixed) {
         WME_Assist.series(problems, unresolvedIdx, function (p, next) {
@@ -1146,7 +1148,7 @@ WME_Assist.Analyzer = function () {
                 setTimeout(next, 0);
             });
         }, allfixed);
-    }
+    };
 
     var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
         var userlevel = Waze.loginManager.user.normalizedLevel;
@@ -1162,7 +1164,7 @@ WME_Assist.Analyzer = function () {
         if (!street.isEmpty) {
             if (!exceptions.contains(street.name)) {
                 try {
-                    var result = rules.correct(variant, street.name);
+                    var result = rules.processAll(variant, street.name);
                     var newStreetName = result.value;
                     detected = (newStreetName != street.name);
                     if (obj.type == 'venue') title = 'POI: ';
@@ -1216,7 +1218,7 @@ WME_Assist.Analyzer = function () {
 
             onProblemDetected(obj, title, reason);
         }
-    }
+    };
 
     this.analyze = function (bounds, zoom, data, onProblemDetected) {
         //var permissions = new require("Waze/Permissions");
@@ -1276,7 +1278,7 @@ WME_Assist.Analyzer = function () {
         }
 
         WME_Assist.info('end analyze: ' + (new Date().getTime() - startTime) + 'ms');
-    }
+    };
 };
 
 WME_Assist.Scaner = function () {
@@ -1287,7 +1289,7 @@ WME_Assist.Scaner = function () {
     var getData = function (e, cb) {
         console.log(e);
         $.get(Waze.Config.paths.features, e).done(cb);
-    }
+    };
 
     var splitExtent = function (extent, zoom) {
         var result = [];
@@ -1308,7 +1310,7 @@ WME_Assist.Scaner = function () {
         }
 
         return result;
-    }
+    };
 
     var zoomToRoadType = function (zoom) {
         var s = Waze.Config.segments.zoomToRoadType[zoom] || [];
@@ -1323,10 +1325,10 @@ WME_Assist.Scaner = function () {
             if (i) {
                 r.push(t);
             }
-        })
+        });
 
-        return (r.length == 0) ? null : { roadTypes: s.toString() }
-    }
+        return (r.length === 0) ? null : { roadTypes: s.toString() };
+    };
 
     this.scan = function (bounds, zoom, analyze, progress) {
         var boundsArray = splitExtent(bounds, zoom);
@@ -1336,7 +1338,7 @@ WME_Assist.Scaner = function () {
             return;
         }
 
-        progress = progress || function () {}
+        progress = progress || function () {};
 
         WME_Assist.series(boundsArray, 0, function (bounds, next) {
             var peace = bounds.transform(map.getProjectionObject(), map.displayProjection);
@@ -1356,8 +1358,7 @@ WME_Assist.Scaner = function () {
                 next();
             });
         });
-    }
+    };
 };
 
 run_wme_assist();
-
