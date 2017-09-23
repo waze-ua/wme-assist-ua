@@ -2,9 +2,13 @@
 // @name         WME Assist UA
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
+// @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
+// @resource     customCSS https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css
+// @grant        GM_addStyle
+// @grant        GM_getResourceText
+// @grant        unsafeWindow
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scaner.js
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
-// @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @version      0.5.9
 // @namespace    https://greasyfork.org/users/66819
@@ -13,6 +17,7 @@
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
+GM_addStyle(GM_getResourceText("customCSS"));
 
 WME_Assist.debug = function (message) {
     if (!$('#assist_debug').is(':checked')) return;
@@ -51,7 +56,7 @@ function run_wme_assist() {
     var warning = WME_Assist.warning;
 
     function getWazeApi() {
-        var wazeapi = window.Waze;
+        var wazeapi = unsafeWindow.Waze;
 
         if (!wazeapi) return null;
         if (!wazeapi.map) return null;
