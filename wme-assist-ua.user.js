@@ -2,17 +2,18 @@
 // @name         WME Assist UA
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
+// @resource     jqueryCSS https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css
+// @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scaner.js
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
-// @grant        none
+// @grant        GM_addStyle
+// @grant        GM_getResourceText
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.9
-// @namespace    https://greasyfork.org/users/66819
-// @updateURL    https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
-// @downloadURL  https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
+// @version      0.5.10
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
+GM_addStyle(GM_getResourceText("jqueryCSS"));
 
 WME_Assist.debug = function (message) {
     if (!$('#assist_debug').is(':checked')) return;
@@ -51,15 +52,13 @@ function run_wme_assist() {
     var warning = WME_Assist.warning;
 
     function getWazeApi() {
-        var wazeapi = window.Waze;
+        if (!Waze) return null;
+        if (!Waze.map) return null;
+        if (!Waze.model) return null;
+        if (!Waze.model.countries) return null;
+        if (!Waze.model.countries.top) return null;
 
-        if (!wazeapi) return null;
-        if (!wazeapi.map) return null;
-        if (!wazeapi.model) return null;
-        if (!wazeapi.model.countries) return null;
-        if (!wazeapi.model.countries.top) return null;
-
-        return wazeapi;
+        return Waze;
     }
 
     var Rule = function (comment, func, variant) {
@@ -1604,22 +1603,11 @@ function run_wme_assist() {
         done(wazeapi);
     }
 
-    function getByAttr(obj, attr) {
-        return obj.getByAttributes().filter(function (e) {
-            for (var key in attr) {
-                if (e.attributes[key] != attr[key]) {
-                    return false;
-                }
-            }
-
-            return true;
-        });
-    }
-
     waitForWaze(function (wazeapi) {
+        WME_Assist.info("Ready to work!");
         var app = new Application(wazeapi);
         app.start();
     });
-}
+};
 
 run_wme_assist();
