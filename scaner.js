@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name WME_Assist_Scanner
-// @author borman84 (Boris Molodenkov)
+// @author borman84 (Boris Molodenkov), madnut
 // @description Waze Map Editor Assist Scanner
 // @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @grant     none
-// @version   0.5.0.1 (ua)
+// @version   0.5.1 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {}
 
-WME_Assist.Scaner = function (wazeapi) {
+WME_Assist.Scanner = function (wazeapi) {
     var model = wazeapi.model;
     var map = wazeapi.map;
     var controller = wazeapi.controller;
@@ -56,7 +56,7 @@ WME_Assist.Scaner = function (wazeapi) {
             }
         })
 
-        return (r.length == 0) ? null : { roadTypes: s.toString() }
+        return (r.length === 0) ? null : { roadTypes: s.toString() }
     }
 
     this.scan = function (bounds, zoom, analyze, progress) {

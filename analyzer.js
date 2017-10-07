@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name WME_Assist_Analyzer
-// @author borman84 (Boris Molodenkov)
+// @author borman84 (Boris Molodenkov), madnut
 // @description Waze Map Editor Assist Analyzer
 // @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @grant     none
-// @version   0.5.0.4 (ua)
+// @version   0.5.1 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -153,12 +153,13 @@ WME_Assist.Analyzer = function (wazeapi) {
         var skip = false;
         var title = '';
         var reason;
-
+        var newStreetName;
+        
         if (!street.isEmpty) {
             if (!exceptions.contains(street.name)) {
                 try {
                     var result = rules.correct(variant, street.name);
-                    var newStreetName = result.value;
+                    newStreetName = result.value;
                     detected = (newStreetName != street.name);
                     if (obj.type == 'venue') title = 'POI: ';
                     if (attrName == 'streetIDs') {
@@ -169,7 +170,17 @@ WME_Assist.Analyzer = function (wazeapi) {
                         title = '(L' + (obj.lockRank + 1) + ') ' + title;
                         skip = true;
                     }
-                    title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■') + ' ➤ ' + newStreetName;
+                    title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■');
+                    // for "detect only rules" we have no replacement to show
+                    if (!newStreetName) {
+                        skip = true;
+                    }
+                    else {
+                        title = title + ' ➤ ' + newStreetName;
+                    }
+                    if (skip) {
+                        title = '🔒 ' + title;
+                    }
                     reason = street.name;
                 } catch (err) {
                     WME_Assist.warning('Street name "' + street.name + '" causes error in rules');

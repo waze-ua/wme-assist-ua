@@ -4,12 +4,12 @@
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
 // @resource     jqueryCSS https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
-// @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scaner.js
+// @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scanner.js
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.10
+// @version      0.5.11
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -531,7 +531,7 @@ function run_wme_assist() {
         };
 
         var rules_UA = function () {
-            var hasCyrillic = function(s) {return s.search(/[а-яіїєґ]/i) != -1;}
+            var hasCyrillic = function(s) {return s.search(/[а-яіїєґ]/i) != -1;};
             var hasShortStatus = function(s) { return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пров\.|ст\.|пр\.|дор\.|б-р|р-н)( |$)/i) != -1; };
             var hasLongStatus = function(s) { return s.search(/( |^)(площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|шляхопровід|шлях|завулок|квартал)( |$)/i) != -1; };
             var hasSpecialStatus = function(s) { return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)( |$)|^(|до|на|>) /i) != -1; };
@@ -540,7 +540,7 @@ function run_wme_assist() {
 
             // ATTENTION: Rule order is important!
             return rules_basicCommon().concat([
-                new Rule('Fix english characters in name', function (t) {
+                new Rule('Fix English characters in name', function (t) {
                     return !hasCyrillic(t) || hasInternationalName(t) ? t : t.replace(/[AaBCcEeHIiKkMOoPpTXxYy]/g, function (c) {
                         return {
                             'A': 'А',
@@ -578,7 +578,7 @@ function run_wme_assist() {
                         .replace(/[`’]/g, '\'');
                 }),
                 new Rule('Incorrect language', function (t) {
-                    // Translate full russian names to full ukrainian
+                    // Translate full Russian names to full Ukrainian
                     // and next rules will shorten them if necessary
                     return t
                         .replace(/(^| )в?улица( |$)/i, '$1вулиця$2')
@@ -605,7 +605,7 @@ function run_wme_assist() {
                         .replace(/(^| )ул\.?( |$)/i, '$1вул.$2')
                         .replace(/(^| )р-н\.( |$)/i, '$1р-н$2')
                         .replace(/(^| )пер\.?( |$)/i, '$1пров.$2')
-                        .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор)( |$)/i, '$1$2.$3')
+                        .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор)( |$)/i, '$1$2.$3');
                 }),
                 new Rule('Long status must be short', function (t) {
                     // Do short status only if there no other shorten statuses in name
@@ -619,7 +619,7 @@ function run_wme_assist() {
                         .replace(/(^| )станція( |$)/i, '$1ст.$2')
                         .replace(/(^| )мікрорайон( |$)/i, '$1мкрн.$2')
                         .replace(/(^| )набережна( |$)/i, '$1наб.$2')
-                        .replace(/(^| )дорог[аи]( |$)/i, '$1дор.$2')
+                        .replace(/(^| )дорог[аи]( |$)/i, '$1дор.$2');
                 }),
                 new Rule('Shorten street name or status must be long', function (t) {
                     return t
@@ -633,14 +633,14 @@ function run_wme_assist() {
                         .replace(/(^| )див\.?( |$)/i, '$1Дивізії$2')
                         .replace(/(^| )ак\.?( |$)/i, '$1Академіка$2')
                         .replace(/(^| )марш\.?( |$)/i, '$1Маршала$2')
-                        .replace(/(^| )адм\.?( |$)/i, '$1Адмірала$2')
+                        .replace(/(^| )адм\.?( |$)/i, '$1Адмірала$2');
                 }),
                 new Rule('Incorrect number ending', function (t) {
                     return t
                         .replace(/-[гштм]а/, '-а')
                         .replace(/-[ыоиі]й/, '-й')
                         .replace(/-тя/, '-я')
-                        .replace(/-ая/, '-а')
+                        .replace(/-ая/, '-а');
                 }),
                 new Rule('Incorrect highway name', function (text) {
                     return text.replace(/([РрНнМмPpHM])[-\s]*([0-9]{2})/, function (a, p1, p2) {
@@ -683,7 +683,11 @@ function run_wme_assist() {
                 new Rule('Fix status', function (t) {
                     return hasStatus(t) ? t : 'вул. ' + t;
                 }, 'Ukraine'),
-
+                
+                new Rule('Only detect status absense', function (t) {
+                    return hasStatus(t) ? t : '';
+                }, 'Lviv'),
+                
                 new Rule('Move status to begin of name', function (text) {
                     var excludeList = /(?: |^)до |(?: |^)на /;
                     if (! new RegExp(excludeList).test(text)) {
@@ -979,7 +983,7 @@ function run_wme_assist() {
         section.style.paddingTop = "8px";
         section.style.textIndent = "16px";
         section.id = "assist_options";
-        section.innerHTML = '<b>Editor Options</b><br/>' +
+        section.innerHTML = '<b>Scanner Options</b><br/>' +
             '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
             '<label><input type="checkbox" id="assist_skip_alt" value="0"/> Do not check alternative names</label><br/>' +
             '<label><input type="checkbox" id="assist_debug" value="0" checked/> Debug</label><br/>';
@@ -987,11 +991,11 @@ function run_wme_assist() {
         variant.id = 'variant_options';
         // adopt city names for Ukraine
         if (countryName == 'Ukraine') {
-            variant.innerHTML = '<b>Variants</b><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Ukraine" checked/> Ukraine</label><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Lviv"/> Lviv</label><br/>';
+            variant.innerHTML = '<b>Naming Rules</b><a href="https://wazeopedia.waze.com/wiki/Ukraine/Як_називати_вулиці" target="_blank"><span class="fa fa-question-circle"></span></a><br/>' +
+                '<label><input type="radio" name="assist_variant" value="Ukraine" checked/> Ukraine (Classic)</label><br/>' +
+                '<label><input type="radio" name="assist_variant" value="Lviv"/> 🦁 Lviv (Alternative)</label><br/>';
         } else {
-            variant.innerHTML = '<b>Variants</b><br/>' +
+            variant.innerHTML = '<b>Naming Rules</b><br/>' +
                 '<label><input type="radio" name="assist_variant" value="Moscow" checked/> Moscow</label><br/>' +
                 '<label><input type="radio" name="assist_variant" value="Tula"/> Tula</label><br/>';
         }
@@ -1256,20 +1260,29 @@ function run_wme_assist() {
 
         var self = this;
 
-        this.addProblem = function (id, text, func, exception, experimental) {
+        this.addProblem = function (id, text, selectFunc, editFunc, exception, experimental) {
             var problem = $('<li>')
             .prop('id', 'issue-' + id)
             .append($('<a>', {
                 href: "javascript:void(0)",
                 text: text,
                 click: function (event) {
-                    func(event);
+                    selectFunc(event);
                 },
                 contextmenu: function (event) {
                     exception(event);
                     event.preventDefault();
                     event.stopPropagation();
                 },
+            }))
+            .append('&nbsp;')
+            .append($('<span>', {
+                title: "Add custom rule for this problem",
+                class: "fa fa-edit",
+                style: "cursor: pointer;",
+                click: function (event) {
+                    editFunc(event);
+                }
             }))
             .appendTo($('#assist_unresolved_list'));
 
@@ -1367,21 +1380,32 @@ function run_wme_assist() {
     };
 
     var Application = function (wazeapi) {
-        var scaner = new WME_Assist.Scaner(wazeapi);
+        var scanner = new WME_Assist.Scanner(wazeapi);
         var analyzer = new WME_Assist.Analyzer(wazeapi);
 
         var FULL_ZOOM_LEVEL = 5;
 
         var scanForZoom = function (zoom) {
-            scaner.scan(wazeapi.map.calculateBounds(), zoom, function (bounds, zoom, data) {
+            scanner.scan(wazeapi.map.calculateBounds(), zoom, function (bounds, zoom, data) {
                 console.log(data);
                 analyzer.analyze(bounds, zoom, data, function (obj, title, reason) {
-                    ui.addProblem(obj.id, title, action.Select(obj.id, obj.type, obj.center, zoom), function () {
-                        analyzer.addException(reason, function (id) {
-                            ui.removeError(id);
-                            ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
-                        });
-                    }, false);
+                    ui.addProblem(obj.id, title, 
+                        action.Select(obj.id, obj.type, obj.center, zoom), 
+                        function () {
+                            ui.customRuleDialog('Add custom rule', {
+                                oldname: reason,
+                                newname: reason
+                            }).done(function (response) {
+                                rules.push(response.oldname, response.newname);
+                                ui.scanAreaBtn().click();
+                            });
+                        },
+                        function () {
+                            analyzer.addException(reason, function (id) {
+                                ui.removeError(id);
+                                ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                            });
+                        }, false);
 
                     ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
                 });
@@ -1608,6 +1632,6 @@ function run_wme_assist() {
         var app = new Application(wazeapi);
         app.start();
     });
-};
+}
 
 run_wme_assist();
