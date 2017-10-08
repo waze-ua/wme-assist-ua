@@ -9,7 +9,7 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.12
+// @version      0.5.13
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -683,14 +683,14 @@ function run_wme_assist() {
                 new Rule('Fix status', function (t) {
                     return hasStatus(t) ? t : 'вул. ' + t;
                 }, 'Ukraine'),
-                
+
                 new Rule('Only detect status absense', function (t) {
                     return hasStatus(t) ? t : '';
                 }, 'Lviv'),
-                
+
                 new Rule('Move status to begin of name', function (text) {
-                    var excludeList = /(?: |^)до |(?: |^)на /;
-                    if (! new RegExp(excludeList).test(text)) {
+                    var excludeList = /(^|\s)(~|>|до|на)\s/i;
+                    if (! excludeList.test(text)) {
                         return text.replace(/(.*)(вул\.)(.*)/, '$2 $1 $3');
                     }
                     return text;
@@ -1661,8 +1661,7 @@ function run_wme_assist() {
     function waitForWaze(done) {
         var wazeapi = getWazeApi();
 
-        // Does not get jQuery.ui
-        // Relies on WME Toolbox plugin
+        // Wait for Waze and jQuery.ui
         if (wazeapi === null || !jQuery.ui) {
             console.log("WME ASSIST: waiting for Waze");
             setTimeout(function () {
