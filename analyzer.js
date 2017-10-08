@@ -4,24 +4,24 @@
 // @description Waze Map Editor Assist Analyzer
 // @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @grant     none
-// @version   0.5.1 (ua)
+// @version   0.5.2 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
-var WME_Assist = WME_Assist || {}
+var WME_Assist = WME_Assist || {};
 
 WME_Assist.Analyzer = function (wazeapi) {
     var Exceptions = function () {
         var exceptions = [];
 
-        var onAdd = function (name) {}
-        var onDelete = function (index) {}
+        var onAdd = function (name) {};
+        var onDelete = function (index) {};
 
         var save = function (exception) {
             if (localStorage) {
                 localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
             }
-        }
+        };
 
         this.load = function () {
             if (localStorage) {
@@ -34,28 +34,28 @@ WME_Assist.Analyzer = function (wazeapi) {
                     }
                 }
             }
-        }
+        };
 
         this.contains = function (name) {
             if (exceptions.indexOf(name) == -1) return false;
             return true;
-        }
+        };
 
         this.add = function (name) {
             exceptions.push(name);
             save(exceptions);
             onAdd(name);
-        }
+        };
 
         this.remove = function (index) {
             exceptions.splice(index, 1);
             save(exceptions);
             onDelete(index);
-        }
+        };
 
-        this.onAdd = function (cb) { onAdd = cb }
-        this.onDelete = function (cb) {onDelete = cb }
-    }
+        this.onAdd = function (cb) { onAdd = cb; };
+        this.onDelete = function (cb) {onDelete = cb; };
+    };
 
     var analyzedIds = [];
     var problems = [];
@@ -68,34 +68,34 @@ WME_Assist.Analyzer = function (wazeapi) {
 
     var getUnresolvedErrorNum = function () {
         return problems.length - unresolvedIdx - skippedErrors;
-    }
+    };
 
     var getFixedErrorNum = function () {
         return unresolvedIdx;
-    }
+    };
 
     this.unresolvedErrorNum = getUnresolvedErrorNum;
     this.fixedErrorNum = getFixedErrorNum;
 
     this.setRules = function (r) {
         rules = r;
-    }
+    };
 
     this.setActionHelper = function (a) {
         action = a;
-    }
+    };
 
     this.loadExceptions = function () {
         exceptions.load();
-    }
+    };
 
     this.onExceptionAdd = function (cb) {
         exceptions.onAdd(cb);
-    }
+    };
 
     this.onExceptionDelete = function (cb) {
         exceptions.onDelete(cb);
-    }
+    };
 
     this.addException = function (reason, cb) {
         exceptions.add(reason);
@@ -110,24 +110,24 @@ WME_Assist.Analyzer = function (wazeapi) {
                 cb(problem.object.id);
             }
         }
-    }
+    };
 
     this.removeException = function (i) {
         exceptions.remove(i);
-    }
+    };
 
     this.setVariant = function (v) {
         variant = v;
-    }
+    };
 
     this.reset = function () {
         analyzedIds = [];
         problems = [];
         unresolvedIdx = 0;
         skippedErrors = 0;
-    }
+    };
 
-    this.fixAll = function (onefixed, allfixed) {
+    this.fixAll = function (oneFixed, allFixed) {
         WME_Assist.series(problems, unresolvedIdx, function (p, next) {
             if (p.skip) {
                 next();
@@ -136,13 +136,33 @@ WME_Assist.Analyzer = function (wazeapi) {
 
             action.fixProblem(p).done(function (id) {
                 ++unresolvedIdx;
-                onefixed(id);
+                oneFixed(id);
 
                 setTimeout(next, 0);
             });
-        }, allfixed);
-    }
+        }, allFixed);
+    };
 
+    this.fixSelected = function (listToFix, oneFixed, allFixed) {
+        WME_Assist.series(problems, unresolvedIdx, function (p, next) {
+            if (listToFix.indexOf(p.object.id.toString()) == -1) {
+                next();
+                return;
+            }
+            if (p.skip) {
+                next();
+                return;
+            }
+
+            action.fixProblem(p).done(function (id) {
+                ++unresolvedIdx;
+                oneFixed(id);
+
+                setTimeout(next, 0);
+            });
+        }, allFixed);
+    };
+    
     var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
         var userlevel = wazeapi.loginManager.user.normalizedLevel;
         var street = wazeapi.model.streets.get(streetID);
@@ -222,7 +242,7 @@ WME_Assist.Analyzer = function (wazeapi) {
 
             onProblemDetected(obj, title, reason);
         }
-    }
+    };
 
     this.analyze = function (bounds, zoom, data, onProblemDetected) {
         //var permissions = new require("Waze/Permissions");
@@ -282,5 +302,5 @@ WME_Assist.Analyzer = function (wazeapi) {
         }
 
         WME_Assist.info('end analyze: ' + (new Date().getTime() - startTime) + 'ms');
-    }
-}
+    };
+};

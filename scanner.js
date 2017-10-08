@@ -4,11 +4,11 @@
 // @description Waze Map Editor Assist Scanner
 // @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @grant     none
-// @version   0.5.1 (ua)
+// @version   0.5.2 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
-var WME_Assist = WME_Assist || {}
+var WME_Assist = WME_Assist || {};
 
 WME_Assist.Scanner = function (wazeapi) {
     var model = wazeapi.model;
@@ -18,7 +18,7 @@ WME_Assist.Scanner = function (wazeapi) {
     var getData = function (e, cb) {
         console.log(e);
         $.get(wazeapi.Config.paths.features, e).done(cb);
-    }
+    };
 
     var splitExtent = function (extent, zoom) {
         var result = [];
@@ -39,7 +39,7 @@ WME_Assist.Scanner = function (wazeapi) {
         }
 
         return result;
-    }
+    };
 
     var zoomToRoadType = function (zoom) {
         var s = wazeapi.Config.segments.zoomToRoadType[zoom] || [];
@@ -54,10 +54,10 @@ WME_Assist.Scanner = function (wazeapi) {
             if (i) {
                 r.push(t);
             }
-        })
+        });
 
-        return (r.length === 0) ? null : { roadTypes: s.toString() }
-    }
+        return (r.length === 0) ? null : { roadTypes: s.toString() };
+    };
 
     this.scan = function (bounds, zoom, analyze, progress) {
         var boundsArray = splitExtent(bounds, zoom);
@@ -67,7 +67,7 @@ WME_Assist.Scanner = function (wazeapi) {
             return;
         }
 
-        progress = progress || function () {}
+        progress = progress || function () {};
 
         WME_Assist.series(boundsArray, 0, function (bounds, next) {
             var peace = bounds.transform(map.getProjectionObject(), map.displayProjection);
@@ -87,5 +87,5 @@ WME_Assist.Scanner = function (wazeapi) {
                 next();
             });
         });
-    }
-}
+    };
+};

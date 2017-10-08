@@ -9,7 +9,7 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.11
+// @version      0.5.12
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -1122,33 +1122,35 @@ function run_wme_assist() {
             title: 'WME Assist',
         })
             .append($('<div>').css({
-            padding: 10,
-        })
+                padding: 10,
+            })
+                .append($('<div class="btn-toolbar">')
                     .append($('<button id="assist_fixall_btn" class="btn btn-danger">Fix all</button>'))
+                    .append($('<button id="assist_fixselected_btn" class="btn btn-primary">Fix selected</button>'))
                     .append($('<button id="assist_scanarea_btn" class="btn btn-warning">Scan area</button>'))
-                    .append($('<button id="assist_clearfixed_btn" class="btn btn-success">Clear fixed</button>'))
-                    .append($('<h2>Unresolved issues</h2>').css({
-            'font-size': '100%',
-            'font-weight': 'bold',
-        }))
-                    .append($('<ol id="assist_unresolved_list"></ol>').css({
-            border: '1px solid lightgrey',
-            'padding-top': 2,
-            'padding-bottom': 2,
-        })))
-            .append($('<div>').css({
-            padding: 10,
-        })
-                    .append($('<h2>Fixed issues</h2>').css({
-            'font-size': '100%',
-            'font-weight': 'bold',
-        }))
-                    .append($('<ol id="assist_fixed_list"></ol>').css({
-            border: '1px solid lightgrey',
-            'padding-top': 2,
-            'padding-bottom': 2,
-        })))
-            .appendTo($('#WazeMap'));
+                    .append($('<button id="assist_clearfixed_btn" class="btn btn-success">Clear fixed</button>')))
+                .append($('<h2>Unresolved issues</h2>').css({
+                    'font-size': '100%',
+                    'font-weight': 'bold',
+                }))
+                .append($('<ol id="assist_unresolved_list"></ol>').css({
+                    border: '1px solid lightgrey',
+                    'padding-top': 2,
+                    'padding-bottom': 2,
+                })))
+                .append($('<div>').css({
+                    padding: 10,
+                })
+                .append($('<h2>Fixed issues</h2>').css({
+                    'font-size': '100%',
+                    'font-weight': 'bold',
+                }))
+                .append($('<ol id="assist_fixed_list"></ol>').css({
+                    border: '1px solid lightgrey',
+                    'padding-top': 2,
+                    'padding-bottom': 2,
+                })))
+                .appendTo($('#WazeMap'));
 
         $('<div>').prop('id', 'assist_custom_rule_dialog')
             .append($('<p>All form fields are required</p>'))
@@ -1240,8 +1242,6 @@ function run_wme_assist() {
         }
         var btn = mainWindow.prev('.ui-dialog-titlebar').find('button');
         mainWindow.prev('.ui-dialog-titlebar').find('button').unbind('click');
-        var visible = true;
-        var height;
         mainWindow.prev('.ui-dialog-titlebar').find('button').click(function () {
             if ($('#WME_AssistWindow').is(':visible')) {
                 $('#WME_AssistWindow').hide();
@@ -1263,6 +1263,10 @@ function run_wme_assist() {
         this.addProblem = function (id, text, selectFunc, editFunc, exception, experimental) {
             var problem = $('<li>')
             .prop('id', 'issue-' + id)
+            .append($('<input>', {
+                value: id,
+                type: "checkbox"
+            }))
             .append($('<a>', {
                 href: "javascript:void(0)",
                 text: text,
@@ -1291,6 +1295,16 @@ function run_wme_assist() {
             }
         };
 
+        this.getCheckedItemsList = function () {
+            var itemsList = [];
+            $('#assist_unresolved_list').find('input').each(function () {
+                if (this.checked) {
+                    itemsList.push(this.value);
+                }
+            });
+            return itemsList;
+        };
+        
         this.updateProblem = function (id, text) {
             var a = $('li#issue-' + escapeId(id) + ' > a');
             a.text(a.text() + ' ' + text);
@@ -1313,18 +1327,22 @@ function run_wme_assist() {
         };
 
         this.moveToFixedList = function (id) {
-            $("#issue-" + escapeId(id)).appendTo($('#assist_fixed_list'));
+            $("#issue-" + escapeId(id)).appendTo($('#assist_fixed_list')).find("span").remove();
+            $("#issue-" + escapeId(id)).find("input").remove();
         };
 
         this.removeError = function (id) {
             $("#issue-" + escapeId(id)).remove();
         };
 
-        var fixallBtn = $('#assist_fixall_btn');
-        var clearfixedBtn = $('#assist_clearfixed_btn');
+        var fixAllBtn = $('#assist_fixall_btn');
+        var fixSelectedBtn = $('#assist_fixselected_btn');
+        var clearFixedBtn = $('#assist_clearfixed_btn');
         var scanAreaBtn = $('#assist_scanarea_btn');
+        
         var unresolvedList = $('#assist_unresolved_list');
         var fixedList = $('#assist_fixed_list');
+        
         var enableCheckbox = $('#assist_enabled');
         var skipAltCheckbox = $('#assist_skip_alt');
         var debugCheckbox = $('#assist_debug');
@@ -1333,8 +1351,9 @@ function run_wme_assist() {
         var editCustomRuleBtn = $('#assist_edit_custom_rule');
         var delCustomRuleBtn = $('#assist_del_custom_rule');
 
-        this.fixallBtn = function () { return fixallBtn; };
-        this.clearfixedBtn = function () { return clearfixedBtn; };
+        this.fixAllBtn = function () { return fixAllBtn; };
+        this.fixSelectedBtn = function () { return fixSelectedBtn; };
+        this.clearFixedBtn = function () { return clearFixedBtn; };
         this.scanAreaBtn = function () { return scanAreaBtn; };
 
         this.unresolvedList = function () { return unresolvedList; };
@@ -1393,7 +1412,7 @@ function run_wme_assist() {
                         action.Select(obj.id, obj.type, obj.center, zoom), 
                         function () {
                             ui.customRuleDialog('Add custom rule', {
-                                oldname: reason,
+                                oldname: '(.*)' + reason + '(.*)',
                                 newname: reason
                             }).done(function (response) {
                                 rules.push(response.oldname, response.newname);
@@ -1535,9 +1554,10 @@ function run_wme_assist() {
                 ui.debugCheckbox().click();
             }
 
-            ui.fixallBtn().click(function () {
-                ui.fixallBtn().hide();
-                ui.clearfixedBtn().hide();
+            ui.fixAllBtn().click(function () {
+                ui.fixAllBtn().hide();
+                ui.fixSelectedBtn().hide();
+                ui.clearFixedBtn().hide();
                 ui.scanAreaBtn().hide();
 
                 wazeapi.model.events.unregister('mergeend', map, scan);
@@ -1548,16 +1568,43 @@ function run_wme_assist() {
                         ui.setFixedErrorNum(analyzer.fixedErrorNum());
                         ui.moveToFixedList(id);
                     }, function () {
-                        ui.fixallBtn().show();
-                        ui.clearfixedBtn().show();
+                        ui.fixAllBtn().show();
+                        ui.fixSelectedBtn().show();
+                        ui.clearFixedBtn().show();
                         ui.scanAreaBtn().show();
 
                         wazeapi.model.events.register('mergeend', map, scan);
                     });
                 }, 0);
             });
+            
+            ui.fixSelectedBtn().click(function () {
+                ui.fixAllBtn().hide();
+                ui.fixSelectedBtn().hide();
+                ui.clearFixedBtn().hide();
+                ui.scanAreaBtn().hide();
 
-            ui.clearfixedBtn().click(function () {
+                wazeapi.model.events.unregister('mergeend', map, scan);
+
+                var listToFix = ui.getCheckedItemsList();
+
+                setTimeout(function () {
+                    analyzer.fixSelected(listToFix, function (id) {
+                        ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                        ui.setFixedErrorNum(analyzer.fixedErrorNum());
+                        ui.moveToFixedList(id);
+                    }, function () {
+                        ui.fixAllBtn().show();
+                        ui.fixSelectedBtn().show();
+                        ui.clearFixedBtn().show();
+                        ui.scanAreaBtn().show();
+
+                        wazeapi.model.events.register('mergeend', map, scan);
+                    });
+                }, 0);
+            });
+            
+            ui.clearFixedBtn().click(function () {
                 ui.fixedList().empty();
             });
 
