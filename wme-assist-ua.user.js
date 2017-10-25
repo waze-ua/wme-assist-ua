@@ -9,7 +9,7 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.13
+// @version      0.5.14
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -534,7 +534,7 @@ function run_wme_assist() {
             var hasCyrillic = function(s) {return s.search(/[а-яіїєґ]/i) != -1;};
             var hasShortStatus = function(s) { return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пров\.|ст\.|пр\.|дор\.|б-р|р-н)( |$)/i) != -1; };
             var hasLongStatus = function(s) { return s.search(/( |^)(площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|шляхопровід|шлях|завулок|квартал)( |$)/i) != -1; };
-            var hasSpecialStatus = function(s) { return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)( |$)|^(|до|на|>) /i) != -1; };
+            var hasSpecialStatus = function(s) { return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)|~|>|\/( |$)|^(|до|на|>) /i) != -1; };
             var hasInternationalName = function(s) {return s.search(/^E[0-9]+$/i) != -1; };
             var hasStatus = function(s) { return (hasShortStatus(s) || hasLongStatus(s) || hasSpecialStatus(s)); };
 
@@ -689,8 +689,7 @@ function run_wme_assist() {
                 }, 'Lviv'),
 
                 new Rule('Move status to begin of name', function (text) {
-                    var excludeList = /(^|\s)(~|>|до|на)\s/i;
-                    if (! excludeList.test(text)) {
+                    if (!hasSpecialStatus(text)) {
                         return text.replace(/(.*)(вул\.)(.*)/, '$2 $1 $3');
                     }
                     return text;
@@ -1106,7 +1105,7 @@ function run_wme_assist() {
             mainWindow.dialog('open');
             mainWindow.dialog('option', 'position', {
                 my: 'right top',
-                at: 'right-50 top',
+                at: 'right top+50',
                 of: '#WazeMap',
             });
             // Minimize window
