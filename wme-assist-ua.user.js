@@ -9,7 +9,7 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.15
+// @version      0.5.16
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -1101,12 +1101,12 @@ function run_wme_assist() {
         };
 
         this.showMainWindow = function () {
-            $('#map').css('overflow', 'hidden');
+            $('#WazeMap').css('overflow', 'hidden');
             mainWindow.dialog('open');
             mainWindow.dialog('option', 'position', {
                 my: 'right top',
                 at: 'right top+50',
-                of: '#map',
+                of: '#WazeMap',
             });
             // Minimize window
             mainWindow.prev('.ui-dialog-titlebar').find('button').click();
@@ -1149,7 +1149,7 @@ function run_wme_assist() {
                     'padding-top': 2,
                     'padding-bottom': 2,
                 })))
-                .appendTo($('#map'));
+                .appendTo($('#WazeMap'));
 
         $('<div>').prop('id', 'assist_custom_rule_dialog')
             .append($('<p>All form fields are required</p>'))
@@ -1171,7 +1171,7 @@ function run_wme_assist() {
         }))
                            )
                    )
-            .appendTo($('#map'));
+            .appendTo($('#WazeMap'));
 
 
         $('#assist_custom_rule_dialog label').css({display: 'block'});
@@ -1196,7 +1196,7 @@ function run_wme_assist() {
 
         var mainWindow = $('#WME_AssistWindow').dialog({
             autoOpen: false,
-            appendTo: $('#map'),
+            appendTo: $('#WazeMap'),
             width: 500,
             draggable: true,
             height: 600,
