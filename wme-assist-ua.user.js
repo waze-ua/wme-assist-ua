@@ -9,7 +9,7 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.16
+// @version      0.5.17
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -569,12 +569,12 @@ function run_wme_assist() {
                     });
                 }),
                 new Rule('Delete space in initials', function (text) {
-                    return text.replace(/(^| +)([А-ЯІЇЄ]\.) ([А-ЯІЇЄ]\.)/, '$1$2$3');
+                    return text.replace(/(^| +)([А-ЯІЇЄҐ]\.) ([А-ЯІЇЄҐ]\.)/, '$1$2$3');
                 }),
                 new Rule('Incorrect characters in street name', function (t) {
                     // This rule should be before renaming rules or they couldn't see some errors
                     return t
-                        .replace(/[@#№$,^!:;*"?<]/, ' ').replace(/ {2,}/, ' ')
+                        .replace(/[@#№$,^!:;*"?<]/g, ' ').replace(/ {2,}/, ' ')
                         .replace(/[`’]/g, '\'');
                 }),
                 new Rule('Incorrect language', function (t) {
