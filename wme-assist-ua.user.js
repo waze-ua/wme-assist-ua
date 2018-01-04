@@ -2,18 +2,14 @@
 // @name         WME Assist UA
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @resource     jqueryCSS https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css
-// @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scanner.js
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
-// @grant        GM_addStyle
-// @grant        GM_getResourceText
+// @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.17
+// @version      0.5.18
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
-GM_addStyle(GM_getResourceText("jqueryCSS"));
 
 WME_Assist.debug = function (message) {
     if (!$('#assist_debug').is(':checked')) return;
@@ -52,13 +48,15 @@ function run_wme_assist() {
     var warning = WME_Assist.warning;
 
     function getWazeApi() {
-        if (!Waze) return null;
-        if (!Waze.map) return null;
-        if (!Waze.model) return null;
-        if (!Waze.model.countries) return null;
-        if (!Waze.model.countries.top) return null;
+        var wazeapi = window.Waze;
 
-        return Waze;
+        if (!wazeapi) return null;
+        if (!wazeapi.map) return null;
+        if (!wazeapi.model) return null;
+        if (!wazeapi.model.countries) return null;
+        if (!wazeapi.model.countries.top) return null;
+
+        return wazeapi;
     }
 
     var Rule = function (comment, func, variant) {
