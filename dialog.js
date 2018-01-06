@@ -13,7 +13,7 @@
         content: '',
         x: null, y: null,
         width: 300, height: 200,
-        maximized: false
+        maximized: true
       },
       dialog: null,
       title: null,
@@ -49,7 +49,7 @@
     ctx.dialog.style.width = ctx.config.width + 'px';
     ctx.dialog.style.minHeight = ctx.config.maximized ? ctx.config.height + 'px' : '1px';
     ctx.dialog.style.maxHeight = ctx.config.height + 'px';
-    ctx.dialog.style.left = ctx.config.x === null ? (w.innerWidth - ctx.config.width) / 2 + 'px': ctx.config.x + 'px';		+    ctx.dialog.style.maxHeight = ctx.config.height + 'px';
+    ctx.dialog.style.left = ctx.config.x === null ? (w.innerWidth - ctx.config.width) / 2 + 'px': ctx.config.x + 'px';
     ctx.dialog.style.top = ctx.config.y === null ? (w.innerHeight - ctx.config.height) / 2 + 'px': ctx.config.y + 'px';
     ctx.content.style.display = ctx.config.maximized ? 'block' : 'none';
     ctx.maximized = ctx.config.maximized;
