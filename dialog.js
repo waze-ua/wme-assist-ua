@@ -5,114 +5,137 @@
 'use strict';
 
 (function(w, d) {
-  w.newDialog = (config) => {
-  	// Default dialog context
-    let ctx = {
-      config: {
-        title: 'Title',
-        content: '',
-        x: null, y: null,
-        width: 300, height: 200,
-        maximized: true
-      },
+  w.newDialog = (c) => {
+
+    // Context
+    let ctx = {};
+
+    // Default config
+    let cfg = {
+      title: 'Title',
+      content: '',
+      x: null, y: null,
+      width: 300, height: 200,
+      close: true, // Show close button
+      minmax: true, // Show min/max button
+      minimized: false // Create minimized dialog
+    };
+    
+    // UI elements
+    let ui = {
       dialog: null,
       title: null,
       content: null,
       minmax: null,
-      maximized: true,
-      drag: {
-      	mouseX:0, mouseY:0,
-        dialogX:0, dialogY:0
-      },
+      close: null,
     };
 
-		// Merge config with default
-    for (let i in config)
-    	ctx.config[i] = (typeof(config[i])) ? config[i] : ctx.config[i];
+    // Dialog movemet
+    let mv = {
+      mouseX:0, mouseY:0,
+      dialogX:0, dialogY:0
+    };
 
-		ctx.dialog = d.createElement('div');
-    ctx.title = d.createElement('div');
-    ctx.minmax = d.createElement('span');
-    ctx.content = d.createElement('div');
+    // Merge config with default
+    for (let i in c)
+        cfg[i] = (typeof(c[i])) ? c[i] : cfg[i];
 
-		ctx.dialog.appendChild(ctx.title);
-    ctx.dialog.appendChild(ctx.minmax);
-    ctx.dialog.appendChild(ctx.content);
-    d.body.appendChild(ctx.dialog);
+    ui.dialog = d.createElement('div');
+    ui.title = d.createElement('div');
+    ui.minmax = d.createElement('span');
+    ui.close = d.createElement('span');
+    ui.content = d.createElement('div');
 
-    ctx.dialog.className = 'dlg-box';
-    ctx.minmax.className = 'dlg-minmax';
-    ctx.minmax.innerHTML = '&ndash;';
-    ctx.title.className = 'dlg-title';
-    ctx.content.className = 'dlg-content';
+    ui.dialog.appendChild(ui.close);
+    ui.dialog.appendChild(ui.minmax);
+    ui.dialog.appendChild(ui.title);
+    ui.dialog.appendChild(ui.content);
+    d.body.appendChild(ui.dialog);
 
-    ctx.dialog.style.width = ctx.config.width + 'px';
-    ctx.dialog.style.minHeight = ctx.config.maximized ? ctx.config.height + 'px' : '1px';
-    ctx.dialog.style.maxHeight = ctx.config.height + 'px';
-    ctx.dialog.style.left = ctx.config.x === null ? (w.innerWidth - ctx.config.width) / 2 + 'px': ctx.config.x + 'px';
-    ctx.dialog.style.top = ctx.config.y === null ? (w.innerHeight - ctx.config.height) / 2 + 'px': ctx.config.y + 'px';
-    ctx.content.style.display = ctx.config.maximized ? 'block' : 'none';
-    ctx.maximized = ctx.config.maximized;
-      
+    ui.dialog.className = 'dlg-box';
+    ui.minmax.className = 'dlg-minmax';
+    ui.minmax.innerHTML = '&ndash;';
+    ui.close.innerHTML = '&times;';
+    ui.close.className = 'dlg-close';
+    ui.title.className = 'dlg-title';
+    ui.content.className = 'dlg-content';
+
+    ui.dialog.style.width = cfg.width + 'px';
+    ui.dialog.style.minHeight = cfg.minimized ? '1px' : cfg.height + 'px';
+    ui.dialog.style.maxHeight = cfg.height + 'px';
+    ui.dialog.style.left = cfg.x === null ? (w.innerWidth - cfg.width) / 2 + 'px': cfg.x + 'px';
+    ui.dialog.style.top = cfg.y === null ? (w.innerHeight - cfg.height) / 2 + 'px': cfg.y + 'px';
+    ui.content.style.display = cfg.minimized ? 'none' : 'block';
+
+    if (cfg.close === false)
+        ui.close.style.display = 'none';
+
+    if (cfg.minmax === false)
+        ui.minmax.style.display = 'none';
+
    	// Content section
-    if (typeof ctx.config.title === 'string')
-			ctx.title.innerHTML = ctx.config.title;
+    if (typeof cfg.title === 'string')
+        ui.title.innerHTML = cfg.title;
     else
-    	ctx.title.appendChild(ctx.config.title);
+        ui.title.appendChild(cfg.title);
     
-    if (typeof ctx.config.content === 'string')
-			ctx.content.innerHTML = ctx.config.content;
+    if (typeof cfg.content === 'string')
+        ui.content.innerHTML = cfg.content;
     else
-      ctx.content.appendChild(ctx.config.content);
+        ui.content.appendChild(cfg.content);
 
-		// Dragging...
-		const eventMouseMove = (ev) => {
-      const dx = ev.clientX - ctx.drag.mouseX,
-            dy = ev.clientY - ctx.drag.mouseY;
+    // Dragging...
+    const eventMouseMove = (ev) => {
+        const dx = ev.clientX - mv.mouseX,
+            dy = ev.clientY - mv.mouseY;
 
-      ctx.dialog.style.left = ctx.drag.dialogX + dx + 'px';
-      ctx.dialog.style.top = ctx.drag.dialogY + dy + 'px';
+        ui.dialog.style.left = mv.dialogX + dx + 'px';
+        ui.dialog.style.top = mv.dialogY + dy + 'px';
     };
 
-		// End drag...
-		const eventMouseUp = () => {
+    // End drag...
+    const eventMouseUp = () => {
     	d.removeEventListener('mousemove', eventMouseMove);
     };
 
-		// Start drag...
+    // Start drag...
     const eventMouseDown = (ev) => {
-      ctx.drag.mouseX = ev.clientX;
-      ctx.drag.mouseY = ev.clientY;
-      ctx.drag.dialogX = ev.target.parentNode.offsetLeft;
-      ctx.drag.dialogY = ev.target.parentNode.offsetTop;
+        mv.mouseX = ev.clientX;
+        mv.mouseY = ev.clientY;
+        mv.dialogX = ev.target.parentNode.offsetLeft;
+        mv.dialogY = ev.target.parentNode.offsetTop;
 
-      d.addEventListener('mousemove', eventMouseMove);
+        d.addEventListener('mousemove', eventMouseMove);
 
-      if(ev.preventDefault) ev.preventDefault();
-      ev.cancelBubble = true;
+        if(ev.preventDefault) ev.preventDefault();
+        
+        ev.cancelBubble = true;
     	ev.returnValue = false;
 
-			return false;
-    };
-
-		ctx.title.addEventListener('mousedown', eventMouseDown);
-    ctx.title.addEventListener('mouseup', eventMouseUp);
-
-		ctx.minmax.onclick = () => {
-      ctx.content.style.display = ctx.maximized ? 'none' : 'block';
-      ctx.dialog.style.minHeight = ctx.maximized ? '1px' : ctx.config.height + 'px';
-      ctx.maximized = !ctx.maximized;
+        return false;
     };
 
     ctx.close = () => {
-    	d.removeEventListener('mousemove', eventMouseMove);
-      d.body.removeChild(ctx.dialog);
-      ctx.dialog = null;
-      ctx.minmax = null;
-      ctx.title = null;
-      ctx.content = null;
+        d.removeEventListener('mousemove', eventMouseMove);
+        d.body.removeChild(ui.dialog);
+        ui.dialog = null;
+        ui.minmax = null;
+        ui.title = null;
+        ui.content = null;
+        ui.close = null;
     };
 
-		return ctx;
-  };
+    ui.title.addEventListener('mousedown', eventMouseDown);
+    ui.title.addEventListener('mouseup', eventMouseUp);
+
+    ui.minmax.onclick = () => {
+        ui.content.style.display = cfg.minimized ? 'block' : 'none';
+        ui.dialog.style.minHeight = cfg.minimized ? cfg.height + 'px' : '1px' ;
+        cfg.minimized = !cfg.minimized;
+    };
+
+    ui.close.onclick = ctx.close;
+
+    return ctx;
+};
 })(window, document);
