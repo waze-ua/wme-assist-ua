@@ -86,11 +86,6 @@
   cursor:pointer;
 }
 
-/*.dlg-box .dlg-minmax:focus {
-  border-width:0;
-  outline:none;
-}*/
-
 .dlg-box .dlg-minmax:hover, .dlg-box .dlg-close:hover {color:#D77}
 .dlg-box .dlg-minmax:focus, .dlg-box .dlg-close:focus  {color:#C90000}
 .dlg-box .dlg-minmax:active, .dlg-box .dlg-close:active  {color:#444}
