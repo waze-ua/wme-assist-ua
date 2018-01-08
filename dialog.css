@@ -79,8 +79,7 @@
   line-height:1.35em;
   color:#aaa;
   float: right;
-  padding: 0 0.3em;
-  //position:absolute;
+  padding-right: 0.5em;
   top:0;
   text-align:center;
   cursor:pointer;
