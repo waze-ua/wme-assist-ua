@@ -248,8 +248,14 @@ WME_Assist.Analyzer = function (wazeapi) {
         //var permissions = new require("Waze/Permissions");
         var startTime = new Date().getTime();
         var analyzeAlt = true;
-        
-        WME_Assist.info('start analyze');
+
+        if (localStorage) {
+            if (localStorage.getItem('assist_skip_alt') == 'true')
+                analyzeAlt = false;
+
+            if (localStorage.getItem('assist_enabled') == 'false')
+                return;
+        }
 
         var subjects = {
             'segment': {
@@ -261,13 +267,9 @@ WME_Assist.Analyzer = function (wazeapi) {
                 name: 'venues'
             }
         };
-
-        if (localStorage) {
-            if (localStorage.getItem('assist_skip_alt') == 'true') {
-                analyzeAlt = false;
-            }
-        }
         
+        WME_Assist.info('start analyze');
+
         for (var k in subjects) {
             var subject = subjects[k];
             var subjectData = data[subject.name];
