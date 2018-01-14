@@ -1,7 +1,5 @@
 var WME_Assist = WME_Assist || {};
 
-console.log("WME_ASSIST_UA_Scanner");
-
 WME_Assist.Scanner = function (wazeapi) {
     var model = wazeapi.model;
     var map = wazeapi.map;
