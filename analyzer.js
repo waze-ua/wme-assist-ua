@@ -5,7 +5,6 @@
 // @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @grant     none
 // @version   0.5.2 (ua)
-// @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
