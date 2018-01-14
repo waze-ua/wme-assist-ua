@@ -1,5 +1,7 @@
 var WME_Assist = WME_Assist || {};
 
+console.log("WME_ASSIST_UA_Analyzer");
+
 WME_Assist.Analyzer = function (wazeapi) {
     var Exceptions = function () {
         var exceptions = [];
