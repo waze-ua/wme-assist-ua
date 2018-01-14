@@ -1,12 +1,3 @@
-// ==UserScript==
-// @name WME_Assist_Scanner
-// @author borman84 (Boris Molodenkov), madnut
-// @description Waze Map Editor Assist Scanner
-// @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @grant     none
-// @version   0.5.3 (ua)
-// ==/UserScript==
-
 var WME_Assist = WME_Assist || {};
 
 WME_Assist.Scanner = function (wazeapi) {
