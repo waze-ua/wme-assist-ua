@@ -6,7 +6,7 @@
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.19
+// @version      0.5.20
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};
@@ -48,7 +48,7 @@ function run_wme_assist() {
     var warning = WME_Assist.warning;
 
     function getWazeApi() {
-        var wazeapi = window.Waze;
+        var wazeapi = window.W;
 
         if (!wazeapi) return null;
         if (!wazeapi.map) return null;
@@ -893,7 +893,7 @@ function run_wme_assist() {
         };
 
         var addOrGetCity = function (countryID, stateID, cityName) {
-            var foundCities = Waze.model.cities.getByAttributes({
+            var foundCities = wazeapi.model.cities.getByAttributes({
                 countryID: countryID,
                 stateID: stateID,
                 name : cityName
@@ -902,10 +902,10 @@ function run_wme_assist() {
             if (foundCities.length == 1)
                 return foundCities[0];
 
-            var state = Waze.model.states.objects[stateID];
-            var country = Waze.model.countries.objects[countryID];
+            var state = wazeapi.model.states.objects[stateID];
+            var country = wazeapi.model.countries.objects[countryID];
             var a = new WazeActionAddOrGetCity(state, country, cityName);
-            Waze.model.actionManager.add(a);
+            wazeapi.model.actionManager.add(a);
             return a.city;
         };
 
