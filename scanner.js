@@ -4,7 +4,7 @@
 // @description Waze Map Editor Assist Scanner
 // @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @grant     none
-// @version   0.5.3 (ua)
+// @version   0.5.4 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -50,8 +50,8 @@ WME_Assist.Scanner = function (wazeapi) {
         var r = [];
         Object.keys(wazeapi.Config.segments.zoomToRoadType).forEach(function (t) {
             t = parseInt(t, 10);
-            var i = s.contains(t);
-            if (i) {
+            var i = s.indexOf(t);
+            if (i > -1) {
                 r.push(t);
             }
         });
