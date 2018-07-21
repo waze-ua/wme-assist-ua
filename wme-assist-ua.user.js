@@ -6,7 +6,7 @@
 // @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.21
+// @version      0.5.22
 // ==/UserScript==
 
 var WME_Assist = WME_Assist || {};

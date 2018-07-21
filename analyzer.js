@@ -4,7 +4,7 @@
 // @description Waze Map Editor Assist Analyzer
 // @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @grant     none
-// @version   0.5.2 (ua)
+// @version   0.5.3 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -17,7 +17,7 @@ WME_Assist.Analyzer = function (wazeapi) {
         var onAdd = function (name) {};
         var onDelete = function (index) {};
 
-        var save = function (exception) {
+        var save = function (exceptions) {
             if (localStorage) {
                 localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
             }
@@ -181,13 +181,22 @@ WME_Assist.Analyzer = function (wazeapi) {
                     var result = rules.correct(variant, street.name);
                     newStreetName = result.value;
                     detected = (newStreetName != street.name);
-                    if (obj.type == 'venue') title = 'POI: ';
+                    if (obj.type == 'venue') {
+                        title = 'POI: ';
+                    }
+                    // lock alternatives, no auto-fix as of now
                     if (attrName == 'streetIDs') {
                         title = 'ALT: ';
                         skip = true;
                     }
+                    // if user has lower rank, just show the segment, but no fix allowed
                     if (obj.lockRank && obj.lockRank >= userlevel) {
                         title = '(L' + (obj.lockRank + 1) + ') ' + title;
+                        skip = true;
+                    }
+                    // show segments with closures, but lock them from fixing
+                    if (obj.hasClosures) {
+                        title = '(🚧) ' + title;
                         skip = true;
                     }
                     title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■');
@@ -245,7 +254,6 @@ WME_Assist.Analyzer = function (wazeapi) {
     };
 
     this.analyze = function (bounds, zoom, data, onProblemDetected) {
-        //var permissions = new require("Waze/Permissions");
         var startTime = new Date().getTime();
         var analyzeAlt = true;
         
@@ -283,8 +291,6 @@ WME_Assist.Analyzer = function (wazeapi) {
                 obj.type = k;
 
                 if (analyzedIds.indexOf(id) >= 0) continue;
-
-                if (obj.hasClosures) continue;
 
                 if (typeof obj.approved != 'undefined' && !obj.approved) continue;
 
