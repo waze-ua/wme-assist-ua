@@ -4,7 +4,7 @@
 // @description Waze Map Editor Assist Analyzer
 // @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
 // @grant     none
-// @version   0.5.3 (ua)
+// @version   0.5.4 (ua)
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
@@ -165,7 +165,7 @@ WME_Assist.Analyzer = function (wazeapi) {
     
     var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
         var userlevel = wazeapi.loginManager.user.normalizedLevel;
-        var street = wazeapi.model.streets.get(streetID);
+        var street = wazeapi.model.streets.getObjectById(streetID);
 
         if (!street) return;
 
