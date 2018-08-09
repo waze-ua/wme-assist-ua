@@ -2,14 +2,14 @@
 // @name         WME Assist UA
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @require      https://github.com/waze-ua/wme-assist-ua/raw/master/scanner.js
-// @require      https://github.com/waze-ua/wme-assist-ua/raw/master/analyzer.js
+// @require      https://rawgit.com/waze-ua/wme-assist-ua/master/scanner.js
+// @require      https://rawgit.com/waze-ua/wme-assist-ua/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      0.5.22
+// @version      2018.08.09.1
 // ==/UserScript==
 
-var WME_Assist = WME_Assist || {};
+var WME_Assist = window.WME_Assist;
 
 WME_Assist.debug = function (message) {
     if (!$('#assist_debug').is(':checked')) return;
