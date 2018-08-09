@@ -8,7 +8,8 @@
 // @namespace https://greasyfork.org/users/66819
 // ==/UserScript==
 
-var WME_Assist = WME_Assist || {};
+window.WME_Assist = window.WME_Assist || {};
+var WME_Assist = window.WME_Assist;
 
 WME_Assist.Analyzer = function (wazeapi) {
     var Exceptions = function () {
