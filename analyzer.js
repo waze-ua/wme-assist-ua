@@ -1,13 +1,3 @@
-// ==UserScript==
-// @name WME_Assist_Analyzer
-// @author borman84 (Boris Molodenkov), madnut
-// @description Waze Map Editor Assist Analyzer
-// @include   /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @grant     none
-// @version   0.5.4 (ua)
-// @namespace https://greasyfork.org/users/66819
-// ==/UserScript==
-
 window.WME_Assist = window.WME_Assist || {};
 var WME_Assist = window.WME_Assist;
 
