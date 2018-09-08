@@ -2,9 +2,9 @@ window.WME_Assist = window.WME_Assist || {};
 var WME_Assist = window.WME_Assist;
 
 WME_Assist.Scanner = function (wazeapi) {
-    var model = wazeapi.model;
+    //var model = wazeapi.model;
     var map = wazeapi.map;
-    var controller = wazeapi.controller;
+    //var controller = wazeapi.controller;
 
     var getData = function (e, cb) {
         console.log(e);

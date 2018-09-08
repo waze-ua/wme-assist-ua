@@ -215,8 +215,8 @@ WME_Assist.Analyzer = function (wazeapi) {
         //     if (newCityID != street.cityID) {
         //         detected = true;
         //         title = 'city: ' +
-        //             wazeapi.model.cities.objects[street.cityID].name + ' -> ' +
-        //             wazeapi.model.cities.objects[newCityID].name;
+        //             wazeapi.model.cities.getObjectById(street.cityID).name + ' -> ' +
+        //             wazeapi.model.cities.getObjectById(newCityID).name;
         //     }
         // }
 

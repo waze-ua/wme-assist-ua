@@ -6,7 +6,7 @@
 // @require      https://rawgit.com/waze-ua/wme-assist-ua/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2018.08.09.1
+// @version      2018.09.09.1
 // ==/UserScript==
 
 var WME_Assist = window.WME_Assist;
@@ -827,9 +827,8 @@ function run_wme_assist() {
     };
 
     var ActionHelper = function (wazeapi) {
-        var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
-        var WazeActionAddOrGetStreet = require("Waze/Action/AddOrGetStreet");
-        var WazeActionAddOrGetCity = require("Waze/Action/AddOrGetCity");
+        var WazeActionAddAlternateStreet   = require("Waze/Action/AddAlternateStreet");
+        var WazeActionUpdateFeatureAddress =  require("Waze/Action/UpdateFeatureAddress");
 
         var ui;
 
@@ -851,7 +850,7 @@ function run_wme_assist() {
             var select = function () {
                 info('select: ' + id);
 
-                var obj = type2repo(type).objects[id];
+                var obj = type2repo(type).getObjectById(id);
 
                 wazeapi.model.events.unregister('mergeend', map, select);
 
@@ -876,84 +875,31 @@ function run_wme_assist() {
             return false;
         };
 
-        var addOrGetStreet = function (cityId, name, isEmpty) {
-            var foundStreets = wazeapi.model.streets.getByAttributes({
-                cityID: cityId,
-                name: name,
-            });
-
-            if (foundStreets.length == 1)
-                return foundStreets[0];
-
-            var city = wazeapi.model.cities.objects[cityId];
-            var a = new WazeActionAddOrGetStreet(name, city, isEmpty);
-            wazeapi.model.actionManager.add(a);
-
-            return a.street;
-        };
-
-        var addOrGetCity = function (countryID, stateID, cityName) {
-            var foundCities = wazeapi.model.cities.getByAttributes({
-                countryID: countryID,
-                stateID: stateID,
-                name : cityName
-            });
-
-            if (foundCities.length == 1)
-                return foundCities[0];
-
-            var state = wazeapi.model.states.objects[stateID];
-            var country = wazeapi.model.countries.objects[countryID];
-            var a = new WazeActionAddOrGetCity(state, country, cityName);
-            wazeapi.model.actionManager.add(a);
-            return a.city;
-        };
-
-        var cityMap = {};
         var onlyVisible = false;
-
-        this.newCityID = function (id) {
-            var newid = cityMap[id];
-            if (newid) return newid;
-            return id;
-        };
-
-        this.renameCity = function (oldname, newname) {
-            var oldcity = wazeapi.model.cities.getByAttributes({name: oldname});
-
-            if (oldcity.length === 0) {
-                console.log('City not found: ' + oldname);
-                return false;
-            }
-
-            var city = oldcity[0];
-            var newcity = addOrGetCity(city.countryID, city.stateID, newname);
-
-            cityMap[city.getID()] = newcity.getID();
-            onlyVisible = true;
-
-            console.log('Do not forget press reset button and re-enable script');
-            return true;
-        };
 
         this.fixProblem = function (problem) {
             var deferred = $.Deferred();
             var attemptNum = 10; // after that we decide that object was removed
 
             var fix = function () {
-                var obj = type2repo(problem.object.type).objects[problem.object.id];
+                var obj = type2repo(problem.object.type).getObjectById(problem.object.id);
                 wazeapi.model.events.unregister('mergeend', map, fix);
 
                 if (obj) {
                     // protect user manual fix
-                    var currentValue = wazeapi.model.streets.objects[obj.attributes[problem.attrName]].name;
-                    if (problem.reason == currentValue) {
-                        var correctStreet = addOrGetStreet(problem.cityId, problem.newStreetName, problem.isEmpty);
-                        var request = {};
-                        request[problem.attrName] = correctStreet.getID();
-                        wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, request));
+                    var addr = obj.getAddress().attributes;
+                    if (problem.reason == addr.street.name) {
+                        var attr = {
+                            cityName: addr.city.attributes.name,
+                            emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
+                            stateID: addr.state.id,
+                            countryID: addr.country.id,
+                            streetName: problem.newStreetName, 
+                            emptyStreet: problem.isEmpty
+                        };
+                        wazeapi.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, { streetIDField: problem.attrName }));
                     } else {
-                        ui.updateProblem(problem.object.id, '(user fix: ' + currentValue + ')');
+                        ui.updateProblem(problem.object.id, '(user fix: ' + addr.street.name + ')');
                     }
                     deferred.resolve(obj.getID());
                 } else if (--attemptNum <= 0) {
@@ -984,7 +930,7 @@ function run_wme_assist() {
         section.innerHTML = '<b>Scanner Options</b><br/>' +
             '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
             '<label><input type="checkbox" id="assist_skip_alt" value="0"/> Do not check alternative names</label><br/>' +
-            '<label><input type="checkbox" id="assist_debug" value="0" checked/> Debug</label><br/>';
+            '<label><input type="checkbox" id="assist_debug" value="0"/> Debug</label><br/>';
         var variant = document.createElement('p');
         variant.id = 'variant_options';
         // adopt city names for Ukraine
@@ -1441,7 +1387,7 @@ function run_wme_assist() {
 
         var countryName = function () {
             var id = wazeapi.model.countries.top.id;
-            var name = wazeapi.model.countries.objects[id].name;
+            var name = wazeapi.model.countries.getObjectById(id).name;
             return name;
         };
 
@@ -1652,8 +1598,6 @@ function run_wme_assist() {
 
             window.assist = this;
         };
-
-        this.renameCity = action.renameCity;
     };
 
     function waitForWaze(done) {
