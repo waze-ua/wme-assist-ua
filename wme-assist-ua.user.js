@@ -6,7 +6,7 @@
 // @require      https://rawgit.com/waze-ua/wme-assist-ua/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2018.09.09.1
+// @version      2018.09.09.2
 // ==/UserScript==
 
 var WME_Assist = window.WME_Assist;
@@ -75,7 +75,7 @@ function run_wme_assist() {
         }));
     };
 
-    var ExperimentalRule = function (comment,  func) {
+    var ExperimentalRule = function (comment, func) {
         this.comment = comment;
         this.correct = func;
         this.experimental = true;
@@ -827,8 +827,9 @@ function run_wme_assist() {
     };
 
     var ActionHelper = function (wazeapi) {
-        var WazeActionAddAlternateStreet   = require("Waze/Action/AddAlternateStreet");
-        var WazeActionUpdateFeatureAddress =  require("Waze/Action/UpdateFeatureAddress");
+        var WazeActionAddAlternateStreet = require("Waze/Action/AddAlternateStreet");
+        var WazeActionUpdateFeatureAddress = require("Waze/Action/UpdateFeatureAddress");
+        var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
 
         var ui;
 
@@ -882,29 +883,49 @@ function run_wme_assist() {
             var attemptNum = 10; // after that we decide that object was removed
 
             var fix = function () {
+                var uniqueId = problem.object.id + '_' + problem.streetID;
                 var obj = type2repo(problem.object.type).getObjectById(problem.object.id);
                 wazeapi.model.events.unregister('mergeend', map, fix);
 
                 if (obj) {
-                    // protect user manual fix
                     var addr = obj.getAddress().attributes;
-                    if (problem.reason == addr.street.name) {
-                        var attr = {
-                            cityName: addr.city.attributes.name,
-                            emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
-                            stateID: addr.state.id,
-                            countryID: addr.country.id,
-                            streetName: problem.newStreetName, 
-                            emptyStreet: problem.isEmpty
-                        };
-                        wazeapi.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, { streetIDField: problem.attrName }));
+                    var attr = {
+                        countryID: addr.country.id,
+                        stateID: addr.state.id,
+                        cityName: addr.city.attributes.name,
+                        emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
+                        streetName: problem.newStreetName,
+                        emptyStreet: problem.isEmpty
+                    };
+                    if (problem.attrName == 'streetIDs') {
+                        // alternative names
+                        if (obj.attributes.streetIDs.indexOf(problem.streetID) > -1) {
+                            // remove old street
+                            var streets2keep = [];
+                            obj.attributes.streetIDs.forEach(function(sid) {
+                                if (problem.streetID !== sid) {
+                                    streets2keep.push(sid);
+                                }
+                            });
+                            wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, { streetIDs: streets2keep}));
+
+                            // add new street
+                            wazeapi.model.actionManager.add(new WazeActionAddAlternateStreet(obj, attr, { streetIDField: problem.attrName }));
+                        } else {
+                            ui.updateProblem(uniqueId, '(not found. Deleted?)');
+                        }
                     } else {
-                        ui.updateProblem(problem.object.id, '(user fix: ' + addr.street.name + ')');
+                        // protect user manual fix
+                        if (problem.reason == addr.street.name) {
+                            wazeapi.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, { streetIDField: problem.attrName }));
+                        } else {
+                            ui.updateProblem(uniqueId, '(user fix: ' + addr.street.name + ')');
+                        }
                     }
-                    deferred.resolve(obj.getID());
+                    deferred.resolve(uniqueId);
                 } else if (--attemptNum <= 0) {
-                    ui.updateProblem(problem.object.id, '(was not fixed. Deleted?)');
-                    deferred.resolve(problem.object.id);
+                    ui.updateProblem(uniqueId, '(was not fixed. Deleted?)');
+                    deferred.resolve(uniqueId);
                 } else {
                     wazeapi.model.events.register('mergeend', map, fix);
                     wazeapi.map.setCenter(problem.detectPos, problem.zoom);
@@ -1051,7 +1072,7 @@ function run_wme_assist() {
             mainWindow.dialog('option', 'position', {
                 my: 'right top',
                 at: 'right top+50',
-                of: '#WazeMap',
+                of: '#WazeMap'
             });
             // Minimize window
             mainWindow.prev('.ui-dialog-titlebar').find('button').click();
@@ -1248,7 +1269,7 @@ function run_wme_assist() {
             });
             return itemsList;
         };
-        
+
         this.updateProblem = function (id, text) {
             var a = $('li#issue-' + escapeId(id) + ' > a');
             a.text(a.text() + ' ' + text);
@@ -1283,10 +1304,10 @@ function run_wme_assist() {
         var fixSelectedBtn = $('#assist_fixselected_btn');
         var clearFixedBtn = $('#assist_clearfixed_btn');
         var scanAreaBtn = $('#assist_scanarea_btn');
-        
+
         var unresolvedList = $('#assist_unresolved_list');
         var fixedList = $('#assist_fixed_list');
-        
+
         var enableCheckbox = $('#assist_enabled');
         var skipAltCheckbox = $('#assist_skip_alt');
         var debugCheckbox = $('#assist_debug');
@@ -1351,9 +1372,9 @@ function run_wme_assist() {
         var scanForZoom = function (zoom) {
             scanner.scan(wazeapi.map.calculateBounds(), zoom, function (bounds, zoom, data) {
                 console.log(data);
-                analyzer.analyze(bounds, zoom, data, function (obj, title, reason) {
-                    ui.addProblem(obj.id, title, 
-                        action.Select(obj.id, obj.type, obj.center, zoom), 
+                analyzer.analyze(bounds, zoom, data, function (id, obj, title, reason) {
+                    ui.addProblem(id, title,
+                        action.Select(obj.id, obj.type, obj.center, zoom),
                         function () {
                             ui.customRuleDialog('Add custom rule', {
                                 oldname: '(.*)' + reason + '(.*)',
@@ -1521,7 +1542,7 @@ function run_wme_assist() {
                     });
                 }, 0);
             });
-            
+
             ui.fixSelectedBtn().click(function () {
                 ui.fixAllBtn().hide();
                 ui.fixSelectedBtn().hide();
@@ -1547,7 +1568,7 @@ function run_wme_assist() {
                     });
                 }, 0);
             });
-            
+
             ui.clearFixedBtn().click(function () {
                 ui.fixedList().empty();
             });

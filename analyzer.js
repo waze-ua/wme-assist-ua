@@ -136,7 +136,7 @@ WME_Assist.Analyzer = function (wazeapi) {
 
     this.fixSelected = function (listToFix, oneFixed, allFixed) {
         WME_Assist.series(problems, unresolvedIdx, function (p, next) {
-            if (listToFix.indexOf(p.object.id.toString()) == -1) {
+            if (listToFix.indexOf(p.object.id + '_' + p.streetID) == -1) {
                 next();
                 return;
             }
@@ -175,10 +175,9 @@ WME_Assist.Analyzer = function (wazeapi) {
                     if (obj.type == 'venue') {
                         title = 'POI: ';
                     }
-                    // lock alternatives, no auto-fix as of now
+                    // alternative names
                     if (attrName == 'streetIDs') {
                         title = 'ALT: ';
-                        skip = true;
                     }
                     // if user has lower rank, just show the segment, but no fix allowed
                     if (obj.lockRank && obj.lockRank >= userlevel) {
@@ -209,17 +208,6 @@ WME_Assist.Analyzer = function (wazeapi) {
             }
         }
 
-        var newCityID = street.cityID;
-        // if (obj.type != 'segment') {
-        //     newCityID = action.newCityID(street.cityID);
-        //     if (newCityID != street.cityID) {
-        //         detected = true;
-        //         title = 'city: ' +
-        //             wazeapi.model.cities.getObjectById(street.cityID).name + ' -> ' +
-        //             wazeapi.model.cities.getObjectById(newCityID).name;
-        //     }
-        // }
-
         if (detected) {
             var gj = new OL.Format.GeoJSON();
             var geometry = gj.parseGeometry(obj.geometry);
@@ -235,12 +223,13 @@ WME_Assist.Analyzer = function (wazeapi) {
                 zoom: zoom,
                 newStreetName: newStreetName,
                 isEmpty: street.isEmpty,
-                cityId: newCityID,
+                cityId: street.cityID,
+                streetID: streetID,
                 experimental: false,
                 skip: skip,
             });
 
-            onProblemDetected(obj, title, reason);
+            onProblemDetected(obj.id + '_' + streetID, obj, title, reason);
         }
     };
 
