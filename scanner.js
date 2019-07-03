@@ -2,9 +2,49 @@ window.WME_Assist = window.WME_Assist || {};
 var WME_Assist = window.WME_Assist;
 
 WME_Assist.Scanner = function (wazeapi) {
-    //var model = wazeapi.model;
     var map = wazeapi.map;
-    //var controller = wazeapi.controller;
+
+    var zoomToRoadType = function(e) {
+        switch (e) {
+            case 0:
+            case 1:
+                return [];
+            case 2:
+                return [2, 3, 4, 6, 7, 15];
+            case 3:
+                return [2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            default:
+                return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+        }
+    };
+    var zoomToVenueLevel = function(e) {
+        switch (e) {
+            case 0:
+                return 1;
+            case 1:
+                return 2;
+            case 2:
+            case 3:
+            case 4:
+                return 3;
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+                return 4;
+            default:
+                return null
+        }
+    };
 
     var getData = function (e, cb) {
         console.log(e);
@@ -31,7 +71,7 @@ WME_Assist.Scanner = function (wazeapi) {
 
         return result;
     };
-
+/*
     var zoomToRoadType = function (zoom) {
         var s = wazeapi.Config.segments.zoomToRoadType[zoom] || [];
         if (-1 === s) {
@@ -49,7 +89,7 @@ WME_Assist.Scanner = function (wazeapi) {
 
         return (r.length === 0) ? null : { roadTypes: s.toString() };
     };
-
+*/
     this.scan = function (bounds, zoom, analyze, progress) {
         var boundsArray = splitExtent(bounds, zoom);
         var completed = 0;
@@ -67,14 +107,14 @@ WME_Assist.Scanner = function (wazeapi) {
                 bbox: peace.toBBOX(),
                 language: I18n.locale,
                 venueFilter: '3',
-                venueLevel: wazeapi.Config.venues.zoomToSize[zoom],
+                venueLevel: zoomToVenueLevel(zoom),
             };
 
             OL.Util.extend(e, zoomToRoadType(zoom));
 
             getData(e, function (data) {
                 analyze(peace, zoom, data);
-                progress(++completed*100/boundsArray.length);
+                progress(++completed * 100 / boundsArray.length);
                 next();
             });
         });
