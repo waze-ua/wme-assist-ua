@@ -109,8 +109,10 @@ WME_Assist.Scanner = function (wazeapi) {
                 venueFilter: '3',
                 venueLevel: zoomToVenueLevel(zoom),
             };
-
-            OL.Util.extend(e, zoomToRoadType(zoom));
+            var z = {
+                roadTypes: zoomToRoadType(zoom).toString()
+            };
+            OL.Util.extend(e, z);
 
             getData(e, function (data) {
                 analyze(peace, zoom, data);
