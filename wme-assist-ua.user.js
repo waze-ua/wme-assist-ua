@@ -6,7 +6,7 @@
 // @require      https://rawgit.com/waze-ua/wme-assist-ua/master/analyzer.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2019.07.04.001
+// @version      2019.07.30.001
 // ==/UserScript==
 
 var WME_Assist = window.WME_Assist;
@@ -1073,7 +1073,7 @@ function run_wme_assist() {
             mainWindow.dialog('open');
             mainWindow.dialog('option', 'position', {
                 my: 'right top',
-                at: 'right top+50',
+                at: 'right-70 top+50',
                 of: '#WazeMap'
             });
             // Minimize window
