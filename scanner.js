@@ -54,16 +54,16 @@ WME_Assist.Scanner = function (wazeapi) {
     var splitExtent = function (extent, zoom) {
         var result = [];
 
-        var ratio = map.getResolution() / map.getResolutionForZoom(zoom);
+        var ratio = 1; //map.getResolution() / map.getResolutionForZoom(zoom); //FIXME: temporary commented, because getResolutionForZoom() is gone
         var dx = extent.getWidth() / ratio;
         var dy = extent.getHeight() / ratio;
 
         var x, y;
         for (x = extent.left; x < extent.right; x += dx) {
             for (y = extent.bottom; y < extent.top; y += dy) {
-                var bounds = new OpenLayers.Bounds();
-                bounds.extend(new OpenLayers.LonLat(x, y));
-                bounds.extend(new OpenLayers.LonLat(x + dx, y + dy));
+                var bounds = new OL.Bounds();
+                bounds.extend(new OL.LonLat(x, y));
+                bounds.extend(new OL.LonLat(x + dx, y + dy));
 
                 result.push(bounds);
             }
@@ -71,25 +71,7 @@ WME_Assist.Scanner = function (wazeapi) {
 
         return result;
     };
-/*
-    var zoomToRoadType = function (zoom) {
-        var s = wazeapi.Config.segments.zoomToRoadType[zoom] || [];
-        if (-1 === s) {
-            s = W.Config.segments.allTypes;
-        }
 
-        var r = [];
-        Object.keys(wazeapi.Config.segments.zoomToRoadType).forEach(function (t) {
-            t = parseInt(t, 10);
-            var i = s.indexOf(t);
-            if (i > -1) {
-                r.push(t);
-            }
-        });
-
-        return (r.length === 0) ? null : { roadTypes: s.toString() };
-    };
-*/
     this.scan = function (bounds, zoom, analyze, progress) {
         var boundsArray = splitExtent(bounds, zoom);
         var completed = 0;
