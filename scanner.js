@@ -42,7 +42,7 @@ WME_Assist.Scanner = function (wazeapi) {
             case 10:
                 return 4;
             default:
-                return null
+                return null;
         }
     };
 
