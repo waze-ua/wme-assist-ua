@@ -155,7 +155,7 @@ WME_Assist.Analyzer = function (wazeapi) {
     };
     
     var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
-        var userlevel = wazeapi.loginManager.user.normalizedLevel;
+        var userlevel = wazeapi.loginManager.user.rank + 1;
         var street = wazeapi.model.streets.getObjectById(streetID);
 
         if (!street) return;
