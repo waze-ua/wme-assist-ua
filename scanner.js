@@ -61,9 +61,9 @@ WME_Assist.Scanner = function (wazeapi) {
         var x, y;
         for (x = extent.left; x < extent.right; x += dx) {
             for (y = extent.bottom; y < extent.top; y += dy) {
-                var bounds = new OL.Bounds();
-                bounds.extend(new OL.LonLat(x, y));
-                bounds.extend(new OL.LonLat(x + dx, y + dy));
+                var bounds = new OpenLayers.Bounds();
+                bounds.extend(new OpenLayers.LonLat(x, y));
+                bounds.extend(new OpenLayers.LonLat(x + dx, y + dy));
 
                 result.push(bounds);
             }
@@ -94,7 +94,7 @@ WME_Assist.Scanner = function (wazeapi) {
             var z = {
                 roadTypes: zoomToRoadType(zoom).toString()
             };
-            OL.Util.extend(e, z);
+            OpenLayers.Util.extend(e, z);
 
             getData(e, function (data) {
                 analyze(peace, zoom, data);
