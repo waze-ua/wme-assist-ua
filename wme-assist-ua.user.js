@@ -7,7 +7,7 @@
 // @require      https://code.jquery.com/jquery-migrate-3.0.0.min.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2020.10.15.001
+// @version      2021.08.14.001
 // ==/UserScript==
 
 /* global $ */
@@ -17,17 +17,31 @@
 
 var WME_Assist = window.WME_Assist;
 
+WME_Assist.name = GM_info.script.name;
+
 WME_Assist.debug = function (message) {
     if (!$('#assist_debug').is(':checked')) return;
-    console.log("WME ASSIST DEBUG: " + message);
+    if (typeof message === 'string') {
+        console.log(WME_Assist.name + " DEBUG: " + message);
+    } else {
+        console.log(WME_Assist.name + " DEBUG: ", message);
+    }
 };
 
 WME_Assist.info = function (message) {
-    console.log("WME ASSIST INFO: " + message);
+    if (typeof message === 'string') {
+        console.log(WME_Assist.name + " INFO: " + message);
+    } else {
+        console.log(WME_Assist.name + " INFO: ", message);
+    }
 };
 
 WME_Assist.warning = function (message) {
-    console.log("WME ASSIST WARN: " + message);
+    if (typeof message === 'string') {
+        console.warn(WME_Assist.name + " WARN: " + message);
+    } else {
+        console.warn(WME_Assist.name + " WARN: ", message);
+    }
 };
 
 WME_Assist.series = function (array, start, action, alldone) {
@@ -47,11 +61,7 @@ WME_Assist.series = function (array, start, action, alldone) {
 };
 
 function run_wme_assist() {
-    var ver = GM_info.script.version;
-
-    //var debug = WME_Assist.debug;
     var info = WME_Assist.info;
-    //var warning = WME_Assist.warning;
 
     function getWazeApi() {
         var wazeapi = window.W;
@@ -990,7 +1000,7 @@ function run_wme_assist() {
 
     var Ui = function (countryName) {
         var addon = document.createElement('section');
-        addon.innerHTML = '<b>WME Assist UA</b> v' + ver;
+        addon.innerHTML = '<b>' + WME_Assist.name + '</b> v' + GM_info.script.version;
 
         var section = document.createElement('p');
         section.style.paddingTop = "8px";
@@ -1132,7 +1142,7 @@ function run_wme_assist() {
 
         $('<div>', {
             id: 'WME_AssistWindow',
-            title: 'WME Assist',
+            title: WME_Assist.name,
         })
             .append($('<div>').css({
                 padding: 10,

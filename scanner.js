@@ -47,7 +47,7 @@ WME_Assist.Scanner = function (wazeapi) {
     };
 
     var getData = function (e, cb) {
-        console.log(e);
+        WME_Assist.debug(e);
         $.get(wazeapi.Config.paths.features, e).done(cb);
     };
 
@@ -83,7 +83,7 @@ WME_Assist.Scanner = function (wazeapi) {
         progress = progress || function () {};
 
         WME_Assist.series(boundsArray, 0, function (bounds, next) {
-            var peace = bounds.transform(map.getProjectionObject(), map.displayProjection);
+            var peace = bounds.transform(map.getProjectionObject(), 'EPSG:4326');
 
             var e = {
                 bbox: peace.toBBOX(),
