@@ -7,7 +7,7 @@
 // @require      https://code.jquery.com/jquery-migrate-3.0.0.min.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2021.08.14.001
+// @version      2021.08.23.001
 // ==/UserScript==
 
 /* global $ */
@@ -955,14 +955,21 @@ function run_wme_assist() {
                         streetName: problem.newStreetName,
                         emptyStreet: problem.isEmpty
                     };
+
+                    // check if alternative name
                     if (problem.attrName == 'streetIDs') {
-                        // alternative names
+                        // check if still exist
                         if (obj.attributes.streetIDs.indexOf(problem.streetID) > -1) {
-                            // remove old street
+                            // remove old street and keep other ones
                             var streets2keep = [];
                             obj.attributes.streetIDs.forEach(function(sid) {
                                 if (problem.streetID !== sid) {
                                     streets2keep.push(sid);
+                                } else {
+                                    var altStreet = wazeapi.model.streets.getObjectById(sid);
+                                    var city = wazeapi.model.cities.getObjectById(altStreet.cityID);
+                                    attr.cityName = city.attributes.name;
+                                    attr.emptyCity = city.hasName() ? null : true;
                                 }
                             });
                             wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, { streetIDs: streets2keep}));
