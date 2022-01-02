@@ -211,8 +211,8 @@ WME_Assist.Analyzer = function (wazeapi) {
         if (detected) {
             var gj = new OpenLayers.Format.GeoJSON();
             var geometry = gj.parseGeometry(obj.geometry);
-            var objCenter = geometry.getBounds().getCenterLonLat().transform(wazeapi.map.displayProjection, wazeapi.map.getProjectionObject());
-            var boundsCenter = bounds.clone().getCenterLonLat().transform(wazeapi.map.displayProjection, wazeapi.map.getProjectionObject());
+            var objCenter = geometry.getBounds().getCenterLonLat().transform(wazeapi.map.getOLMap().displayProjection, wazeapi.map.getProjectionObject());
+            var boundsCenter = bounds.clone().getCenterLonLat().transform(wazeapi.map.getOLMap().displayProjection, wazeapi.map.getProjectionObject());
             obj.center = objCenter;
 
             problems.push({

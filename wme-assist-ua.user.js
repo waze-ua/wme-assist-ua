@@ -7,7 +7,7 @@
 // @require      https://code.jquery.com/jquery-migrate-3.0.0.min.js
 // @grant        none
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2021.08.23.001
+// @version      2022.01.02.001
 // ==/UserScript==
 
 /* global $ */
