@@ -4,42 +4,55 @@ var WME_Assist = window.WME_Assist;
 WME_Assist.Scanner = function (wazeapi) {
     var map = wazeapi.map;
 
+    var ROAD_TYPE = {
+        STREET: 1,
+        PRIMARY_STREET: 2,
+        FREEWAY: 3,
+        RAMP: 4,
+        WALKING_TRAIL: 5,
+        MAJOR_HIGHWAY: 6,
+        MINOR_HIGHWAY: 7,
+        OFF_ROAD: 8,
+        WALKWAY: 9,
+        PEDESTRIAN_BOARDWALK: 10,
+        FERRY: 15,
+        STAIRWAY: 16,
+        PRIVATE_ROAD: 17,
+        RAILROAD: 18,
+        RUNWAY_TAXIWAY: 19,
+        PARKING_LOT_ROAD: 20,
+        ALLEY: 22
+    };
+
     var zoomToRoadType = function(e) {
+        if (e < 14) {
+            return [];
+        }
         switch (e) {
-            case 0:
-            case 1:
-                return [];
-            case 2:
-                return [2, 3, 4, 6, 7, 15];
-            case 3:
-                return [2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-            case 9:
-            case 10:
+            case 14:
+                return [ROAD_TYPE.PRIMARY_STREET, ROAD_TYPE.FREEWAY, ROAD_TYPE.RAMP, ROAD_TYPE.MAJOR_HIGHWAY, ROAD_TYPE.MINOR_HIGHWAY, ROAD_TYPE.FERRY];
+            case 15:
+                return [ROAD_TYPE.PRIMARY_STREET, ROAD_TYPE.FREEWAY, ROAD_TYPE.RAMP, ROAD_TYPE.MAJOR_HIGHWAY, ROAD_TYPE.MINOR_HIGHWAY, ROAD_TYPE.OFF_ROAD, ROAD_TYPE.WALKWAY, ROAD_TYPE.PEDESTRIAN_BOARDWALK, ROAD_TYPE.FERRY, ROAD_TYPE.STAIRWAY, ROAD_TYPE.PRIVATE_ROAD, ROAD_TYPE.RAILROAD, ROAD_TYPE.RUNWAY_TAXIWAY, ROAD_TYPE.PARKING_LOT_ROAD, ROAD_TYPE.ALLEY];
             default:
-                return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+                return Object.values(ROAD_TYPE);
         }
     };
     var zoomToVenueLevel = function(e) {
         switch (e) {
-            case 0:
+            case 12:
                 return 1;
-            case 1:
+            case 13:
                 return 2;
-            case 2:
-            case 3:
-            case 4:
+            case 14:
+            case 15:
+            case 16:
                 return 3;
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-            case 9:
-            case 10:
+            case 17:
+            case 18:
+            case 19:
+            case 20:
+            case 21:
+            case 22:
                 return 4;
             default:
                 return null;
