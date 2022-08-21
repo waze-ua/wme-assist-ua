@@ -5,11 +5,15 @@
 // @require      https://rawgit.com/waze-ua/wme-assist-ua/master/scanner.js
 // @require      https://rawgit.com/waze-ua/wme-assist-ua/master/analyzer.js
 // @require      https://code.jquery.com/jquery-migrate-3.0.0.min.js
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @connect      google.com
+// @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.08.11.001
+// @version      2022.08.21.001
 // ==/UserScript==
 
+/* jshint esversion: 8 */
+/* global W */
 /* global $ */
 /* global jQuery */
 /* global map */
@@ -63,8 +67,83 @@ WME_Assist.series = function (array, start, action, alldone) {
 function run_wme_assist() {
     var info = WME_Assist.info;
 
+    const requestsTimeout = 20000; // in ms
+    const rulesHash = "AKfycbyCR85UB-OexWIcN2pkTV1828bf0M6hUXkfHmu79M50PW3LMjpXkZ4ynRUzf2AOJqQqBA";
+    const url = 'https://script.google.com/macros/s/' + rulesHash + '/exec?func=getStreetRules';
+    let rulesDB = {};
+
+    function displayHtmlPage(res) {
+        if (res.responseText.match(/Authorization needed/) || res.responseText.match(/ServiceLogin/)) {
+            alert(WME_Assist.name + ":\n" +
+                "Authorization is required for using this script. This is one time action.\n" +
+                "Now you will be redirected to the authorization page, where you'll need to approve request.\n" +
+                "After confirmation, please close the page and reload WME.");
+        }
+        let w = window.open();
+        w.document.open();
+        w.document.write(res.responseText);
+        w.document.close();
+        w.location = res.finalUrl;
+    }
+
+    function validateHTTPResponse(res) {
+        let result = false,
+            displayError = true;
+        if (res) {
+            switch (res.status) {
+                case 200:
+                    displayError = false;
+                    if (res.responseHeaders.match(/content-type: application\/json/i)) {
+                        result = true;
+                    } else if (res.responseHeaders.match(/content-type: text\/html/i)) {
+                        displayHtmlPage(res);
+                    }
+                    break;
+                default:
+                    displayError = false;
+                    alert(WME_Assist.name + " Error: unsupported status code - " + res.status);
+                    WME_Assist.info(res.responseHeaders);
+                    WME_Assist.info(res.responseText);
+                    break;
+            }
+        } else {
+            displayError = false;
+            alert(WME_Assist.name + " error: Response is empty!");
+        }
+
+        if (displayError) {
+            alert(WME_Assist.name + ": Error processing request. Response: " + res.responseText);
+        }
+        return result;
+    }
+
+    let requestRules = new Promise(function (resolve) {
+        GM_xmlhttpRequest({
+            url: url,
+            method: 'GET',
+            timeout: requestsTimeout,
+            onload: function (res) {
+                if (validateHTTPResponse(res)) {
+                    let out = JSON.parse(res.responseText);
+                    if (out.result == "success") {
+                        resolve(out.rules);
+                    } else {
+                        alert(WME_Assist.name + ": Error getting rules!");
+                    }
+                }
+                resolve({});
+            },
+            ontimeout: function (res) {
+                alert(WME_Assist.name + ": Sorry, request timeout!");
+            },
+            onerror: function (res) {
+                alert(WME_Assist.name + ": Sorry, request error!");
+            }
+        });
+    });
+
     function getWazeApi() {
-        var wazeapi = window.W;
+        var wazeapi = window.W || W;
 
         if (!wazeapi) return null;
         if (!wazeapi.map) return null;
@@ -590,11 +669,18 @@ function run_wme_assist() {
                     '|Полуднева|Лебедина|Навколишня|Січнева|Горівська|Поморянська|Кінцева|Курінна|Новознесенська|Міртова|Шполянська|Грунтова|Ґрунтова|Варшавська)( |$)',
                     'i'
                 );
-                return s.search(adjRegex) != -1; 
+                return s.search(adjRegex) != -1;
             };
 
             // ATTENTION: Rule order is important!
             return rules_basicCommon().concat([
+                new Rule('Check with rules from Google Sheet', function (t) {
+                    if (rulesDB[t]) {
+                        return rulesDB[t];
+                    }
+                    return t;
+                }, 'GSheets'),
+
                 new Rule('Fix English characters in name', function (t) {
                     return !hasCyrillic(t) || hasInternationalName(t) ? t : t.replace(/[AaBCcEeHIiKkMOoPpTXxYy]/g, function (c) {
                         return {
@@ -632,6 +718,7 @@ function run_wme_assist() {
                         .replace(/[@#№$,^!:;*"?<]/g, ' ').replace(/ {2,}/, ' ')
                         .replace(/[`’]/g, '\'');
                 }),
+                /*
                 new Rule('Incorrect language', function (t) {
                     // Translate full Russian names to full Ukrainian
                     // and next rules will shorten them if necessary
@@ -652,6 +739,7 @@ function run_wme_assist() {
                         .replace(/(^| )(а)дмирала( |$)/i, '$1$2дмірала$3')
                         .replace(/ и /i, ' та ');
                 }),
+                */
                 new Rule('Mistake in short status', function (t) {
                     return t
                         .replace(/(^| )(буль?в?\.?|б-р\.)( |$)/i, '$1б-р$3')
@@ -780,7 +868,7 @@ function run_wme_assist() {
                     countryRules = rules_UA();
                     break;
                 default:
-                    info('There are not implemented rules for country: ' + name);
+                    info('There are no implemented rules for country: ' + name);
                     countryRules = [];
             }
             return countryRules.concat(commonRules);
@@ -1023,7 +1111,8 @@ function run_wme_assist() {
         if (countryName == 'Ukraine') {
             variant.innerHTML = '<b>Naming Rules</b><a href="https://wazeopedia.waze.com/wiki/Ukraine/Як_називати_вулиці" target="_blank"><span class="fa fa-question-circle"></span></a><br/>' +
                 '<label><input type="radio" name="assist_variant" value="Ukraine" checked/> Ukraine (Classic)</label><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Lviv"/> 🦁 Lviv (Alternative)</label><br/>';
+                '<label><input type="radio" name="assist_variant" value="Lviv"/> 🦁 Lviv (Alternative)</label><br/>' +
+                '<label><input type="radio" name="assist_variant" value="GSheets"/> Rules from Google Sheet</label><br/>';
         } else {
             variant.innerHTML = '<b>Naming Rules</b><br/>' +
                 '<label><input type="radio" name="assist_variant" value="Moscow" checked/> Moscow</label><br/>' +
@@ -1435,7 +1524,7 @@ function run_wme_assist() {
         var scanner = new WME_Assist.Scanner(wazeapi);
         var analyzer = new WME_Assist.Analyzer(wazeapi);
 
-        var FULL_ZOOM_LEVEL = 5;
+        var FULL_ZOOM_LEVEL = 16;
 
         var scanForZoom = function (zoom) {
             scanner.scan(wazeapi.map.calculateBounds(), zoom, function (bounds, zoom, data) {
@@ -1709,25 +1798,29 @@ function run_wme_assist() {
         };
     };
 
-    function waitForWaze(done) {
+    function waitForWaze(doneFunc) {
         var wazeapi = getWazeApi();
 
         // Wait for Waze and jQuery.ui
         if (wazeapi === null || !jQuery.ui) {
             WME_Assist.info("waiting for Waze");
             setTimeout(function () {
-                waitForWaze(done);
-            }, 500);
+                waitForWaze(doneFunc);
+            }, 1500);
             return;
         }
 
-        done(wazeapi);
+        doneFunc(wazeapi);
     }
 
-    waitForWaze(function (wazeapi) {
-        WME_Assist.info("Ready to work!");
-        var app = new Application(wazeapi);
-        app.start();
+    requestRules.then(function (value) {
+        rulesDB = value;
+
+        waitForWaze(function (wazeapi) {
+            WME_Assist.info("Ready to work!");
+            var app = new Application(wazeapi);
+            app.start();
+        });
     });
 }
 
