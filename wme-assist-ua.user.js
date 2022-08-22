@@ -9,7 +9,7 @@
 // @connect      google.com
 // @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.08.22.002
+// @version      2022.08.23.001
 // ==/UserScript==
 
 /* jshint esversion: 8 */
@@ -1074,6 +1074,8 @@ function run_wme_assist() {
                     } else {
                         // protect user manual fix
                         if (problem.reason == addr.street.name) {
+                            wazeapi.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, { streetIDField: problem.attrName }));
+                            // move old name to alt street
                             if (setOld2Alt && obj.type == 'segment') {
                                 var altAttr = {
                                     countryID: addr.country.id,
@@ -1085,7 +1087,6 @@ function run_wme_assist() {
                                 };
                                 wazeapi.model.actionManager.add(new WazeActionAddAlternateStreet(obj, altAttr, { streetIDField: problem.attrName }));
                             }
-                            wazeapi.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, { streetIDField: problem.attrName }));
                         } else {
                             ui.updateProblem(uniqueId, '(user fix: ' + addr.street.name + ')');
                         }
