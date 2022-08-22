@@ -9,7 +9,7 @@
 // @connect      google.com
 // @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.08.22.001
+// @version      2022.08.22.002
 // ==/UserScript==
 
 /* jshint esversion: 8 */
@@ -716,7 +716,7 @@ function run_wme_assist() {
                     // This rule should be before renaming rules or they couldn't see some errors
                     return t
                         .replace(/[@#№$,^!:;*"?<]/g, ' ').replace(/ {2,}/, ' ')
-                        .replace(/[`’]/g, '\'');
+                        .replace(/[`\u02bc]/g, '\''); // replace incorrect apostrophes (`’)
                 }),
                 /*
                 new Rule('Incorrect language', function (t) {
