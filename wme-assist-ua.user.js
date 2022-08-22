@@ -9,7 +9,7 @@
 // @connect      google.com
 // @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.08.21.001
+// @version      2022.08.22.001
 // ==/UserScript==
 
 /* jshint esversion: 8 */
@@ -898,9 +898,12 @@ function run_wme_assist() {
         this.correct = function (variant, text) {
             var newtext = text;
             var experimental = false;
+            var custom_enabled = localStorage.getItem('assist_enable_custom_rules') == 'true';
 
             for (var i = 0; i < rules.length; ++i) {
                 var rule = rules[i];
+
+                if (rule.custom && !custom_enabled) continue;
 
                 if (rule.experimental && !this.experimental) continue;
 
@@ -1027,6 +1030,7 @@ function run_wme_assist() {
         this.fixProblem = function (problem) {
             var deferred = $.Deferred();
             var attemptNum = 10; // after that we decide that object was removed
+            var setOld2Alt = localStorage.getItem('assist_move_old_to_alt') == 'true';
 
             var fix = function () {
                 var uniqueId = problem.object.id + '_' + problem.streetID;
@@ -1070,6 +1074,17 @@ function run_wme_assist() {
                     } else {
                         // protect user manual fix
                         if (problem.reason == addr.street.name) {
+                            if (setOld2Alt && obj.type == 'segment') {
+                                var altAttr = {
+                                    countryID: addr.country.id,
+                                    stateID: addr.state.id,
+                                    cityName: addr.city.attributes.name,
+                                    emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
+                                    streetName: problem.reason,
+                                    emptyStreet: false //problem.isEmpty
+                                };
+                                wazeapi.model.actionManager.add(new WazeActionAddAlternateStreet(obj, altAttr, { streetIDField: problem.attrName }));
+                            }
                             wazeapi.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, { streetIDField: problem.attrName }));
                         } else {
                             ui.updateProblem(uniqueId, '(user fix: ' + addr.street.name + ')');
@@ -1094,52 +1109,52 @@ function run_wme_assist() {
     };
 
     var Ui = function (countryName) {
-        var addon = document.createElement('section');
-        addon.innerHTML = '<b>' + WME_Assist.name + '</b> v' + GM_info.script.version;
+        var addon = document.createElement('div');
+        addon.innerHTML = '<wz-overline>' + WME_Assist.name + ' v' + GM_info.script.version + '</wz-overline>';
 
-        var section = document.createElement('p');
-        section.style.paddingTop = "8px";
-        section.style.textIndent = "16px";
+        var section = document.createElement('div');
         section.id = "assist_options";
-        section.innerHTML = '<b>Scanner Options</b><br/>' +
-            '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
-            '<label><input type="checkbox" id="assist_skip_alt" value="0"/> Do not check alternative names</label><br/>' +
-            '<label><input type="checkbox" id="assist_debug" value="0"/> Debug</label><br/>';
-        var variant = document.createElement('p');
-        variant.id = 'variant_options';
-        // adopt city names for Ukraine
-        if (countryName == 'Ukraine') {
-            variant.innerHTML = '<b>Naming Rules</b><a href="https://wazeopedia.waze.com/wiki/Ukraine/Як_називати_вулиці" target="_blank"><span class="fa fa-question-circle"></span></a><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Ukraine" checked/> Ukraine (Classic)</label><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Lviv"/> 🦁 Lviv (Alternative)</label><br/>' +
-                '<label><input type="radio" name="assist_variant" value="GSheets"/> Rules from Google Sheet</label><br/>';
-        } else {
-            variant.innerHTML = '<b>Naming Rules</b><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Moscow" checked/> Moscow</label><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Tula"/> Tula</label><br/>';
-        }
-        section.appendChild(variant);
+        section.className = "form-group";
+        section.innerHTML = '<wz-label>Options</wz-label>' +
+            '<wz-checkbox name="assist_enabled" id="assist_enabled" value="on">Enable/disable</wz-checkbox>' +
+            '<wz-checkbox name="assist_skip_alt" id="assist_skip_alt" value="on">Skip checking alternative names</wz-checkbox>' +
+            '<wz-checkbox name="assist_move_old_to_alt" id="assist_move_old_to_alt" value="on">Move old name to alternative</wz-checkbox>' +
+            '<wz-checkbox name="assist_debug" id="assist_debug" value="on">Enable debug log</wz-checkbox>';
         addon.appendChild(section);
 
-        section = document.createElement('p');
-        section.style.paddingTop = "8px";
-        section.style.textIndent = "16px";
+        var variant = document.createElement('div');
+        variant.id = 'variant_options';
+        variant.className = "form-group";
+        // adopt city names for Ukraine
+        if (countryName == 'Ukraine') {
+            variant.innerHTML = '<wz-label>Naming Rules <a href="https://wazeopedia.waze.com/wiki/Ukraine/Як_називати_вулиці" target="_blank"><span class="fa fa-question-circle"></span></a></wz-label>' +
+                '<wz-radio-button name="assist_variant" value="Ukraine" checked="">Ukraine (Classic)</wz-radio-button>' +
+                '<wz-radio-button name="assist_variant" value="Lviv">🦁 Lviv (Alternative)</wz-radio-button>' +
+                '<wz-radio-button name="assist_variant" value="GSheets">Rules from Google Sheet</wz-radio-button>';
+        } else {
+            // todo: add other countries support if needed
+            variant.innerHTML = '';
+        }
+        addon.appendChild(variant);
+
+        section = document.createElement('div');
         section.id = "assist_custom_rules";
+        section.className = "form-group";
         $(section)
-            .append($('<p>').addClass('message').css({'font-weight': 'bold'}).text('Custom rules'))
+            .append($('<wz-label>Custom Rules</wz-label>'))
+            .append($('<wz-checkbox name="assist_enable_custom_rules" id="assist_enable_custom_rules" value="on">Enable custom rules</wz-checkbox>'))
             .append($('<div>').addClass('btn-toolbar')
-            .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text('Add'))
-            .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text('Edit'))
-            .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text('Del')))
+                .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text('Add'))
+                .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text('Edit'))
+                .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text('Del')))
             .append($('<ul>').addClass('result-list').css({"height": "250px", "overflow": "auto"}));
         addon.appendChild(section);
 
-        section = document.createElement('p');
-        section.style.paddingTop = "8px";
-        section.style.textIndent = "16px";
+        section = document.createElement('div');
         section.id = "assist_exceptions";
+        section.className = "form-group";
         $(section)
-            .append($('<p title="Right click on error in list to add">').addClass('message').css({'font-weight': 'bold'}).text('Exceptions'))
+            .append($('<wz-label title="Right click on error in list to add">').text('Exceptions'))
             .append($('<ul>').addClass('result-list').css({"height": "250px", "overflow": "auto"}));
         addon.appendChild(section);
 
@@ -1466,7 +1481,9 @@ function run_wme_assist() {
 
         var enableCheckbox = $('#assist_enabled');
         var skipAltCheckbox = $('#assist_skip_alt');
+        var moveOld2AltCheckbox = $('#assist_move_old_to_alt');
         var debugCheckbox = $('#assist_debug');
+        var enableCustomRulesCheckbox = $('#assist_enable_custom_rules');
 
         var addCustomRuleBtn = $('#assist_add_custom_rule');
         var editCustomRuleBtn = $('#assist_edit_custom_rule');
@@ -1483,7 +1500,9 @@ function run_wme_assist() {
 
         this.enableCheckbox = function () { return enableCheckbox; };
         this.skipAltCheckbox = function () { return skipAltCheckbox; };
+        this.moveOld2AltCheckbox = function () { return moveOld2AltCheckbox; };
         this.debugCheckbox = function () { return debugCheckbox; };
+        this.enableCustomRulesCheckbox = function () { return enableCustomRulesCheckbox; };
         this.variantRadio = function (value) {
             if (!value) {
                 return $('[name=assist_variant]');
@@ -1515,16 +1534,16 @@ function run_wme_assist() {
 
             return deferred.promise();
         };
-        this.variant = function () {
-            return $('[name=assist_variant]:checked')[0].value;
-        };
+        //this.variant = function () {
+        //    return $('[name=assist_variant][checked]')[0].value;
+        //};
     };
 
     var Application = function (wazeapi) {
         var scanner = new WME_Assist.Scanner(wazeapi);
         var analyzer = new WME_Assist.Analyzer(wazeapi);
 
-        var FULL_ZOOM_LEVEL = 16;
+        var FULL_ZOOM_LEVEL = 17;
 
         var scanForZoom = function (zoom) {
             scanner.scan(wazeapi.map.calculateBounds(), zoom, function (bounds, zoom, data) {
@@ -1624,8 +1643,8 @@ function run_wme_assist() {
         rules.load();
 
         this.start = function () {
-            ui.enableCheckbox().click(function () {
-                if (ui.enableCheckbox().is(':checked')) {
+            ui.enableCheckbox().change(function () {
+                if (this.checked) {
                     localStorage.setItem('assist_enabled', true);
                     ui.showMainWindow();
 
@@ -1634,7 +1653,7 @@ function run_wme_assist() {
                     var savedVariant = localStorage.getItem('assist_variant');
                     if (savedVariant !== null) {
                         ui.variantRadio(savedVariant).prop('checked', true);
-                        analyzer.setVariant(ui.variant());
+                        analyzer.setVariant(savedVariant);
                     }
 
                     scan();
@@ -1649,27 +1668,40 @@ function run_wme_assist() {
                 }
             });
 
-            ui.skipAltCheckbox().click(function () {
-                if (ui.skipAltCheckbox().is(':checked')) {
-                    localStorage.setItem('assist_skip_alt', true);
-                } else {
-                    localStorage.setItem('assist_skip_alt', false);
-                }
-            });
-
-            ui.debugCheckbox().click(function () {
-                if (ui.debugCheckbox().is(':checked')) {
-                    localStorage.setItem('assist_debug', true);
-                } else {
-                    localStorage.setItem('assist_debug', false);
-                }
-            });
-
-            ui.variantRadio().click(function () {
-                localStorage.setItem('assist_variant', this.value);
-
-                analyzer.setVariant(ui.variant());
+            ui.skipAltCheckbox().change(function () {
+                localStorage.setItem('assist_skip_alt', this.checked);
                 ui.scanAreaBtn().click();
+            });
+
+            ui.moveOld2AltCheckbox().change(function () {
+                localStorage.setItem('assist_move_old_to_alt', this.checked);
+                if (this.checked) {
+                    // force enable skip alt option
+                    localStorage.setItem('assist_skip_alt', true);
+                    ui.skipAltCheckbox().prop('checked', true);
+                    ui.skipAltCheckbox().prop('disabled', true);
+                } else {
+                    // unblock skip alt option
+                    ui.skipAltCheckbox().prop('disabled', false);
+                }
+            });
+
+            ui.debugCheckbox().change(function () {
+                localStorage.setItem('assist_debug', this.checked);
+            });
+
+            ui.enableCustomRulesCheckbox().change(function () {
+                localStorage.setItem('assist_enable_custom_rules', this.checked);
+                ui.scanAreaBtn().click();
+            });
+
+            ui.variantRadio().change(function (e) {
+                if (e.currentTarget.checked) {
+                    localStorage.setItem('assist_variant', this.value);
+
+                    analyzer.setVariant(this.value);
+                    ui.scanAreaBtn().click();
+                }
             });
 
             if (localStorage.getItem('assist_enabled') == 'true') {
@@ -1678,8 +1710,14 @@ function run_wme_assist() {
             if (localStorage.getItem('assist_skip_alt') == 'true') {
                 ui.skipAltCheckbox().click();
             }
+            if (localStorage.getItem('assist_move_old_to_alt') == 'true') {
+                ui.moveOld2AltCheckbox().click();
+            }
             if (localStorage.getItem('assist_debug') == 'true') {
                 ui.debugCheckbox().click();
+            }
+            if (localStorage.getItem('assist_enable_custom_rules') == 'true') {
+                ui.enableCustomRulesCheckbox().click();
             }
 
             ui.fixAllBtn().click(function () {
