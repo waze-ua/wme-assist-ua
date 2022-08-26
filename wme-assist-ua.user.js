@@ -8,7 +8,7 @@
 // @connect      google.com
 // @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.08.26.001
+// @version      2022.08.26.002
 // ==/UserScript==
 
 /* jshint esversion: 8 */
@@ -677,9 +677,11 @@ function run_wme_assist() {
             // ATTENTION: Rule order is important!
             return rules_basicCommon().concat([
                 new Rule('Check with rules from Google Sheet', function (text, city) {
-                    let matchCity = rulesDB[text].city ? rulesDB[text].city == city : true;
-                    if (rulesDB[text] && matchCity) {
-                        return rulesDB[text].new_name;
+                    if (rulesDB[text]) {
+                        let matchCity = rulesDB[text].city ? rulesDB[text].city == city : true;
+                        if (matchCity) {
+                            return rulesDB[text].new_name;
+                        }
                     }
                     return text;
                 }, 'GSheets'),
@@ -1633,17 +1635,17 @@ function run_wme_assist() {
             var boundsArray = splitExtent(bounds, zoom);
             var completed = 0;
 
-            if (boundsArray.length > 20 && !confirm('Script will scan ' + boundsArray.length + ' peaces. Are you OK?')) {
+            if (boundsArray.length > 20 && !confirm('Script will scan ' + boundsArray.length + ' pieces. Are you OK?')) {
                 return;
             }
 
             progress = progress || function () { };
 
             series(boundsArray, 0, function (bounds, next) {
-                var peace = bounds.transform(map.getProjectionObject(), 'EPSG:4326');
+                var piece = bounds.transform(map.getProjectionObject(), 'EPSG:4326');
 
                 var e = {
-                    bbox: peace.toBBOX(),
+                    bbox: piece.toBBOX(),
                     language: I18n.locale,
                     venueFilter: '3',
                     venueLevel: zoomToVenueLevel(zoom),
@@ -1654,7 +1656,7 @@ function run_wme_assist() {
                 OpenLayers.Util.extend(e, z);
 
                 getData(e, function (data) {
-                    analyze(peace, zoom, data);
+                    analyze(piece, zoom, data);
                     progress(++completed * 100 / boundsArray.length);
                     next();
                 });
