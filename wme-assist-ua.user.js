@@ -8,7 +8,7 @@
 // @connect      google.com
 // @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.08.26.002
+// @version      2022.09.05.001
 // ==/UserScript==
 
 /* jshint esversion: 8 */
@@ -191,7 +191,7 @@ function run_wme_assist() {
                     return text.replace(/\u2010|\u2011|\u2012|\u2013|\u2014|\u2015|\u2043|\u2212|\u2796/g, '-');
                 }),
                 new Rule('No space after the word', function (text) {
-                    return text.replace(/\.(?!\s)/g, '. ');
+                    return text.replace(/\.(?!\s)(.+)/g, '. $1');
                 }),
                 new Rule('No space after the >', function (text) {
                     return text.replace(/>(?!\s)/g, '> ');
