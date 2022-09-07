@@ -1,50 +1,51 @@
 // ==UserScript==
 // @name         WME Assist UA
+// @namespace    waze-ua
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @require      https://rawgit.com/waze-ua/wme-assist-ua/master/scanner.js
-// @require      https://rawgit.com/waze-ua/wme-assist-ua/master/analyzer.js
 // @require      https://code.jquery.com/jquery-migrate-3.0.0.min.js
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @connect      google.com
+// @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.08.11.001
+// @version      2022.09.05.001
 // ==/UserScript==
 
+/* jshint esversion: 8 */
+/* global W */
 /* global $ */
 /* global jQuery */
 /* global map */
 /* global require */
 
-var WME_Assist = window.WME_Assist;
+const scriptName = GM_info.script.name;
 
-WME_Assist.name = GM_info.script.name;
-
-WME_Assist.debug = function (message) {
+function debug(message) {
     if (!$('#assist_debug').is(':checked')) return;
     if (typeof message === 'string') {
-        console.log(WME_Assist.name + " DEBUG: " + message);
+        console.log(scriptName + " DEBUG: " + message);
     } else {
-        console.log(WME_Assist.name + " DEBUG: ", message);
+        console.log(scriptName + " DEBUG: ", message);
     }
-};
+}
 
-WME_Assist.info = function (message) {
+function info(message) {
     if (typeof message === 'string') {
-        console.log(WME_Assist.name + " INFO: " + message);
+        console.log(scriptName + " INFO: " + message);
     } else {
-        console.log(WME_Assist.name + " INFO: ", message);
+        console.log(scriptName + " INFO: ", message);
     }
-};
+}
 
-WME_Assist.warning = function (message) {
+function warning(message) {
     if (typeof message === 'string') {
-        console.warn(WME_Assist.name + " WARN: " + message);
+        console.warn(scriptName + " WARN: " + message);
     } else {
-        console.warn(WME_Assist.name + " WARN: ", message);
+        console.warn(scriptName + " WARN: ", message);
     }
-};
+}
 
-WME_Assist.series = function (array, start, action, alldone) {
+function series(array, start, action, alldone) {
     var helper = function (i) {
         if (i < array.length) {
             action(array[i], function () {
@@ -58,21 +59,101 @@ WME_Assist.series = function (array, start, action, alldone) {
     };
 
     helper(start);
-};
+}
 
 function run_wme_assist() {
-    var info = WME_Assist.info;
+    const supportedRulesVersion = "1.0";
+    const requestsTimeout = 20000; // in ms
+    const rulesHash = "AKfycbyCR85UB-OexWIcN2pkTV1828bf0M6hUXkfHmu79M50PW3LMjpXkZ4ynRUzf2AOJqQqBA";
+    let rulesDB = {};
 
-    function getWazeApi() {
-        var wazeapi = window.W;
+    function displayHtmlPage(res) {
+        if (res.responseText.match(/Authorization needed/) || res.responseText.match(/ServiceLogin/)) {
+            alert(scriptName + ":\n" +
+                "Authorization is required for using this script. This is one time action.\n" +
+                "Now you will be redirected to the authorization page, where you'll need to approve request.\n" +
+                "After confirmation, please close the page and reload WME.");
+        }
+        let w = window.open();
+        w.document.open();
+        w.document.write(res.responseText);
+        w.document.close();
+        w.location = res.finalUrl;
+    }
 
-        if (!wazeapi) return null;
-        if (!wazeapi.map) return null;
-        if (!wazeapi.model) return null;
-        if (!wazeapi.model.countries) return null;
-        if (!wazeapi.model.countries.top) return null;
+    function validateHTTPResponse(res) {
+        let result = false,
+            displayError = true;
+        if (res) {
+            switch (res.status) {
+                case 200:
+                    displayError = false;
+                    if (res.responseHeaders.match(/content-type: application\/json/i)) {
+                        result = true;
+                    } else if (res.responseHeaders.match(/content-type: text\/html/i)) {
+                        displayHtmlPage(res);
+                    }
+                    break;
+                default:
+                    displayError = false;
+                    alert(scriptName + " Error: unsupported status code - " + res.status);
+                    info(res.responseHeaders);
+                    info(res.responseText);
+                    break;
+            }
+        } else {
+            displayError = false;
+            alert(scriptName + " error: Response is empty!");
+        }
 
-        return wazeapi;
+        if (displayError) {
+            alert(scriptName + ": Error processing request. Response: " + res.responseText);
+        }
+        return result;
+    }
+
+    function requestRules (callbackFunc) {
+        GM_xmlhttpRequest({
+            url: 'https://script.google.com/macros/s/' + rulesHash + '/exec?func=getStreetRules&user=' + W.loginManager.user.userName,
+            method: 'GET',
+            timeout: requestsTimeout,
+            onload: function (res) {
+                if (validateHTTPResponse(res)) {
+                    let out = JSON.parse(res.responseText);
+                    if (out.result == "success") {
+                        info("Rules format version: " + out.version);
+                        if (out.version == supportedRulesVersion) {
+                            rulesDB = out.rules;
+                        } else {
+                            alert(scriptName + ": Table rules format version is not supported!\nPlease, update Assist script to newer version.");
+                        }
+                    } else {
+                        alert(scriptName + ": Error getting rules!");
+                    }
+                }
+                callbackFunc();
+            },
+            ontimeout: function (res) {
+                alert(scriptName + ": Sorry, request timeout!");
+            },
+            onerror: function (res) {
+                alert(scriptName + ": Sorry, request error!");
+            }
+        });
+    }
+
+    function isWazeApiReady() {
+        let wazeapi = window.W || W;
+
+        if (!wazeapi) return false;
+        if (!wazeapi.map) return false;
+        if (!wazeapi.model) return false;
+        if (!wazeapi.model.countries) return false;
+        if (!wazeapi.model.countries.top) return false;
+        if (!wazeapi.loginManager) return false;
+        if (!wazeapi.loginManager.user) return false;
+
+        return true;
     }
 
     var Rule = function (comment, func, variant) {
@@ -110,7 +191,7 @@ function run_wme_assist() {
                     return text.replace(/\u2010|\u2011|\u2012|\u2013|\u2014|\u2015|\u2043|\u2212|\u2796/g, '-');
                 }),
                 new Rule('No space after the word', function (text) {
-                    return text.replace(/\.(?!\s)/g, '. ');
+                    return text.replace(/\.(?!\s)(.+)/g, '. $1');
                 }),
                 new Rule('No space after the >', function (text) {
                     return text.replace(/>(?!\s)/g, '> ');
@@ -590,11 +671,21 @@ function run_wme_assist() {
                     '|Полуднева|Лебедина|Навколишня|Січнева|Горівська|Поморянська|Кінцева|Курінна|Новознесенська|Міртова|Шполянська|Грунтова|Ґрунтова|Варшавська)( |$)',
                     'i'
                 );
-                return s.search(adjRegex) != -1; 
+                return s.search(adjRegex) != -1;
             };
 
             // ATTENTION: Rule order is important!
             return rules_basicCommon().concat([
+                new Rule('Check with rules from Google Sheet', function (text, city) {
+                    if (rulesDB[text]) {
+                        let matchCity = rulesDB[text].city ? rulesDB[text].city == city : true;
+                        if (matchCity) {
+                            return rulesDB[text].new_name;
+                        }
+                    }
+                    return text;
+                }, 'GSheets'),
+
                 new Rule('Fix English characters in name', function (t) {
                     return !hasCyrillic(t) || hasInternationalName(t) ? t : t.replace(/[AaBCcEeHIiKkMOoPpTXxYy]/g, function (c) {
                         return {
@@ -630,8 +721,9 @@ function run_wme_assist() {
                     // This rule should be before renaming rules or they couldn't see some errors
                     return t
                         .replace(/[@#№$,^!:;*"?<]/g, ' ').replace(/ {2,}/, ' ')
-                        .replace(/[`’]/g, '\'');
+                        .replace(/[`\u02bc]/g, '\''); // replace incorrect apostrophes (`’)
                 }),
+                /*
                 new Rule('Incorrect language', function (t) {
                     // Translate full Russian names to full Ukrainian
                     // and next rules will shorten them if necessary
@@ -652,6 +744,7 @@ function run_wme_assist() {
                         .replace(/(^| )(а)дмирала( |$)/i, '$1$2дмірала$3')
                         .replace(/ и /i, ' та ');
                 }),
+                */
                 new Rule('Mistake in short status', function (t) {
                     return t
                         .replace(/(^| )(буль?в?\.?|б-р\.)( |$)/i, '$1б-р$3')
@@ -780,7 +873,7 @@ function run_wme_assist() {
                     countryRules = rules_UA();
                     break;
                 default:
-                    info('There are not implemented rules for country: ' + name);
+                    info('There are no implemented rules for country: ' + name);
                     countryRules = [];
             }
             return countryRules.concat(commonRules);
@@ -807,19 +900,22 @@ function run_wme_assist() {
             return rules[index];
         };
 
-        this.correct = function (variant, text) {
+        this.correct = function (variant, text, city) {
             var newtext = text;
             var experimental = false;
+            var custom_enabled = localStorage.getItem('assist_enable_custom_rules') == 'true';
 
             for (var i = 0; i < rules.length; ++i) {
                 var rule = rules[i];
+
+                if (rule.custom && !custom_enabled) continue;
 
                 if (rule.experimental && !this.experimental) continue;
 
                 if (rule.variant && rule.variant != variant) continue;
 
                 var previous = newtext;
-                newtext = rule.correct(newtext);
+                newtext = rule.correct(newtext, city);
                 var changed = (previous != newtext);
                 if (rule.experimental && previous != newtext) {
                     experimental = true;
@@ -883,7 +979,7 @@ function run_wme_assist() {
         };
     };
 
-    var ActionHelper = function (wazeapi) {
+    var ActionHelper = function () {
         var WazeActionAddAlternateStreet = require("Waze/Action/AddAlternateStreet");
         var WazeActionUpdateFeatureAddress = require("Waze/Action/UpdateFeatureAddress");
         var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
@@ -892,8 +988,8 @@ function run_wme_assist() {
 
         var type2repo = function (type) {
             var map = {
-                'venue': wazeapi.model.venues,
-                'segment': wazeapi.model.segments
+                'venue': W.model.venues,
+                'segment': W.model.segments
             };
             return map[type];
         };
@@ -910,17 +1006,17 @@ function run_wme_assist() {
 
                 var obj = type2repo(type).getObjectById(id);
 
-                wazeapi.model.events.unregister('mergeend', map, select);
+                W.model.events.unregister('mergeend', map, select);
 
                 if (obj) {
-                    wazeapi.selectionManager.setSelectedModels([obj]);
+                    W.selectionManager.setSelectedModels([obj]);
                 } else if (--attemptNum > 0) {
-                    wazeapi.model.events.register('mergeend', map, select);
+                    W.model.events.register('mergeend', map, select);
                 }
 
-                WME_Assist.debug("Attempt number left: " + attemptNum);
+                debug("Attempt number left: " + attemptNum);
 
-                wazeapi.map.setCenter(center, zoom);
+                W.map.setCenter(center, zoom);
             };
 
             return select;
@@ -929,7 +1025,7 @@ function run_wme_assist() {
         this.isObjectVisible = function (obj) {
             if (!onlyVisible) return true;
             if (obj.geometry) {
-                return wazeapi.map.getExtent().intersectsBounds(obj.geometry.getBounds());
+                return W.map.getExtent().intersectsBounds(obj.geometry.getBounds());
             }
             return false;
         };
@@ -939,11 +1035,12 @@ function run_wme_assist() {
         this.fixProblem = function (problem) {
             var deferred = $.Deferred();
             var attemptNum = 10; // after that we decide that object was removed
+            var setOld2Alt = localStorage.getItem('assist_move_old_to_alt') == 'true';
 
             var fix = function () {
                 var uniqueId = problem.object.id + '_' + problem.streetID;
                 var obj = type2repo(problem.object.type).getObjectById(problem.object.id);
-                wazeapi.model.events.unregister('mergeend', map, fix);
+                W.model.events.unregister('mergeend', map, fix);
 
                 if (obj) {
                     var addr = obj.getAddress().attributes;
@@ -966,23 +1063,35 @@ function run_wme_assist() {
                                 if (problem.streetID !== sid) {
                                     streets2keep.push(sid);
                                 } else {
-                                    var altStreet = wazeapi.model.streets.getObjectById(sid);
-                                    var city = wazeapi.model.cities.getObjectById(altStreet.cityID);
+                                    var altStreet = W.model.streets.getObjectById(sid);
+                                    var city = W.model.cities.getObjectById(altStreet.cityID);
                                     attr.cityName = city.attributes.name;
                                     attr.emptyCity = city.hasName() ? null : true;
                                 }
                             });
-                            wazeapi.model.actionManager.add(new WazeActionUpdateObject(obj, { streetIDs: streets2keep}));
+                            W.model.actionManager.add(new WazeActionUpdateObject(obj, { streetIDs: streets2keep}));
 
                             // add new street
-                            wazeapi.model.actionManager.add(new WazeActionAddAlternateStreet(obj, attr, { streetIDField: problem.attrName }));
+                            W.model.actionManager.add(new WazeActionAddAlternateStreet(obj, attr, { streetIDField: problem.attrName }));
                         } else {
                             ui.updateProblem(uniqueId, '(not found. Deleted?)');
                         }
                     } else {
                         // protect user manual fix
                         if (problem.reason == addr.street.name) {
-                            wazeapi.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, { streetIDField: problem.attrName }));
+                            W.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, { streetIDField: problem.attrName }));
+                            // move old name to alt street, if option enabled
+                            if (setOld2Alt && obj.type == 'segment') {
+                                var altAttr = {
+                                    countryID: addr.country.id,
+                                    stateID: addr.state.id,
+                                    cityName: addr.city.attributes.name,
+                                    emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
+                                    streetName: problem.reason,
+                                    emptyStreet: false //problem.isEmpty
+                                };
+                                W.model.actionManager.add(new WazeActionAddAlternateStreet(obj, altAttr, { streetIDField: problem.attrName }));
+                            }
                         } else {
                             ui.updateProblem(uniqueId, '(user fix: ' + addr.street.name + ')');
                         }
@@ -992,11 +1101,11 @@ function run_wme_assist() {
                     ui.updateProblem(uniqueId, '(was not fixed. Deleted?)');
                     deferred.resolve(uniqueId);
                 } else {
-                    wazeapi.model.events.register('mergeend', map, fix);
-                    wazeapi.map.setCenter(problem.detectPos, problem.zoom);
+                    W.model.events.register('mergeend', map, fix);
+                    W.map.setCenter(problem.detectPos, problem.zoom);
                 }
 
-                WME_Assist.debug('Attempt number left: ' + attemptNum);
+                debug('Attempt number left: ' + attemptNum);
             };
 
             fix();
@@ -1006,51 +1115,54 @@ function run_wme_assist() {
     };
 
     var Ui = function (countryName) {
-        var addon = document.createElement('section');
-        addon.innerHTML = '<b>' + WME_Assist.name + '</b> v' + GM_info.script.version;
+        var addon = document.createElement('div');
+        addon.innerHTML = '<wz-overline>' + scriptName + ' v' + GM_info.script.version + '</wz-overline>';
 
-        var section = document.createElement('p');
-        section.style.paddingTop = "8px";
-        section.style.textIndent = "16px";
+        var section = document.createElement('div');
         section.id = "assist_options";
-        section.innerHTML = '<b>Scanner Options</b><br/>' +
-            '<label><input type="checkbox" id="assist_enabled" value="0"/> Enable/disable</label><br/>' +
-            '<label><input type="checkbox" id="assist_skip_alt" value="0"/> Do not check alternative names</label><br/>' +
-            '<label><input type="checkbox" id="assist_debug" value="0"/> Debug</label><br/>';
-        var variant = document.createElement('p');
-        variant.id = 'variant_options';
-        // adopt city names for Ukraine
-        if (countryName == 'Ukraine') {
-            variant.innerHTML = '<b>Naming Rules</b><a href="https://wazeopedia.waze.com/wiki/Ukraine/Як_називати_вулиці" target="_blank"><span class="fa fa-question-circle"></span></a><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Ukraine" checked/> Ukraine (Classic)</label><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Lviv"/> 🦁 Lviv (Alternative)</label><br/>';
-        } else {
-            variant.innerHTML = '<b>Naming Rules</b><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Moscow" checked/> Moscow</label><br/>' +
-                '<label><input type="radio" name="assist_variant" value="Tula"/> Tula</label><br/>';
-        }
-        section.appendChild(variant);
+        section.className = "form-group";
+        section.innerHTML = '<wz-label>Options</wz-label>' +
+            '<wz-checkbox name="assist_enabled" id="assist_enabled" value="on">Enable/disable</wz-checkbox>' +
+            '<wz-checkbox name="assist_skip_alt" id="assist_skip_alt" value="on">Skip checking alternative names</wz-checkbox>' +
+            '<wz-checkbox name="assist_move_old_to_alt" id="assist_move_old_to_alt" value="on">Move old name to alternative</wz-checkbox>' +
+            '<wz-checkbox name="assist_debug" id="assist_debug" value="on">Enable debug log</wz-checkbox>';
         addon.appendChild(section);
 
-        section = document.createElement('p');
-        section.style.paddingTop = "8px";
-        section.style.textIndent = "16px";
+        var variant = document.createElement('div');
+        variant.id = 'variant_options';
+        variant.className = "form-group";
+        // adopt city names for Ukraine
+        //if (countryName == 'Ukraine') {
+            variant.innerHTML = '<wz-label>Naming Rules <a href="https://wazeopedia.waze.com/wiki/Ukraine/Як_називати_вулиці" target="_blank"><span class="fa fa-question-circle"></span></a></wz-label>' +
+                '<wz-radio-button name="assist_variant" value="Ukraine" checked="">Ukraine (Classic)</wz-radio-button>' +
+                '<wz-radio-button name="assist_variant" value="Lviv">🦁 Lviv (Alternative)</wz-radio-button>';
+            if (!jQuery.isEmptyObject(rulesDB)) {
+                variant.innerHTML += '<wz-radio-button name="assist_variant" value="GSheets">Rules from Google Sheet</wz-radio-button>';
+            }
+        //} else {
+            // todo: add other countries support if needed
+        //    variant.innerHTML = '';
+        //}
+        addon.appendChild(variant);
+
+        section = document.createElement('div');
         section.id = "assist_custom_rules";
+        section.className = "form-group";
         $(section)
-            .append($('<p>').addClass('message').css({'font-weight': 'bold'}).text('Custom rules'))
+            .append($('<wz-label>Custom Rules</wz-label>'))
+            .append($('<wz-checkbox name="assist_enable_custom_rules" id="assist_enable_custom_rules" value="on">Enable custom rules</wz-checkbox>'))
             .append($('<div>').addClass('btn-toolbar')
-            .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text('Add'))
-            .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text('Edit'))
-            .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text('Del')))
+                .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text('Add'))
+                .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text('Edit'))
+                .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text('Del')))
             .append($('<ul>').addClass('result-list').css({"height": "250px", "overflow": "auto"}));
         addon.appendChild(section);
 
-        section = document.createElement('p');
-        section.style.paddingTop = "8px";
-        section.style.textIndent = "16px";
+        section = document.createElement('div');
         section.id = "assist_exceptions";
+        section.className = "form-group";
         $(section)
-            .append($('<p title="Right click on error in list to add">').addClass('message').css({'font-weight': 'bold'}).text('Exceptions'))
+            .append($('<wz-label title="Right click on error in list to add">').text('Exceptions'))
             .append($('<ul>').addClass('result-list').css({"height": "250px", "overflow": "auto"}));
         addon.appendChild(section);
 
@@ -1149,7 +1261,7 @@ function run_wme_assist() {
 
         $('<div>', {
             id: 'WME_AssistWindow',
-            title: WME_Assist.name,
+            title: scriptName,
         })
             .append($('<div>').css({
                 padding: 10,
@@ -1377,7 +1489,9 @@ function run_wme_assist() {
 
         var enableCheckbox = $('#assist_enabled');
         var skipAltCheckbox = $('#assist_skip_alt');
+        var moveOld2AltCheckbox = $('#assist_move_old_to_alt');
         var debugCheckbox = $('#assist_debug');
+        var enableCustomRulesCheckbox = $('#assist_enable_custom_rules');
 
         var addCustomRuleBtn = $('#assist_add_custom_rule');
         var editCustomRuleBtn = $('#assist_edit_custom_rule');
@@ -1394,7 +1508,9 @@ function run_wme_assist() {
 
         this.enableCheckbox = function () { return enableCheckbox; };
         this.skipAltCheckbox = function () { return skipAltCheckbox; };
+        this.moveOld2AltCheckbox = function () { return moveOld2AltCheckbox; };
         this.debugCheckbox = function () { return debugCheckbox; };
+        this.enableCustomRulesCheckbox = function () { return enableCustomRulesCheckbox; };
         this.variantRadio = function (value) {
             if (!value) {
                 return $('[name=assist_variant]');
@@ -1426,20 +1542,427 @@ function run_wme_assist() {
 
             return deferred.promise();
         };
-        this.variant = function () {
-            return $('[name=assist_variant]:checked')[0].value;
+        //this.variant = function () {
+        //    return $('[name=assist_variant][checked]')[0].value;
+        //};
+    };
+
+    var Scanner = function () {
+        var map = W.map;
+
+        var ROAD_TYPE = {
+            STREET: 1,
+            PRIMARY_STREET: 2,
+            FREEWAY: 3,
+            RAMP: 4,
+            WALKING_TRAIL: 5,
+            MAJOR_HIGHWAY: 6,
+            MINOR_HIGHWAY: 7,
+            OFF_ROAD: 8,
+            WALKWAY: 9,
+            PEDESTRIAN_BOARDWALK: 10,
+            FERRY: 15,
+            STAIRWAY: 16,
+            PRIVATE_ROAD: 17,
+            RAILROAD: 18,
+            RUNWAY_TAXIWAY: 19,
+            PARKING_LOT_ROAD: 20,
+            ALLEY: 22
+        };
+
+        var zoomToRoadType = function (e) {
+            if (e < 14) {
+                return [];
+            }
+            switch (e) {
+                case 14:
+                    return [ROAD_TYPE.PRIMARY_STREET, ROAD_TYPE.FREEWAY, ROAD_TYPE.RAMP, ROAD_TYPE.MAJOR_HIGHWAY, ROAD_TYPE.MINOR_HIGHWAY, ROAD_TYPE.FERRY];
+                case 15:
+                    return [ROAD_TYPE.PRIMARY_STREET, ROAD_TYPE.FREEWAY, ROAD_TYPE.RAMP, ROAD_TYPE.MAJOR_HIGHWAY, ROAD_TYPE.MINOR_HIGHWAY, ROAD_TYPE.OFF_ROAD, ROAD_TYPE.WALKWAY, ROAD_TYPE.PEDESTRIAN_BOARDWALK, ROAD_TYPE.FERRY, ROAD_TYPE.STAIRWAY, ROAD_TYPE.PRIVATE_ROAD, ROAD_TYPE.RAILROAD, ROAD_TYPE.RUNWAY_TAXIWAY, ROAD_TYPE.PARKING_LOT_ROAD, ROAD_TYPE.ALLEY];
+                default:
+                    return Object.values(ROAD_TYPE);
+            }
+        };
+        var zoomToVenueLevel = function (e) {
+            switch (e) {
+                case 12:
+                    return 1;
+                case 13:
+                    return 2;
+                case 14:
+                case 15:
+                case 16:
+                    return 3;
+                case 17:
+                case 18:
+                case 19:
+                case 20:
+                case 21:
+                case 22:
+                    return 4;
+                default:
+                    return null;
+            }
+        };
+
+        var getData = function (e, cb) {
+            debug(e);
+            $.get(W.Config.paths.features, e).done(cb);
+        };
+
+        var splitExtent = function (extent, zoom) {
+            var result = [];
+
+            var ratio = 1; //map.getResolution() / map.getResolutionForZoom(zoom); //FIXME: temporary commented, because getResolutionForZoom() is gone
+            var dx = extent.getWidth() / ratio;
+            var dy = extent.getHeight() / ratio;
+
+            var x, y;
+            for (x = extent.left; x < extent.right; x += dx) {
+                for (y = extent.bottom; y < extent.top; y += dy) {
+                    var bounds = new OpenLayers.Bounds();
+                    bounds.extend(new OpenLayers.LonLat(x, y));
+                    bounds.extend(new OpenLayers.LonLat(x + dx, y + dy));
+
+                    result.push(bounds);
+                }
+            }
+
+            return result;
+        };
+
+        this.scan = function (bounds, zoom, analyze, progress) {
+            var boundsArray = splitExtent(bounds, zoom);
+            var completed = 0;
+
+            if (boundsArray.length > 20 && !confirm('Script will scan ' + boundsArray.length + ' pieces. Are you OK?')) {
+                return;
+            }
+
+            progress = progress || function () { };
+
+            series(boundsArray, 0, function (bounds, next) {
+                var piece = bounds.transform(map.getProjectionObject(), 'EPSG:4326');
+
+                var e = {
+                    bbox: piece.toBBOX(),
+                    language: I18n.locale,
+                    venueFilter: '3',
+                    venueLevel: zoomToVenueLevel(zoom),
+                };
+                var z = {
+                    roadTypes: zoomToRoadType(zoom).toString()
+                };
+                OpenLayers.Util.extend(e, z);
+
+                getData(e, function (data) {
+                    analyze(piece, zoom, data);
+                    progress(++completed * 100 / boundsArray.length);
+                    next();
+                });
+            });
         };
     };
 
-    var Application = function (wazeapi) {
-        var scanner = new WME_Assist.Scanner(wazeapi);
-        var analyzer = new WME_Assist.Analyzer(wazeapi);
+    var Analyzer = function () {
+        var Exceptions = function () {
+            var exceptions = [];
 
-        var FULL_ZOOM_LEVEL = 5;
+            var onAdd = function (name) { };
+            var onDelete = function (index) { };
+
+            var save = function (exceptions) {
+                if (localStorage) {
+                    localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
+                }
+            };
+
+            this.load = function () {
+                if (localStorage) {
+                    var str = localStorage.getItem('assistExceptionsKey');
+                    if (str) {
+                        var arr = JSON.parse(str);
+                        for (var i = 0; i < arr.length; ++i) {
+                            var exception = arr[i];
+                            this.add(exception);
+                        }
+                    }
+                }
+            };
+
+            this.contains = function (name) {
+                if (exceptions.indexOf(name) == -1) return false;
+                return true;
+            };
+
+            this.add = function (name) {
+                exceptions.push(name);
+                save(exceptions);
+                onAdd(name);
+            };
+
+            this.remove = function (index) {
+                exceptions.splice(index, 1);
+                save(exceptions);
+                onDelete(index);
+            };
+
+            this.onAdd = function (cb) { onAdd = cb; };
+            this.onDelete = function (cb) { onDelete = cb; };
+        };
+
+        var analyzedIds = [];
+        var problems = [];
+        var unresolvedIdx = 0;
+        var skippedErrors = 0;
+        var variant;
+        var exceptions = new Exceptions();
+        var rules;
+        var action;
+
+        var getUnresolvedErrorNum = function () {
+            return problems.length - unresolvedIdx - skippedErrors;
+        };
+
+        var getFixedErrorNum = function () {
+            return unresolvedIdx;
+        };
+
+        this.unresolvedErrorNum = getUnresolvedErrorNum;
+        this.fixedErrorNum = getFixedErrorNum;
+
+        this.setRules = function (r) {
+            rules = r;
+        };
+
+        this.setActionHelper = function (a) {
+            action = a;
+        };
+
+        this.loadExceptions = function () {
+            exceptions.load();
+        };
+
+        this.onExceptionAdd = function (cb) {
+            exceptions.onAdd(cb);
+        };
+
+        this.onExceptionDelete = function (cb) {
+            exceptions.onDelete(cb);
+        };
+
+        this.addException = function (reason, cb) {
+            exceptions.add(reason);
+
+            var i;
+            for (i = 0; i < problems.length; ++i) {
+                var problem = problems[i];
+                if (problem.reason == reason) {
+                    problem.skip = true;
+                    ++skippedErrors;
+
+                    cb(problem.object.id);
+                }
+            }
+        };
+
+        this.removeException = function (i) {
+            exceptions.remove(i);
+        };
+
+        this.setVariant = function (v) {
+            variant = v;
+        };
+
+        this.reset = function () {
+            analyzedIds = [];
+            problems = [];
+            unresolvedIdx = 0;
+            skippedErrors = 0;
+        };
+
+        this.fixAll = function (oneFixed, allFixed) {
+            series(problems, unresolvedIdx, function (p, next) {
+                if (p.skip) {
+                    next();
+                    return;
+                }
+
+                action.fixProblem(p).done(function (id) {
+                    ++unresolvedIdx;
+                    oneFixed(id);
+
+                    setTimeout(next, 0);
+                });
+            }, allFixed);
+        };
+
+        this.fixSelected = function (listToFix, oneFixed, allFixed) {
+            series(problems, unresolvedIdx, function (p, next) {
+                if (listToFix.indexOf(p.object.id + '_' + p.streetID) == -1) {
+                    next();
+                    return;
+                }
+                if (p.skip) {
+                    next();
+                    return;
+                }
+
+                action.fixProblem(p).done(function (id) {
+                    ++unresolvedIdx;
+                    oneFixed(id);
+
+                    setTimeout(next, 0);
+                });
+            }, allFixed);
+        };
+
+        var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
+            var userlevel = W.loginManager.user.rank + 1;
+            var street = W.model.streets.getObjectById(streetID);
+
+            if (!street) return;
+
+            var detected = false;
+            var skip = false;
+            var title = '';
+            var reason;
+            var newStreetName;
+
+            if (!street.isEmpty) {
+                if (!exceptions.contains(street.name)) {
+                    try {
+                        var city = W.model.cities.getObjectById(street.cityID);
+                        var result = rules.correct(variant, street.name, city.attributes.name);
+                        newStreetName = result.value;
+                        detected = (newStreetName != street.name);
+                        if (obj.type == 'venue') {
+                            title = 'POI: ';
+                        }
+                        // alternative names
+                        if (attrName == 'streetIDs') {
+                            title = 'ALT: ';
+                        }
+                        // if user has lower rank, just show the segment, but no fix allowed
+                        if (obj.lockRank && obj.lockRank >= userlevel) {
+                            title = '(L' + (obj.lockRank + 1) + ') ' + title;
+                            skip = true;
+                        }
+                        // show segments with closures, but lock them from fixing
+                        if (obj.hasClosures) {
+                            title = '(🚧) ' + title;
+                            skip = true;
+                        }
+                        title = title + street.name.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■');
+                        // for "detect only rules" we have no replacement to show
+                        if (!newStreetName) {
+                            skip = true;
+                        }
+                        else {
+                            title = title + ' ➤ ' + newStreetName;
+                        }
+                        if (skip) {
+                            title = '🔒 ' + title;
+                        }
+                        reason = street.name;
+                    } catch (err) {
+                        warning('Street name "' + street.name + '" causes error in rules');
+                        return;
+                    }
+                }
+            }
+
+            if (detected) {
+                var gj = new OpenLayers.Format.GeoJSON();
+                var geometry = gj.parseGeometry(obj.geometry);
+                var objCenter = geometry.getBounds().getCenterLonLat().transform(W.Config.map.projection.remote, W.map.getProjectionObject());
+                var boundsCenter = bounds.clone().getCenterLonLat().transform(W.Config.map.projection.remote, W.map.getProjectionObject());
+                obj.center = objCenter;
+
+                problems.push({
+                    object: obj,
+                    reason: reason,
+                    attrName: attrName,
+                    detectPos: boundsCenter,
+                    zoom: zoom,
+                    newStreetName: newStreetName,
+                    isEmpty: street.isEmpty,
+                    cityId: street.cityID,
+                    streetID: streetID,
+                    experimental: false,
+                    skip: skip,
+                });
+
+                onProblemDetected(obj.id + '_' + streetID, obj, title, reason);
+            }
+        };
+
+        this.analyze = function (bounds, zoom, data, onProblemDetected) {
+            var startTime = new Date().getTime();
+            var analyzeAlt = true;
+
+            info('start analyze');
+
+            var subjects = {
+                'segment': {
+                    attr: 'primaryStreetID',
+                    name: 'segments'
+                },
+                'venue': {
+                    attr: 'streetID',
+                    name: 'venues'
+                }
+            };
+
+            if (localStorage) {
+                if (localStorage.getItem('assist_skip_alt') == 'true') {
+                    analyzeAlt = false;
+                }
+            }
+
+            for (var k in subjects) {
+                var subject = subjects[k];
+                var subjectData = data[subject.name];
+
+                if (!subjectData) continue;
+
+                var objects = subjectData.objects;
+
+                for (var i = 0; i < objects.length; ++i) {
+                    var obj = objects[i];
+                    var id = obj.id;
+
+                    obj.type = k;
+
+                    if (analyzedIds.indexOf(id) >= 0) continue;
+
+                    if (typeof obj.approved != 'undefined' && !obj.approved) continue;
+
+                    checkStreet(bounds, zoom, obj[subject.attr], obj, subject.attr, onProblemDetected);
+
+                    // add ugly support for alternative names
+                    if (subject.name == 'segments' && analyzeAlt) {
+                        for (var j = 0, n = obj.streetIDs.length; j < n; j++) {
+                            checkStreet(bounds, zoom, obj.streetIDs[j], obj, 'streetIDs', onProblemDetected);
+                        }
+                    }
+                    analyzedIds.push(id);
+                }
+            }
+
+            info('end analyze: ' + (new Date().getTime() - startTime) + 'ms');
+        };
+    };
+
+    var Application = function () {
+        var scanner = new Scanner();
+        var analyzer = new Analyzer();
+
+        var FULL_ZOOM_LEVEL = 17;
 
         var scanForZoom = function (zoom) {
-            scanner.scan(wazeapi.map.calculateBounds(), zoom, function (bounds, zoom, data) {
-                WME_Assist.debug(data);
+            scanner.scan(W.map.calculateBounds(), zoom, function (bounds, zoom, data) {
+                debug(data);
 
                 //var w = window.open();
                 //w.document.open();
@@ -1477,18 +2000,18 @@ function run_wme_assist() {
         };
 
         var scan = function () {
-            scanForZoom(wazeapi.map.getZoom());
+            scanForZoom(W.map.getZoom());
         };
 
         var countryName = function () {
-            var id = wazeapi.model.countries.top.id;
-            var name = wazeapi.model.countries.getObjectById(id).name;
+            var id = W.model.countries.top.id;
+            var name = W.model.countries.getObjectById(id).name;
             return name;
         };
 
         var country = countryName();
 
-        var action = new ActionHelper(wazeapi);
+        var action = new ActionHelper();
         var rules = new Rules(country);
         var ui = new Ui(country);
 
@@ -1523,7 +2046,7 @@ function run_wme_assist() {
             ui.removeCustomRule(index);
         });
 
-        wazeapi.model.events.register('mergeend', map, function () {
+        W.model.events.register('mergeend', map, function () {
             var name = countryName();
             if (name != country) {
                 rules.onCountryChange(name);
@@ -1535,8 +2058,8 @@ function run_wme_assist() {
         rules.load();
 
         this.start = function () {
-            ui.enableCheckbox().click(function () {
-                if (ui.enableCheckbox().is(':checked')) {
+            ui.enableCheckbox().change(function () {
+                if (this.checked) {
                     localStorage.setItem('assist_enabled', true);
                     ui.showMainWindow();
 
@@ -1545,42 +2068,55 @@ function run_wme_assist() {
                     var savedVariant = localStorage.getItem('assist_variant');
                     if (savedVariant !== null) {
                         ui.variantRadio(savedVariant).prop('checked', true);
-                        analyzer.setVariant(ui.variant());
+                        analyzer.setVariant(savedVariant);
                     }
 
                     scan();
-                    wazeapi.model.events.register('mergeend', map, scan);
+                    W.model.events.register('mergeend', map, scan);
                 } else {
                     localStorage.setItem('assist_enabled', false);
                     ui.hideMainWindow();
 
                     info('disabled');
 
-                    wazeapi.model.events.unregister('mergeend', map, scan);
+                    W.model.events.unregister('mergeend', map, scan);
                 }
             });
 
-            ui.skipAltCheckbox().click(function () {
-                if (ui.skipAltCheckbox().is(':checked')) {
-                    localStorage.setItem('assist_skip_alt', true);
-                } else {
-                    localStorage.setItem('assist_skip_alt', false);
-                }
-            });
-
-            ui.debugCheckbox().click(function () {
-                if (ui.debugCheckbox().is(':checked')) {
-                    localStorage.setItem('assist_debug', true);
-                } else {
-                    localStorage.setItem('assist_debug', false);
-                }
-            });
-
-            ui.variantRadio().click(function () {
-                localStorage.setItem('assist_variant', this.value);
-
-                analyzer.setVariant(ui.variant());
+            ui.skipAltCheckbox().change(function () {
+                localStorage.setItem('assist_skip_alt', this.checked);
                 ui.scanAreaBtn().click();
+            });
+
+            ui.moveOld2AltCheckbox().change(function () {
+                localStorage.setItem('assist_move_old_to_alt', this.checked);
+                if (this.checked) {
+                    // force enable skip alt option
+                    localStorage.setItem('assist_skip_alt', true);
+                    ui.skipAltCheckbox().prop('checked', true);
+                    ui.skipAltCheckbox().prop('disabled', true);
+                } else {
+                    // unblock skip alt option
+                    ui.skipAltCheckbox().prop('disabled', false);
+                }
+            });
+
+            ui.debugCheckbox().change(function () {
+                localStorage.setItem('assist_debug', this.checked);
+            });
+
+            ui.enableCustomRulesCheckbox().change(function () {
+                localStorage.setItem('assist_enable_custom_rules', this.checked);
+                ui.scanAreaBtn().click();
+            });
+
+            ui.variantRadio().change(function (e) {
+                if (e.currentTarget.checked) {
+                    localStorage.setItem('assist_variant', this.value);
+
+                    analyzer.setVariant(this.value);
+                    ui.scanAreaBtn().click();
+                }
             });
 
             if (localStorage.getItem('assist_enabled') == 'true') {
@@ -1589,8 +2125,14 @@ function run_wme_assist() {
             if (localStorage.getItem('assist_skip_alt') == 'true') {
                 ui.skipAltCheckbox().click();
             }
+            if (localStorage.getItem('assist_move_old_to_alt') == 'true') {
+                ui.moveOld2AltCheckbox().click();
+            }
             if (localStorage.getItem('assist_debug') == 'true') {
                 ui.debugCheckbox().click();
+            }
+            if (localStorage.getItem('assist_enable_custom_rules') == 'true') {
+                ui.enableCustomRulesCheckbox().click();
             }
 
             ui.fixAllBtn().click(function () {
@@ -1600,7 +2142,7 @@ function run_wme_assist() {
                 ui.clearFixedBtn().hide();
                 ui.clearAllBtn().hide();
 
-                wazeapi.model.events.unregister('mergeend', map, scan);
+                W.model.events.unregister('mergeend', map, scan);
 
                 setTimeout(function () {
                     analyzer.fixAll(function (id) {
@@ -1614,7 +2156,7 @@ function run_wme_assist() {
                         ui.clearFixedBtn().show();
                         ui.clearAllBtn().show();
 
-                        wazeapi.model.events.register('mergeend', map, scan);
+                        W.model.events.register('mergeend', map, scan);
                     });
                 }, 0);
             });
@@ -1626,7 +2168,7 @@ function run_wme_assist() {
                 ui.clearFixedBtn().hide();
                 ui.clearAllBtn().hide();
 
-                wazeapi.model.events.unregister('mergeend', map, scan);
+                W.model.events.unregister('mergeend', map, scan);
 
                 var listToFix = ui.getCheckedItemsList();
 
@@ -1642,7 +2184,7 @@ function run_wme_assist() {
                         ui.clearFixedBtn().show();
                         ui.clearAllBtn().show();
 
-                        wazeapi.model.events.register('mergeend', map, scan);
+                        W.model.events.register('mergeend', map, scan);
                     });
                 }, 0);
             });
@@ -1709,26 +2251,23 @@ function run_wme_assist() {
         };
     };
 
-    function waitForWaze(done) {
-        var wazeapi = getWazeApi();
-
+    function waitForWaze(doneFunc) {
         // Wait for Waze and jQuery.ui
-        if (wazeapi === null || !jQuery.ui) {
-            WME_Assist.info("waiting for Waze");
+        if (!isWazeApiReady() || !jQuery.ui) {
+            info("waiting for Waze");
             setTimeout(function () {
-                waitForWaze(done);
-            }, 500);
+                waitForWaze(doneFunc);
+            }, 1500);
             return;
         }
-
-        done(wazeapi);
+        doneFunc(function () {
+            info("Ready to work!");
+            var app = new Application();
+            app.start();
+        });
     }
 
-    waitForWaze(function (wazeapi) {
-        WME_Assist.info("Ready to work!");
-        var app = new Application(wazeapi);
-        app.start();
-    });
+    waitForWaze(requestRules);
 }
 
 run_wme_assist();
