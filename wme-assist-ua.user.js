@@ -8,7 +8,7 @@
 // @connect      google.com
 // @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.09.05.001
+// @version      2022.09.22.001
 // ==/UserScript==
 
 /* jshint esversion: 8 */
@@ -62,7 +62,7 @@ function series(array, start, action, alldone) {
 }
 
 function run_wme_assist() {
-    const supportedRulesVersion = "1.0";
+    const supportedRulesVersion = "1.1";
     const requestsTimeout = 20000; // in ms
     const rulesHash = "AKfycbyCR85UB-OexWIcN2pkTV1828bf0M6hUXkfHmu79M50PW3LMjpXkZ4ynRUzf2AOJqQqBA";
     let rulesDB = {};
@@ -677,10 +677,11 @@ function run_wme_assist() {
             // ATTENTION: Rule order is important!
             return rules_basicCommon().concat([
                 new Rule('Check with rules from Google Sheet', function (text, city) {
-                    if (rulesDB[text]) {
-                        let matchCity = rulesDB[text].city ? rulesDB[text].city == city : true;
+                    let ruleKey = text + '_' + city;
+                    if (rulesDB[ruleKey]) {
+                        let matchCity = rulesDB[ruleKey].city ? rulesDB[ruleKey].city == city : true;
                         if (matchCity) {
-                            return rulesDB[text].new_name;
+                            return rulesDB[ruleKey].new_name;
                         }
                     }
                     return text;
