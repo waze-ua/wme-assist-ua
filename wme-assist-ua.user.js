@@ -5,10 +5,12 @@
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
 // @require      https://code.jquery.com/jquery-migrate-3.0.0.min.js
 // @grant        GM_xmlhttpRequest
+// @updateURL    https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
+// @downloadURL  https://github.com/waze-ua/wme-assist-ua/raw/master/wme-assist-ua.user.js
 // @connect      google.com
 // @connect      script.googleusercontent.com
 // @include      /^https:\/\/(www|beta)\.waze\.com(\/\w{2,3}|\/\w{2,3}-\w{2,3}|\/\w{2,3}-\w{2,3}-\w{2,3})?\/editor\b/
-// @version      2022.09.22.001
+// @version      2022.09.22.002
 // ==/UserScript==
 
 /* jshint esversion: 8 */
