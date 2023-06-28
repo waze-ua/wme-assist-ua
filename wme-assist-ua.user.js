@@ -789,6 +789,12 @@
                             .replace(/(^| )пер\.?( |$)/i, '$1пров.$2')
                             .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор)( |$)/i, '$1$2.$3');
                         }),
+                        new Rule('Rules for back status', function (t) {
+                            // Якщо закінчується на "-ний", переносимо статус в кінець (сміливе рішення)
+                            // !!! Сміливе рішення :)
+                            return t
+                                .replace(/(^)(пров\.|пр\.|тупик|узвіз)( )(.*ний$)/i, '$4 $2')
+                        }),
                         new Rule('Long status must be short', function (t) {
                             // Do short status only if there no other shorten statuses in name
                             return hasShortStatus(t) ? t : t
