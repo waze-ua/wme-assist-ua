@@ -1,15 +1,10 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2023.01.09.001
+// @version      2023.06.28.001
 // @namespace    https://greasyfork.org/ru/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
-// @require      https://code.jquery.com/jquery-migrate-3.0.0.min.js
-// @require      https://code.jquery.com/ui/1.11.4/jquery-ui.min.js
-// @resource     JQUI https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css
 // @grant        GM_xmlhttpRequest
-// @grant        GM_getResourceText
-// @grant        GM_addStyle
 // @updateURL    https://greasyfork.org/ru/scripts/457555-wme-assist-ua
 // @downloadURL  https://greasyfork.org/ru/scripts/457555-wme-assist-ua
 // @connect      google.com
@@ -24,11 +19,10 @@
 /* global jQuery */
 /* global map */
 /* global require */
+/* global OpenLayers */
+/* global I18n */
 
 (function () {
-
-    const jqCss = GM_getResourceText("JQUI");
-    GM_addStyle(jqCss);
 
     const scriptName = GM_info.script.name;
 
@@ -1174,6 +1168,7 @@
 
         var Ui = function (countryName) {
             var addon = document.createElement('div');
+
             addon.innerHTML = '<wz-overline>' + scriptName + ' v' + GM_info.script.version + '</wz-overline>';
 
             var section = document.createElement('div');
