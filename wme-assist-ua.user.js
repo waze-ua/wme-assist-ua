@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2023.08.23.002
+// @version      2023.09.23.001
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
@@ -334,10 +334,11 @@
                             .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор)( |$)/i, '$1$2.$3');
                         }),
                         new Rule('Rules for back status', function (t) {
-                            // Якщо закінчується на "-ний", переносимо статус в кінець (сміливе рішення)
+                            // Якщо закінчується на "-ний; -ський", переносимо статус в кінець (сміливе рішення)
                             // !!! Сміливе рішення :)
                             return t
                                 .replace(/(^)(пров\.|пр\.|тупик|узвіз)( )(.*ний$)/i, '$4 $2')
+                                .replace(/(^)(пров\.|пр\.|тупик|узвіз)( )(.*ський$)/i, '$4 $2')
                         }),
                         new Rule('Long status must be short', function (t) {
                             // Do short status only if there no other shorten statuses in name
