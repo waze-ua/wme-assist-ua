@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2023.09.23.001
+// @version      2023.12.18.001
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
@@ -602,17 +602,6 @@
 
                 return select;
             };
-
-            this.isObjectVisible = function (obj) {
-                if (!onlyVisible)
-                    return true;
-                if (obj.geometry) {
-                    return W.map.getExtent().intersectsBounds(obj.geometry.getBounds());
-                }
-                return false;
-            };
-
-            var onlyVisible = false;
 
             this.fixProblem = function (problem) {
                 var deferred = $.Deferred();
@@ -1665,7 +1654,7 @@
             var FULL_ZOOM_LEVEL = 17;
 
             var scanForZoom = function (zoom) {
-                scanner.scan(W.map.calculateBounds(), zoom, function (bounds, zoom, data) {
+                scanner.scan(W.map.olMap.calculateBounds(), zoom, function (bounds, zoom, data) {
                     //debug(data);
                     //var w = window.open();
                     //w.document.open();
