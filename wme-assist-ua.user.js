@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2023.12.18.001
+// @version      2024.02.25.001
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
@@ -170,7 +170,7 @@
             this.experimental = true;
         };
 
-        var Rules = function (countryName) {
+        var Rules = function () {
             var rules_basicCommon = function () {
                 return [
                     new Rule('Unbreak space in street name', function (text) {
@@ -431,7 +431,7 @@
                     ]);
             };
 
-            var getCountryRules = function (name) {
+            var getCountryRules = function () {
                 var commonRules = [
                     // Following rules must be at the end because
                     // previous rules might insert additional spaces
@@ -445,7 +445,8 @@
                         return text.replace(/[ ]*$/, '');
                     }),
                 ];
-                info('Get rules for country: ' + name);
+                //var countryName = W.model.getTopCountry().getName();
+                //info('Get rules for country: ' + countryName);
                 var countryRules = rules_UA();
 
                 return countryRules.concat(commonRules);
@@ -468,11 +469,11 @@
                 onDelete = cb;
             };
 
-            this.onCountryChange = function (name) {
-                info('Country was changed to ' + name);
-                rules.splice(customRulesNumber, rules.length - customRulesNumber);
-                rules = rules.concat(getCountryRules(name));
-            };
+            //this.onCountryChange = function () {
+            //    info('Country was changed. Reloading rules...');
+            //    rules.splice(customRulesNumber, rules.length - customRulesNumber);
+            //    rules = rules.concat(getCountryRules());
+            //};
 
             this.get = function (index) {
                 return rules[index];
@@ -532,7 +533,7 @@
                     }
                 }
 
-                rules = rules.concat(getCountryRules(countryName));
+                rules = rules.concat(getCountryRules());
             };
 
             this.push = function (oldname, newname) {
@@ -693,7 +694,7 @@
             };
         };
 
-        var Ui = function (countryName) {
+        var Ui = function () {
             // load main window size and position
             var wndW = localStorage.getItem('assist_window_w');
             var wndH = localStorage.getItem('assist_window_h');
@@ -1695,11 +1696,9 @@
                 scanForZoom(W.map.getZoom());
             };
 
-            var country = W.model.getTopCountry().getName();
-
             var action = new ActionHelper();
-            var rules = new Rules(country);
-            var ui = new Ui(country);
+            var rules = new Rules();
+            var ui = new Ui();
 
             analyzer.setRules(rules);
             analyzer.setActionHelper(action);
@@ -1732,13 +1731,13 @@
                 ui.removeCustomRule(index);
             });
 
-            W.model.events.register('mergeend', null, function () {
-                var name = W.model.getTopCountry().getName();
-                if (name != country) {
-                    rules.onCountryChange(name);
-                    country = name;
-                }
-            });
+            //W.model.events.register('mergeend', null, function () {
+            //    var name = W.model.getTopCountry().getName();
+            //    if (name != currentCountry) {
+            //        rules.onCountryChange(name);
+            //        currentCountry = name;
+            //    }
+            //});
 
             analyzer.loadExceptions();
             rules.load();
