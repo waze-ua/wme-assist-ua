@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2024.02.25.001
+// @version      2024.05.31.001
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
@@ -347,7 +347,6 @@
                             .replace(/(^| )бульвар( |$)/i, '$1б-р$2')
                             .replace(/(^| )провулок( |$)/i, '$1пров.$2')
                             .replace(/(^| )проспект( |$)/i, '$1просп.$2')
-                            .replace(/(^| )проїзд( |$)/i, '$1пр.$2')
                             .replace(/(^| )вулиця( |$)/i, '$1вул.$2')
                             .replace(/(^| )станція( |$)/i, '$1ст.$2')
                             .replace(/(^| )мікрорайон( |$)/i, '$1мкрн.$2')
@@ -358,6 +357,7 @@
                             .replace(/(^| )туп\.?( |$)/i, '$1тупик$2')
                             .replace(/(^| )тр-т\.?( |$)/i, '$1тракт$2')
                             .replace(/(^| )(сп\.?|узв\.?|узвоз)( |$)/i, '$1узвіз$3')
+                            .replace(/(^| )пр.\( |$)/i, '$1проїзд$2')
                             .replace(/(^| )пл\.?( |$)/i, '$1площа$2')
                             .replace(/(^| )ал\.?( |$)/i, '$1алея$2')
                             .replace(/(^| )ш\.?( |$)/i, '$1шосе$2')
