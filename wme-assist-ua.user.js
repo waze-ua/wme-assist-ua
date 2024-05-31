@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2024.05.31.001
+// @version      2024.05.31.002
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
@@ -199,10 +199,10 @@
                     return s.search(/[а-яіїєґ]/i) != -1;
                 };
                 var hasShortStatus = function (s) {
-                    return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пров\.|ст\.|пр\.|б-р|р-н)( |$)/i) != -1;
+                    return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|пров\.|ст\.|б-р|р-н)( |$)/i) != -1;
                 };
                 var hasLongStatus = function (s) {
-                    return s.search(/( |^)(площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|дорог[аи]|шляхопровід|шлях|завулок|квартал|автомагістраль)( |$)/i) != -1;
+                    return s.search(/( |^)(проїзд|площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|дорог[аи]|шляхопровід|шлях|завулок|квартал|автомагістраль)( |$)/i) != -1;
                 };
                 var hasSpecialStatus = function (s) {
                     return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)|~|>|\/( |$)|^(|до|на|>) /i) != -1;
