@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2024.05.31.002
+// @version      2024.06.29.001
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
@@ -911,6 +911,7 @@
 
             new WinBox(scriptName, {
                 id: "assist_main_window",
+                index: 1,
                 class: [ "no-full" ],
                 hidden: true,
                 x: wndX ? wndX : defaultX,
@@ -1026,6 +1027,7 @@
 
             new WinBox("Add Custom Rule", {
                 id: "assist_custom_rule_dialog",
+                index: 1,
                 class: [ "no-full", "no-min", "no-max", "no-resize" ],
                 hidden: true,
                 x: "center",
