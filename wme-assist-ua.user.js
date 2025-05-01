@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2024.08.31.001
+// @version      2025.05.02.001
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
@@ -67,7 +67,7 @@
         helper(start);
     }
 
-    function run_wme_assist() {
+    async function run_wme_assist() {
         const supportedRulesVersion = "1.1";
         const requestsTimeout = 20000; // in ms
         const rulesHash = "AKfycbyCR85UB-OexWIcN2pkTV1828bf0M6hUXkfHmu79M50PW3LMjpXkZ4ynRUzf2AOJqQqBA";
@@ -148,1670 +148,1665 @@
             });
         }
 
-        var Rule = function (comment, func, variant) {
-            this.comment = comment;
-            this.correct = func;
-            this.variant = variant;
-        };
+        class Rule {
+            constructor(comment, func, variant) {
+                this.comment = comment;
+                this.correct = func;
+                this.variant = variant;
+            }
+        }
 
-        var CustomRule = function (oldname, newname) {
-            var title = '/' + oldname + '/ ➤ ' + newname;
-            this.oldname = oldname;
-            this.newname = newname;
-            this.custom = true;
-            $.extend(this, new Rule(title, function (text) {
-                return text.replace(new RegExp(oldname), newname);
-            }));
-        };
+        class CustomRule {
+            constructor(oldname, newname) {
+                var title = '/' + oldname + '/ ➤ ' + newname;
+                this.oldname = oldname;
+                this.newname = newname;
+                this.custom = true;
+                $.extend(this, new Rule(title, function (text) {
+                    return text.replace(new RegExp(oldname), newname);
+                }));
+            }
+        }
 
-        var ExperimentalRule = function (comment, func) {
-            this.comment = comment;
-            this.correct = func;
-            this.experimental = true;
-        };
+        class ExperimentalRule {
+            constructor(comment, func) {
+                this.comment = comment;
+                this.correct = func;
+                this.experimental = true;
+            }
+        }
 
-        var Rules = function () {
-            var rules_basicCommon = function () {
-                return [
-                    new Rule('Unbreak space in street name', function (text) {
-                        return text.replace(/\s+/g, ' ');
-                    }),
-                    new Rule('ACUTE ACCENT in street name', function (text) {
-                        return text.replace(/\u0301|\u0300/g, '');
-                    }),
-                    new Rule('Dash in street name', function (text) {
-                        return text.replace(/\u2010|\u2011|\u2012|\u2013|\u2014|\u2015|\u2043|\u2212|\u2796/g, '-');
-                    }),
-                    new Rule('No space after the word', function (text) {
-                        return text.replace(/\.(?!\s)(.+)/g, '. $1');
-                    }),
-                    new Rule('No space after the >', function (text) {
-                        return text.replace(/>(?!\s)/g, '> ');
-                    }),
-                    new Rule('Garbage dot', function (text) {
-                        return text.replace(/(^|\s+)\./g, '$1');
-                    }),
-                ];
-            };
-
-            var rules_UA = function () {
-                var hasCyrillic = function (s) {
-                    return s.search(/[а-яіїєґ]/i) != -1;
-                };
-                var hasShortStatus = function (s) {
-                    return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|ур\.|пров\.|ст\.|б-р|р-н)( |$)/i) != -1;
-                };
-                var hasLongStatus = function (s) {
-                    return s.search(/( |^)(проїзд|площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|дорог[аи]|шляхопровід|шлях|завулок|квартал|автомагістраль)( |$)/i) != -1;
-                };
-                var hasSpecialStatus = function (s) {
-                    return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)|~|>|\/( |$)|^(|до|на|>) /i) != -1;
-                };
-                var hasInternationalName = function (s) {
-                    return s.search(/^E[0-9]+$/i) != -1;
-                };
-                var hasStatus = function (s) {
-                    return (hasShortStatus(s) || hasLongStatus(s) || hasSpecialStatus(s));
+        class Rules {
+            constructor() {
+                var rules_basicCommon = function () {
+                    return [
+                        new Rule('Unbreak space in street name', function (text) {
+                            return text.replace(/\s+/g, ' ');
+                        }),
+                        new Rule('ACUTE ACCENT in street name', function (text) {
+                            return text.replace(/\u0301|\u0300/g, '');
+                        }),
+                        new Rule('Dash in street name', function (text) {
+                            return text.replace(/\u2010|\u2011|\u2012|\u2013|\u2014|\u2015|\u2043|\u2212|\u2796/g, '-');
+                        }),
+                        new Rule('No space after the word', function (text) {
+                            return text.replace(/\.(?!\s)(.+)/g, '. $1');
+                        }),
+                        new Rule('No space after the >', function (text) {
+                            return text.replace(/>(?!\s)/g, '> ');
+                        }),
+                        new Rule('Garbage dot', function (text) {
+                            return text.replace(/(^|\s+)\./g, '$1');
+                        }),
+                    ];
                 };
 
-                var hasAdjName = function (s) {
-                    var adjRegex = new RegExp(
-                        '( |^)(Балтійська|Кропивницька|Бориславська|Овочева|Спортивна|Дорогобицька|Зарічна|Привокзальна|Клубна|Запречистська|Заставська|Глибока|Японська' +
-                        '|Київська|Городоцька|Зелена|Судова|Замкнена|Стрийська|Козельницька|Снопківська|Волоська|Турецька|Скельна|Грецька|Кубанська|Кримська|Водогінна' +
-                        '|Аральська|Студентська|Переяславська|Дунайська|Дністерська|Тернопільська|Зубрівська|Сихівська|Райдужна|Вулецька|Соняшникова|Коломийська' +
-                        '|Садибна|Демнянська|Наукова|Жасминова|Білоцерківська|Орлина|Кульпарківська|Вітряна|Молдавська|Виноградна|Холодноярська|Керамічна|Кишинівська' +
-                        '|Львівська|Урожайна|Садова|Гіпсова|Окружна|Зв\'язкова|Житомирська|Повстанська|Збиральна|Авіаційна|Кондукторська|Полева|Дублянська|Вокзальна' +
-                        '|Галицька|Любінська|Спокійна|Народна|Залізнична|Личаківська|Сполучна|Тернова|Конюшинна|Яворівська|Західна|Суховольська|Світла|Озерна|Ряшівська' +
-                        '|Коротка|Сосновська|Весняна|Січова|Вузька|Журавлина|Рудненська|Чернівецька|Стародубська|Хотинська|Одеська|Стрілецька|Замарстинівська|Топольна' +
-                        '|Інструментальна|Господарська|Волошкова|Сріблиста|Торф\'яна|Городницька|Сінна|Покутська|Заповітна|Малинова|Вербова|Перекопська|Квітова|Корінна' +
-                        '|Східна|Крута|Реміснича|Узбецька|Технічна|Половинна|Хімічна|Жовківська|Лемківська|Сорочинська|Джерельна|Батуринська|Замкова|Клепарівська' +
-                        '|Смерекова|Золота|Чорноморська|Вугільна|Сянська|Мулярська|Весела|Мукачівська|Ужгородська|Пильникарська|Базарна|Водна|Вагова|Таманська' +
-                        '|Театральна|Вірменська|Університетська|Вічева|Руська|Друкарська|Сербська|Ставропігійська|Стара|Насипна|Рівна|Шевська|Староєврейська|Архівна' +
-                        '|Підвальна|Валова|Гуцульська|Банківська|Пекарська|Севастопольська|Тиха|Лісна|Слободна|Харківська|Мала|Круп\'ярська|Таджицька|Кутова|Грибова' +
-                        '|Ярова|Букова|Ромоданівська|Зимова|Долішня|Яричівська|Копальна|Казахська|Низова|Міжгірна|Грушева|Ялтинська|Чумацька|Богданівська|Глиняна' +
-                        '|Переможна|Поетична|Приязна|Визвольна|Бігова|Наступальна|Пластова|Польова|Ковельська|Врізана|Ігорева|Корейська|Теребовлянська|Черкаська' +
-                        '|Белзька|Молочна|Корецька|Крайня|Милятинська|Горіхова|Юнацька|Трависта|Бродівська|Старознесенська|Почаївська|Пинська|Миргородська|Поворотна' +
-                        '|Потелицька|Новознесеньська|Волинська|Промислова|Опришківська|Механічна|Донецька|Льняна|Полтв\'яна|Селянська|Космічна|Купальська|Кукурудзяна' +
-                        '|Бузька|Тарасівська|Бескидська|Лазнева|Підмурна|Рибна|Тролейбусна|Північна|Лугова|Лісова|Сигнальна|Таллінська|Ливарна|Левандівська|Повітряна' +
-                        '|Тісна|Кочегарська|Естонська|Олешківська|Ясна|Щекавицька|Алмазна|Слюсарська|Папоротна|Ботанічна|Заболотівська|Мирна|Скромна|Пропелерна' +
-                        '|Загородня|Моторна|Широка|Холмська|Лисеницька|Довга|Пасічна|Хлібна|Китайська|Садівнича|Каштанова|Медова|Околична|Відкрита|Бойківська' +
-                        '|Куликівська|Червона|Мила|Сарненська|Природна|Перемиська|Моршинська|Конотопська|Похила|Художня|Вишнева|Молодіжна|Дивізійна|Поштова|Тунельна' +
-                        '|Білоруська|Яблунева|Творча|Пільна|Шпитальна|Винниківська|Поліська|Загірна|Нагірна|Мурована|Нова|Архітекторська|Грюнвальдська|Політехнічна' +
-                        '|Професорська|Бібліотечна|Болгарська|Випасова|Малоголосківська|Монгольська|Скісна|Резедова|Простинна|Бузинова|Порічкова|Осикова|Нарцисова' +
-                        '|Розлога|Ряснянська|Паралельна|Південна|Комарнівська|Перемишльська|Заводська|Соборна|Тупікова|Горішня|Шкільна|Українська|Сонячна|Артищівська' +
-                        '|Паркова|Равська|Старомостівська|Головна|Травнева|Клюсовська|Сокальська|Крива|Святоюрська|Завадівська|Центральна|Жовтнева|Колгоспна|Больнична' +
-                        '|Радянська|Ювілейна|Степова|Порохова|Робітнича|Очеретяна|Жнивна|Буковинська|Луганська|Абхазька|Лижв\'ярська|Гайдамацька|Грабова|Полунична' +
-                        '|Томашівська|Каховська|Гіацинтова|Дальня|Дозвільна|Лютнева|Корсунська|Підгаєцька|Дубнівська|Дрогобицька|Мисливська|Бакінська|Чуваська' +
-                        '|Скнилівська|Щирецька|Санітарна|Лікувальна|Баштанна|Мостова|Паровозна|Вагонна|Проста|Суха|Фабрична|Солов\'[яї]на|Хорватська|Вільна|Затишна' +
-                        '|Крехівська|Сходова|Спадиста|Туркменська|Олійна|Рослинна|Албанська|Азовська|Карпатська|Листопадна|Віденська|Енергетична|Соколина|Латвійська' +
-                        '|Земельна|Трускавецька|Росиста|Рядова|Сусідня|Рахівська|Розбіжна|Рівнинна|Керченська|Піскова|Ніжинська|Кошова|Козацька|Гранітна|Дубова' +
-                        '|Полуднева|Лебедина|Навколишня|Січнева|Горівська|Поморянська|Кінцева|Курінна|Новознесенська|Міртова|Шполянська|Грунтова|Ґрунтова|Варшавська)( |$)',
-                        'i');
-                    return s.search(adjRegex) != -1;
-                };
+                var rules_UA = function () {
+                    var hasCyrillic = function (s) {
+                        return s.search(/[а-яіїєґ]/i) != -1;
+                    };
+                    var hasShortStatus = function (s) {
+                        return s.search(/( |^)(вул\.|просп\.|мкрн\.|наб\.|ур\.|пров\.|ст\.|б-р|р-н)( |$)/i) != -1;
+                    };
+                    var hasLongStatus = function (s) {
+                        return s.search(/( |^)(проїзд|площа|алея|шосе|тракт|узвіз|тупик|міст|в\'їзд|виїзд|виїзд|розворот|трамвай|залізниця|майдан|заїзд|траса|дорог[аи]|шляхопровід|шлях|завулок|квартал|автомагістраль)( |$)/i) != -1;
+                    };
+                    var hasSpecialStatus = function (s) {
+                        return s.search(/( |^)([РНТМ](-[0-9]+)+|[EОС][0-9]+)|~|>|\/( |$)|^(|до|на|>) /i) != -1;
+                    };
+                    var hasInternationalName = function (s) {
+                        return s.search(/^E[0-9]+$/i) != -1;
+                    };
+                    var hasStatus = function (s) {
+                        return (hasShortStatus(s) || hasLongStatus(s) || hasSpecialStatus(s));
+                    };
 
-                // ATTENTION: Rule order is important!
-                return rules_basicCommon().concat([
-                    new Rule('Check with rules from Google Sheet', function (text, city) {
-                        let ruleKey = text + '_' + city;
-                        if (rulesDB[ruleKey]) {
-                            let matchCity = rulesDB[ruleKey].city ? rulesDB[ruleKey].city == city : true;
-                            if (matchCity) {
-                                return rulesDB[ruleKey].new_name;
-                            }
-                        }
-                        return text;
-                    }, 'GSheets'),
+                    var hasAdjName = function (s) {
+                        var adjRegex = new RegExp(
+                            '( |^)(Балтійська|Кропивницька|Бориславська|Овочева|Спортивна|Дорогобицька|Зарічна|Привокзальна|Клубна|Запречистська|Заставська|Глибока|Японська' +
+                            '|Київська|Городоцька|Зелена|Судова|Замкнена|Стрийська|Козельницька|Снопківська|Волоська|Турецька|Скельна|Грецька|Кубанська|Кримська|Водогінна' +
+                            '|Аральська|Студентська|Переяславська|Дунайська|Дністерська|Тернопільська|Зубрівська|Сихівська|Райдужна|Вулецька|Соняшникова|Коломийська' +
+                            '|Садибна|Демнянська|Наукова|Жасминова|Білоцерківська|Орлина|Кульпарківська|Вітряна|Молдавська|Виноградна|Холодноярська|Керамічна|Кишинівська' +
+                            '|Львівська|Урожайна|Садова|Гіпсова|Окружна|Зв\'язкова|Житомирська|Повстанська|Збиральна|Авіаційна|Кондукторська|Полева|Дублянська|Вокзальна' +
+                            '|Галицька|Любінська|Спокійна|Народна|Залізнична|Личаківська|Сполучна|Тернова|Конюшинна|Яворівська|Західна|Суховольська|Світла|Озерна|Ряшівська' +
+                            '|Коротка|Сосновська|Весняна|Січова|Вузька|Журавлина|Рудненська|Чернівецька|Стародубська|Хотинська|Одеська|Стрілецька|Замарстинівська|Топольна' +
+                            '|Інструментальна|Господарська|Волошкова|Сріблиста|Торф\'яна|Городницька|Сінна|Покутська|Заповітна|Малинова|Вербова|Перекопська|Квітова|Корінна' +
+                            '|Східна|Крута|Реміснича|Узбецька|Технічна|Половинна|Хімічна|Жовківська|Лемківська|Сорочинська|Джерельна|Батуринська|Замкова|Клепарівська' +
+                            '|Смерекова|Золота|Чорноморська|Вугільна|Сянська|Мулярська|Весела|Мукачівська|Ужгородська|Пильникарська|Базарна|Водна|Вагова|Таманська' +
+                            '|Театральна|Вірменська|Університетська|Вічева|Руська|Друкарська|Сербська|Ставропігійська|Стара|Насипна|Рівна|Шевська|Староєврейська|Архівна' +
+                            '|Підвальна|Валова|Гуцульська|Банківська|Пекарська|Севастопольська|Тиха|Лісна|Слободна|Харківська|Мала|Круп\'ярська|Таджицька|Кутова|Грибова' +
+                            '|Ярова|Букова|Ромоданівська|Зимова|Долішня|Яричівська|Копальна|Казахська|Низова|Міжгірна|Грушева|Ялтинська|Чумацька|Богданівська|Глиняна' +
+                            '|Переможна|Поетична|Приязна|Визвольна|Бігова|Наступальна|Пластова|Польова|Ковельська|Врізана|Ігорева|Корейська|Теребовлянська|Черкаська' +
+                            '|Белзька|Молочна|Корецька|Крайня|Милятинська|Горіхова|Юнацька|Трависта|Бродівська|Старознесенська|Почаївська|Пинська|Миргородська|Поворотна' +
+                            '|Потелицька|Новознесеньська|Волинська|Промислова|Опришківська|Механічна|Донецька|Льняна|Полтв\'яна|Селянська|Космічна|Купальська|Кукурудзяна' +
+                            '|Бузька|Тарасівська|Бескидська|Лазнева|Підмурна|Рибна|Тролейбусна|Північна|Лугова|Лісова|Сигнальна|Таллінська|Ливарна|Левандівська|Повітряна' +
+                            '|Тісна|Кочегарська|Естонська|Олешківська|Ясна|Щекавицька|Алмазна|Слюсарська|Папоротна|Ботанічна|Заболотівська|Мирна|Скромна|Пропелерна' +
+                            '|Загородня|Моторна|Широка|Холмська|Лисеницька|Довга|Пасічна|Хлібна|Китайська|Садівнича|Каштанова|Медова|Околична|Відкрита|Бойківська' +
+                            '|Куликівська|Червона|Мила|Сарненська|Природна|Перемиська|Моршинська|Конотопська|Похила|Художня|Вишнева|Молодіжна|Дивізійна|Поштова|Тунельна' +
+                            '|Білоруська|Яблунева|Творча|Пільна|Шпитальна|Винниківська|Поліська|Загірна|Нагірна|Мурована|Нова|Архітекторська|Грюнвальдська|Політехнічна' +
+                            '|Професорська|Бібліотечна|Болгарська|Випасова|Малоголосківська|Монгольська|Скісна|Резедова|Простинна|Бузинова|Порічкова|Осикова|Нарцисова' +
+                            '|Розлога|Ряснянська|Паралельна|Південна|Комарнівська|Перемишльська|Заводська|Соборна|Тупікова|Горішня|Шкільна|Українська|Сонячна|Артищівська' +
+                            '|Паркова|Равська|Старомостівська|Головна|Травнева|Клюсовська|Сокальська|Крива|Святоюрська|Завадівська|Центральна|Жовтнева|Колгоспна|Больнична' +
+                            '|Радянська|Ювілейна|Степова|Порохова|Робітнича|Очеретяна|Жнивна|Буковинська|Луганська|Абхазька|Лижв\'ярська|Гайдамацька|Грабова|Полунична' +
+                            '|Томашівська|Каховська|Гіацинтова|Дальня|Дозвільна|Лютнева|Корсунська|Підгаєцька|Дубнівська|Дрогобицька|Мисливська|Бакінська|Чуваська' +
+                            '|Скнилівська|Щирецька|Санітарна|Лікувальна|Баштанна|Мостова|Паровозна|Вагонна|Проста|Суха|Фабрична|Солов\'[яї]на|Хорватська|Вільна|Затишна' +
+                            '|Крехівська|Сходова|Спадиста|Туркменська|Олійна|Рослинна|Албанська|Азовська|Карпатська|Листопадна|Віденська|Енергетична|Соколина|Латвійська' +
+                            '|Земельна|Трускавецька|Росиста|Рядова|Сусідня|Рахівська|Розбіжна|Рівнинна|Керченська|Піскова|Ніжинська|Кошова|Козацька|Гранітна|Дубова' +
+                            '|Полуднева|Лебедина|Навколишня|Січнева|Горівська|Поморянська|Кінцева|Курінна|Новознесенська|Міртова|Шполянська|Грунтова|Ґрунтова|Варшавська)( |$)',
+                            'i');
+                        return s.search(adjRegex) != -1;
+                    };
 
-                    new Rule('Fix English characters in name', function (t) {
-                        return !hasCyrillic(t) || hasInternationalName(t) ? t : t.replace(/[AaBCcEeHIiKkMOoPpTXxYy]/g, function (c) {
-                            return {
-                                'A': 'А',
-                                'a': 'а',
-                                'B': 'В',
-                                'C': 'С',
-                                'c': 'с',
-                                'E': 'Е',
-                                'e': 'е',
-                                'H': 'Н',
-                                'I': 'І',
-                                'i': 'і',
-                                'K': 'К',
-                                'k': 'к',
-                                'M': 'М',
-                                'O': 'О',
-                                'o': 'о',
-                                'P': 'Р',
-                                'p': 'р',
-                                'T': 'Т',
-                                'X': 'Х',
-                                'x': 'х',
-                                'Y': 'У',
-                                'y': 'у'
-                            }
-                            [c];
-                        });
-                    }),
-                    new Rule('Delete space in initials', function (text) {
-                        return text.replace(/(^| +)([А-ЯІЇЄҐ]\.) ([А-ЯІЇЄҐ]\.)/, '$1$2$3');
-                    }),
-                    new Rule('Incorrect characters in street name', function (t) {
-                        // This rule should be before renaming rules or they couldn't see some errors
-                        return t
-                            .replace(/[@#№$,^!:;*"?<]/g, ' ').replace(/ {2,}/, ' ')
-                            .replace(/[`\u02bc]/g, '\''); // replace incorrect apostrophes (`’)
-                    }),
-                    /*
-                    new Rule('Incorrect language', function (t) {
-                    // Translate full Russian names to full Ukrainian
-                    // and next rules will shorten them if necessary
-                    return t
-                    .replace(/(^| )в?улица( |$)/i, '$1вулиця$2')
-                    .replace(/(^| )спуск( |$)/i, '$1узвіз$2')
-                    .replace(/(^| )(т)расса( |$)/i, '$1$2раса$3')
-                    .replace(/(^| )(п)ереулок( |$)/i, '$1$2ровулок$3')
-                    .replace(/(^| )(п)роезд( |$)/i, '$1$2роїзд$3')
-                    .replace(/(^| )(п)лощадь( |$)/i, '$1$2лоща$3')
-                    .replace(/(^| )(ш)оссе( |$)/i, '$1$2осе$3')
-                    .replace(/(^| )(с)танция( |$)/i, '$1$2танція$3')
-                    .replace(/(^| )(а)ллея( |$)/i, '$1$2лея$3')
-                    .replace(/(^| )(н)абережная( |$)/i, '$1$2абережна$3')
-                    .replace(/(^| )(м)икрорайон( |$)/i, '$1$2ікрорайон$3')
-                    .replace(/(^| )(л)иния( |$)/i, '$1$2інія$3')
-                    .replace(/(^| )(а)кадемика( |$)/i, '$1$2кадеміка$3')
-                    .replace(/(^| )(а)дмирала( |$)/i, '$1$2дмірала$3')
-                    .replace(/ и /i, ' та ');
-                    }),
-                     */
-                    new Rule('Mistake in short status', function (t) {
-                        return t
-                            .replace(/(^| )(буль?в?\.?|б-р\.)( |$)/i, '$1б-р$3')
-                            .replace(/(^| )(?:пр-к?т|п(?:р|о)?сп)\.?( |$)/i, '$1просп.$2')
-                            .replace(/(^| )пр-з?д\.?( |$)/i, '$1пр.$2')
-                            .replace(/(^| )ул\.?( |$)/i, '$1вул.$2')
-                            .replace(/(^| )р-н\.( |$)/i, '$1р-н$2')
-                            .replace(/(^| )пер\.?( |$)/i, '$1пров.$2')
-                            .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор|ур)( |$)/i, '$1$2.$3');
-                    }),
-                    new Rule('Rules for back status', function (t) {
-                        // Якщо закінчується на "-ний; -ський", переносимо статус в кінець (сміливе рішення)
-                        // !!! Сміливе рішення :)
-                        return t
-                            .replace(/(^)(пров\.|пр\.|тупик|узвіз)( )(.*ний$)/i, '$4 $2')
-                            .replace(/(^)(пров\.|пр\.|тупик|узвіз)( )(.*ський$)/i, '$4 $2')
-                    }),
-                    new Rule('Long status must be short', function (t) {
-                        // Do short status only if there no other shorten statuses in name
-                        return hasShortStatus(t) ? t : t
-                            .replace(/(^| )район( |$)/i, '$1р-н$2')
-                            .replace(/(^| )бульвар( |$)/i, '$1б-р$2')
-                            .replace(/(^| )провулок( |$)/i, '$1пров.$2')
-                            .replace(/(^| )проспект( |$)/i, '$1просп.$2')
-                            .replace(/(^| )вулиця( |$)/i, '$1вул.$2')
-                            .replace(/(^| )станція( |$)/i, '$1ст.$2')
-                            .replace(/(^| )мікрорайон( |$)/i, '$1мкрн.$2')
-                            .replace(/(^| )урочище( |$)/i, '$1ур.$2')
-                            .replace(/(^| )набережна( |$)/i, '$1наб.$2');
-                    }),
-                    new Rule('Shorten street name or status must be long', function (t) {
-                        return t
-                            .replace(/(^| )туп\.?( |$)/i, '$1тупик$2')
-                            .replace(/(^| )тр-т\.?( |$)/i, '$1тракт$2')
-                            .replace(/(^| )(сп\.?|узв\.?|узвоз)( |$)/i, '$1узвіз$3')
-                            .replace(/(^| )пр\.( |$)/i, '$1проїзд$2')
-                            .replace(/(^| )пл\.?( |$)/i, '$1площа$2')
-                            .replace(/(^| )ал\.?( |$)/i, '$1алея$2')
-                            .replace(/(^| )ш\.?( |$)/i, '$1шосе$2')
-                            .replace(/(^|а )дор\.?( |$)/i, '$1дорога$2')
-                            .replace(/(ї )дор\.?( |$)/i, '$1дороги$2')
-                            .replace(/(^| )ген\.?( |$)/i, '$1Генерала$2')
-                            .replace(/(^| )див\.?( |$)/i, '$1Дивізії$2')
-                            .replace(/(^| )ак\.?( |$)/i, '$1Академіка$2')
-                            .replace(/(^| )марш\.?( |$)/i, '$1Маршала$2')
-                            .replace(/(^| )адм\.?( |$)/i, '$1Адмірала$2');
-                    }),
-                    new Rule('Incorrect number ending', function (t) {
-                        return t
-                            .replace(/-[гштм]а/, '-а')
-                            .replace(/-[ыоиі]й/, '-й')
-                            .replace(/-тя/, '-я')
-                            .replace(/-ая/, '-а');
-                    }),
-                    new Rule('Incorrect highway name', function (text) {
-                        return text.replace(/([РрНнМмPpHM])[-\s]*([0-9]{2})/, function (a, p1, p2) {
-                            p1 = p1
-                                .replace('р', 'Р')
-                                .replace('н', 'Н')
-                                .replace('м', 'М')
-                                .replace('P', 'Р')
-                                .replace('p', 'Р')
-                                .replace('H', 'Н')
-                                .replace('M', 'М');
-
-                            return p1 + '-' + p2;
-                        });
-                    }),
-                    new Rule('Incorrect local street name', function (text) {
-                        return text.replace(/([ТтT])[-\s]*([0-9]{2})[-\s]*([0-9]{2})/, function (a, p1, p2, p3) {
-                            p1 = p1
-                                .replace('т', 'Т')
-                                .replace('T', 'Т');
-
-                            return p1 + '-' + p2 + '-' + p3;
-                        });
-                    }),
-                    new Rule('Incorrect international highway name', function (text) {
-                        return text.replace(/^ *[eе][- ]*([0-9]+)/i, 'E$1');
-                    }),
-                    new Rule('Incorrect local road name', function (text) {
-                        return text.replace(/([OoCcОоСс])[-\s]*([0-9]+)[-\s]*([0-9]+)[-\s]*([0-9]+)/, function (a, p1, p2, p3, p4) {
-                            p1 = p1
-                                .replace('o', 'О')
-                                .replace('O', 'О')
-                                .replace('c', 'С')
-                                .replace('C', 'С');
-
-                            return p1 + p2 + p3 + p4;
-                        });
-                    }),
-
-                    new Rule('Fix status', function (t) {
-                        return hasStatus(t) ? t : 'вул. ' + t;
-                    }, 'Ukraine'),
-
-                    new Rule('Detect status absense or incorrect placement', function (t) {
-                        return hasStatus(t) ? (hasAdjName(t) ? t.replace(/(.*)(вул\.)(.*)/, '$1 $3 $2') : t) : (hasAdjName(t) ? t + ' вул.' : '');
-                    }, 'Lviv'),
-
-                    new Rule('Move status to begin of name', function (text) {
-                        if (!hasSpecialStatus(text)) {
-                            return text.replace(/(.*)(вул\.)(.*)/, '$2 $1 $3');
-                        }
-                        return text;
-                    }, 'Ukraine'),
-                ]);
-            };
-
-            var getCountryRules = function () {
-                var commonRules = [
-                    // Following rules must be at the end because
-                    // previous rules might insert additional spaces
-                    new Rule('Redundant space in street name', function (text) {
-                        return text.replace(/[ ]+/g, ' ');
-                    }),
-                    new Rule('Space at the begin of street name', function (text) {
-                        return text.replace(/^[ ]*/, '');
-                    }),
-                    new Rule('Space at the end of street name', function (text) {
-                        return text.replace(/[ ]*$/, '');
-                    }),
-                ];
-                //var countryName = W.model.getTopCountry().getName();
-                //info('Get rules for country: ' + countryName);
-                var countryRules = rules_UA();
-
-                return countryRules.concat(commonRules);
-            };
-
-            var rules = [];
-            var customRulesNumber = 0;
-
-            var onAdd = function (rule) { };
-            var onEdit = function (index, rule) { };
-            var onDelete = function (index) { };
-
-            this.onAdd = function (cb) {
-                onAdd = cb;
-            };
-            this.onEdit = function (cb) {
-                onEdit = cb;
-            };
-            this.onDelete = function (cb) {
-                onDelete = cb;
-            };
-
-            //this.onCountryChange = function () {
-            //    info('Country was changed. Reloading rules...');
-            //    rules.splice(customRulesNumber, rules.length - customRulesNumber);
-            //    rules = rules.concat(getCountryRules());
-            //};
-
-            this.get = function (index) {
-                return rules[index];
-            };
-
-            this.correct = function (variant, text, city) {
-                var newtext = text;
-                var experimental = false;
-                var custom_enabled = localStorage.getItem('assist_enable_custom_rules') == 'true';
-
-                for (var i = 0; i < rules.length; ++i) {
-                    var rule = rules[i];
-
-                    if (rule.custom && !custom_enabled)
-                        continue;
-
-                    if (rule.experimental && !this.experimental)
-                        continue;
-
-                    if (rule.variant && rule.variant != variant)
-                        continue;
-
-                    var previous = newtext;
-                    newtext = rule.correct(newtext, city);
-                    var changed = (previous != newtext);
-                    if (rule.experimental && previous != newtext) {
-                        experimental = true;
-                    }
-                    previous = newtext;
-                    // if (rule.custom && changed) {
-                    //     // prevent result overwriting by common rules
-                    //     break;
-                    // }
-                }
-
-                return {
-                    value: newtext,
-                    experimental: experimental
-                };
-            };
-
-            var save = function (rules) {
-                if (localStorage) {
-                    localStorage.setItem('assistRulesKey', JSON.stringify(rules.slice(0, customRulesNumber)));
-                }
-            };
-
-            this.load = function () {
-                if (localStorage) {
-                    var str = localStorage.getItem('assistRulesKey');
-                    if (str) {
-                        var arr = JSON.parse(str);
-                        for (var i = 0; i < arr.length; ++i) {
-                            var rule = arr[i];
-                            this.push(rule.oldname, rule.newname);
-                        }
-                    }
-                }
-
-                rules = rules.concat(getCountryRules());
-            };
-
-            this.push = function (oldname, newname) {
-                var rule = new CustomRule(oldname, newname);
-                rules.splice(customRulesNumber++, 0, rule);
-                onAdd(rule);
-
-                save(rules);
-            };
-
-            this.update = function (index, oldname, newname) {
-                var rule = new CustomRule(oldname, newname);
-                rules[index] = rule;
-                onEdit(index, rule);
-
-                save(rules);
-            };
-
-            this.remove = function (index) {
-                rules.splice(index, 1);
-                --customRulesNumber;
-                onDelete(index);
-
-                save(rules);
-            };
-        };
-
-        var ActionHelper = function () {
-            var WazeActionAddAlternateStreet = require("Waze/Action/AddAlternateStreet");
-            var WazeActionUpdateFeatureAddress = require("Waze/Action/UpdateFeatureAddress");
-            var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
-
-            var ui;
-
-            var type2repo = function (type) {
-                var map = {
-                    'venue': W.model.venues,
-                    'segment': W.model.segments
-                };
-                return map[type];
-            };
-
-            this.setUi = function (u) {
-                ui = u;
-            };
-
-            this.Select = function (id, type, center, zoom) {
-                var attemptNum = 10;
-
-                var select = function () {
-                    info('select: ' + id);
-
-                    var obj = type2repo(type).getObjectById(id);
-
-                    W.model.events.unregister('mergeend', null, select);
-
-                    if (obj) {
-                        W.selectionManager.setSelectedModels([obj]);
-                    } else if (--attemptNum > 0) {
-                        W.model.events.register('mergeend', null, select);
-                    }
-
-                    debug("Attempt number left: " + attemptNum);
-
-                    W.map.setCenter(center, zoom);
-                };
-
-                return select;
-            };
-
-            this.fixProblem = function (problem) {
-                var deferred = $.Deferred();
-                var attemptNum = 10; // after that we decide that object was removed
-                var setOld2Alt = localStorage.getItem('assist_move_old_to_alt') == 'true';
-
-                var fix = function () {
-                    var uniqueId = problem.object.id + '_' + problem.streetID;
-                    var obj = type2repo(problem.object.type).getObjectById(problem.object.id);
-                    W.model.events.unregister('mergeend', null, fix);
-
-                    if (obj) {
-                        var addr = obj.getAddress().attributes;
-                        var attr = {
-                            countryID: addr.country.attributes.id,
-                            stateID: addr.state.attributes.id,
-                            cityName: addr.city.attributes.name,
-                            emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
-                            streetName: problem.newStreetName,
-                            emptyStreet: problem.isEmpty
-                        };
-
-                        // check if alternative name
-                        if (problem.attrName == 'streetIDs') {
-                            // check if still exist
-                            if (obj.attributes.streetIDs.indexOf(problem.streetID) > -1) {
-                                // remove old street and keep other ones
-                                var streets2keep = [];
-                                obj.attributes.streetIDs.forEach(function (sid) {
-                                    if (problem.streetID !== sid) {
-                                        streets2keep.push(sid);
-                                    } else {
-                                        var altStreet = W.model.streets.getObjectById(sid);
-                                        var city = W.model.cities.getObjectById(altStreet.attributes.cityID);
-                                        attr.cityName = city.attributes.name;
-                                        attr.emptyCity = city.hasName() ? null : true;
-                                    }
-                                });
-                                W.model.actionManager.add(new WazeActionUpdateObject(obj, {
-                                    streetIDs: streets2keep
-                                }));
-
-                                // add new street
-                                W.model.actionManager.add(new WazeActionAddAlternateStreet(obj, attr, {
-                                    streetIDField: problem.attrName
-                                }));
-                            } else {
-                                ui.updateProblem(uniqueId, '(not found. Deleted?)');
-                            }
-                        } else {
-                            // protect user manual fix
-                            if (problem.reason == addr.street.attributes.name) {
-                                W.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, {
-                                    streetIDField: problem.attrName
-                                }));
-                                // move old name to alt street, if option enabled
-                                if (setOld2Alt && obj.type == 'segment') {
-                                    var altAttr = {
-                                        countryID: addr.country.attributes.id,
-                                        stateID: addr.state.attributes.id,
-                                        cityName: addr.city.attributes.name,
-                                        emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
-                                        streetName: problem.reason,
-                                        emptyStreet: false //problem.isEmpty
-                                    };
-                                    W.model.actionManager.add(new WazeActionAddAlternateStreet(obj, altAttr, {
-                                        streetIDField: problem.attrName
-                                    }));
+                    // ATTENTION: Rule order is important!
+                    return rules_basicCommon().concat([
+                        new Rule('Check with rules from Google Sheet', function (text, city) {
+                            let ruleKey = text + '_' + city;
+                            if (rulesDB[ruleKey]) {
+                                let matchCity = rulesDB[ruleKey].city ? rulesDB[ruleKey].city == city : true;
+                                if (matchCity) {
+                                    return rulesDB[ruleKey].new_name;
                                 }
-                            } else {
-                                ui.updateProblem(uniqueId, '(user fix: ' + addr.street.attributes.name + ')');
                             }
-                        }
-                        deferred.resolve(uniqueId);
-                    } else if (--attemptNum <= 0) {
-                        ui.updateProblem(uniqueId, '(was not fixed. Deleted?)');
-                        deferred.resolve(uniqueId);
-                    } else {
-                        W.model.events.register('mergeend', null, fix);
-                        W.map.setCenter(problem.detectPos, problem.zoom);
-                    }
+                            return text;
+                        }, 'GSheets'),
 
-                    debug('Attempt number left: ' + attemptNum);
+                        new Rule('Fix English characters in name', function (t) {
+                            return !hasCyrillic(t) || hasInternationalName(t) ? t : t.replace(/[AaBCcEeHIiKkMOoPpTXxYy]/g, function (c) {
+                                return {
+                                    'A': 'А',
+                                    'a': 'а',
+                                    'B': 'В',
+                                    'C': 'С',
+                                    'c': 'с',
+                                    'E': 'Е',
+                                    'e': 'е',
+                                    'H': 'Н',
+                                    'I': 'І',
+                                    'i': 'і',
+                                    'K': 'К',
+                                    'k': 'к',
+                                    'M': 'М',
+                                    'O': 'О',
+                                    'o': 'о',
+                                    'P': 'Р',
+                                    'p': 'р',
+                                    'T': 'Т',
+                                    'X': 'Х',
+                                    'x': 'х',
+                                    'Y': 'У',
+                                    'y': 'у'
+                                }[c];
+                            });
+                        }),
+                        new Rule('Delete space in initials', function (text) {
+                            return text.replace(/(^| +)([А-ЯІЇЄҐ]\.) ([А-ЯІЇЄҐ]\.)/, '$1$2$3');
+                        }),
+                        new Rule('Incorrect characters in street name', function (t) {
+                            // This rule should be before renaming rules or they couldn't see some errors
+                            return t
+                                .replace(/[@#№$,^!:;*"?<]/g, ' ').replace(/ {2,}/, ' ')
+                                .replace(/[`\u02bc]/g, '\''); // replace incorrect apostrophes (`’)
+                        }),
+                        /*
+                        new Rule('Incorrect language', function (t) {
+                        // Translate full Russian names to full Ukrainian
+                        // and next rules will shorten them if necessary
+                        return t
+                        .replace(/(^| )в?улица( |$)/i, '$1вулиця$2')
+                        .replace(/(^| )спуск( |$)/i, '$1узвіз$2')
+                        .replace(/(^| )(т)расса( |$)/i, '$1$2раса$3')
+                        .replace(/(^| )(п)ереулок( |$)/i, '$1$2ровулок$3')
+                        .replace(/(^| )(п)роезд( |$)/i, '$1$2роїзд$3')
+                        .replace(/(^| )(п)лощадь( |$)/i, '$1$2лоща$3')
+                        .replace(/(^| )(ш)оссе( |$)/i, '$1$2осе$3')
+                        .replace(/(^| )(с)танция( |$)/i, '$1$2танція$3')
+                        .replace(/(^| )(а)ллея( |$)/i, '$1$2лея$3')
+                        .replace(/(^| )(н)абережная( |$)/i, '$1$2абережна$3')
+                        .replace(/(^| )(м)икрорайон( |$)/i, '$1$2ікрорайон$3')
+                        .replace(/(^| )(л)иния( |$)/i, '$1$2інія$3')
+                        .replace(/(^| )(а)кадемика( |$)/i, '$1$2кадеміка$3')
+                        .replace(/(^| )(а)дмирала( |$)/i, '$1$2дмірала$3')
+                        .replace(/ и /i, ' та ');
+                        }),
+                         */
+                        new Rule('Mistake in short status', function (t) {
+                            return t
+                                .replace(/(^| )(буль?в?\.?|б-р\.)( |$)/i, '$1б-р$3')
+                                .replace(/(^| )(?:пр-к?т|п(?:р|о)?сп)\.?( |$)/i, '$1просп.$2')
+                                .replace(/(^| )пр-з?д\.?( |$)/i, '$1пр.$2')
+                                .replace(/(^| )ул\.?( |$)/i, '$1вул.$2')
+                                .replace(/(^| )р-н\.( |$)/i, '$1р-н$2')
+                                .replace(/(^| )пер\.?( |$)/i, '$1пров.$2')
+                                .replace(/(^| )(пров|просп|пр|вул|ст|мкрн|наб|дор|ур)( |$)/i, '$1$2.$3');
+                        }),
+                        new Rule('Rules for back status', function (t) {
+                            // Якщо закінчується на "-ний; -ський", переносимо статус в кінець (сміливе рішення)
+                            // !!! Сміливе рішення :)
+                            return t
+                                .replace(/(^)(пров\.|пр\.|тупик|узвіз)( )(.*ний$)/i, '$4 $2')
+                                .replace(/(^)(пров\.|пр\.|тупик|узвіз)( )(.*ський$)/i, '$4 $2');
+                        }),
+                        new Rule('Long status must be short', function (t) {
+                            // Do short status only if there no other shorten statuses in name
+                            return hasShortStatus(t) ? t : t
+                                .replace(/(^| )район( |$)/i, '$1р-н$2')
+                                .replace(/(^| )бульвар( |$)/i, '$1б-р$2')
+                                .replace(/(^| )провулок( |$)/i, '$1пров.$2')
+                                .replace(/(^| )проспект( |$)/i, '$1просп.$2')
+                                .replace(/(^| )вулиця( |$)/i, '$1вул.$2')
+                                .replace(/(^| )станція( |$)/i, '$1ст.$2')
+                                .replace(/(^| )мікрорайон( |$)/i, '$1мкрн.$2')
+                                .replace(/(^| )урочище( |$)/i, '$1ур.$2')
+                                .replace(/(^| )набережна( |$)/i, '$1наб.$2');
+                        }),
+                        new Rule('Shorten street name or status must be long', function (t) {
+                            return t
+                                .replace(/(^| )туп\.?( |$)/i, '$1тупик$2')
+                                .replace(/(^| )тр-т\.?( |$)/i, '$1тракт$2')
+                                .replace(/(^| )(сп\.?|узв\.?|узвоз)( |$)/i, '$1узвіз$3')
+                                .replace(/(^| )пр\.( |$)/i, '$1проїзд$2')
+                                .replace(/(^| )пл\.?( |$)/i, '$1площа$2')
+                                .replace(/(^| )ал\.?( |$)/i, '$1алея$2')
+                                .replace(/(^| )ш\.?( |$)/i, '$1шосе$2')
+                                .replace(/(^|а )дор\.?( |$)/i, '$1дорога$2')
+                                .replace(/(ї )дор\.?( |$)/i, '$1дороги$2')
+                                .replace(/(^| )ген\.?( |$)/i, '$1Генерала$2')
+                                .replace(/(^| )див\.?( |$)/i, '$1Дивізії$2')
+                                .replace(/(^| )ак\.?( |$)/i, '$1Академіка$2')
+                                .replace(/(^| )марш\.?( |$)/i, '$1Маршала$2')
+                                .replace(/(^| )адм\.?( |$)/i, '$1Адмірала$2');
+                        }),
+                        new Rule('Incorrect number ending', function (t) {
+                            return t
+                                .replace(/-[гштм]а/, '-а')
+                                .replace(/-[ыоиі]й/, '-й')
+                                .replace(/-тя/, '-я')
+                                .replace(/-ая/, '-а');
+                        }),
+                        new Rule('Incorrect highway name', function (text) {
+                            return text.replace(/([РрНнМмPpHM])[-\s]*([0-9]{2})/, function (a, p1, p2) {
+                                p1 = p1
+                                    .replace('р', 'Р')
+                                    .replace('н', 'Н')
+                                    .replace('м', 'М')
+                                    .replace('P', 'Р')
+                                    .replace('p', 'Р')
+                                    .replace('H', 'Н')
+                                    .replace('M', 'М');
+
+                                return p1 + '-' + p2;
+                            });
+                        }),
+                        new Rule('Incorrect local street name', function (text) {
+                            return text.replace(/([ТтT])[-\s]*([0-9]{2})[-\s]*([0-9]{2})/, function (a, p1, p2, p3) {
+                                p1 = p1
+                                    .replace('т', 'Т')
+                                    .replace('T', 'Т');
+
+                                return p1 + '-' + p2 + '-' + p3;
+                            });
+                        }),
+                        new Rule('Incorrect international highway name', function (text) {
+                            return text.replace(/^ *[eе][- ]*([0-9]+)/i, 'E$1');
+                        }),
+                        new Rule('Incorrect local road name', function (text) {
+                            return text.replace(/([OoCcОоСс])[-\s]*([0-9]+)[-\s]*([0-9]+)[-\s]*([0-9]+)/, function (a, p1, p2, p3, p4) {
+                                p1 = p1
+                                    .replace('o', 'О')
+                                    .replace('O', 'О')
+                                    .replace('c', 'С')
+                                    .replace('C', 'С');
+
+                                return p1 + p2 + p3 + p4;
+                            });
+                        }),
+
+                        new Rule('Fix status', function (t) {
+                            return hasStatus(t) ? t : 'вул. ' + t;
+                        }, 'Ukraine'),
+
+                        new Rule('Detect status absense or incorrect placement', function (t) {
+                            return hasStatus(t) ? (hasAdjName(t) ? t.replace(/(.*)(вул\.)(.*)/, '$1 $3 $2') : t) : (hasAdjName(t) ? t + ' вул.' : '');
+                        }, 'Lviv'),
+
+                        new Rule('Move status to begin of name', function (text) {
+                            if (!hasSpecialStatus(text)) {
+                                return text.replace(/(.*)(вул\.)(.*)/, '$2 $1 $3');
+                            }
+                            return text;
+                        }, 'Ukraine'),
+                    ]);
                 };
 
-                fix();
+                var getCountryRules = function () {
+                    var commonRules = [
+                        // Following rules must be at the end because
+                        // previous rules might insert additional spaces
+                        new Rule('Redundant space in street name', function (text) {
+                            return text.replace(/[ ]+/g, ' ');
+                        }),
+                        new Rule('Space at the begin of street name', function (text) {
+                            return text.replace(/^[ ]*/, '');
+                        }),
+                        new Rule('Space at the end of street name', function (text) {
+                            return text.replace(/[ ]*$/, '');
+                        }),
+                    ];
+                    //var countryName = W.model.getTopCountry().getName();
+                    //info('Get rules for country: ' + countryName);
+                    var countryRules = rules_UA();
 
-                return deferred.promise();
-            };
-        };
-
-        var Ui = function () {
-            const translations = {
-                'uk': {
-                    enable: 'Увімкнути/вимкнути',
-                    skipAlt: 'Не перевіряти альтернативи',
-                    moveOld: 'Перенести старе ім\'я в альтерн.',
-                    resetWindow: "Скинути розмір і положення вікна",
-                    options: 'Налаштування',
-                    namingRules: 'Правила йменування',
-                    rulesGoogle: 'Правила з Google таблиці',
-                    localRules: 'Локальні правила',
-                    enableCustomRules: 'Увімкнути локальні правила',
-                    buttonAdd: 'Додати',
-                    buttonAEdit: 'Редагувати',
-                    buttonDel: 'Видалити',
-                    formCustomRules: 'Усі поля повинні бути заповнені',
-                    formCustomRulesRegExp: 'Вираз RegExp',
-                    formCustomRulesReplaceText: 'Текст заміни',
-                    btnSubmit: 'Додати',
-                    btnCancel: 'Скинути',
-                    btnFixAll: 'Усі',
-                    btnFixSel: 'Обрані',
-                    btnScanArea: 'Сканувати',
-                    btnClearFixed: 'Очистити виправлене',
-                    btnClearAll: 'Очистити все',
-                    unresolvedIssues: 'Невирішені проблеми',
-                    resolvedIssues: 'Вирішені проблеми',
-                    exceptions: 'Винятки',
-                },
-                'en-us': {
-                    enable: 'Enable/disable',
-                    skipAlt: 'Skip checking alternative names',
-                    moveOld: 'Move old name to alternative',
-                    resetWindow: "Reset window size and position",
-                    options: 'Options',
-                    namingRules: 'Naming Rules',
-                    rulesGoogle: 'Rules from Google Sheet',
-                    localRules: 'Custom Rules',
-                    enableCustomRules: 'Enable custom rules',
-                    buttonAdd: 'Add',
-                    buttonAEdit: 'Edit',
-                    buttonDel: 'Del',
-                    formCustomRules: 'All form fields are required',
-                    formCustomRulesRegExp: 'RegExp rule',
-                    formCustomRulesReplaceText: 'Replace text',
-                    btnSubmit: 'Submit',
-                    btnCancel: 'Cancel',
-                    btnFixAll: 'Fix All',
-                    btnFixSel: 'Fix selected',
-                    btnScanArea: 'Scan area',
-                    btnClearFixed: 'Clear fixed',
-                    btnClearAll: 'Clear All results',
-                    unresolvedIssues: 'Unresolved issues',
-                    resolvedIssues: 'Fixed issues',
-                    exceptions: 'Exceptions',
-                }
-            }
-
-            var locale = I18n.currentLocale().toLowerCase();
-
-            if (!translations.hasOwnProperty(locale)) {
-                locale = 'en-us';
-            }
-            const translation = translations[locale];
-
-
-            // load main window size and position
-
-            var wndW = localStorage.getItem('assist_window_w');
-            var wndH = localStorage.getItem('assist_window_h');
-            var wndX = localStorage.getItem('assist_window_x');
-            var wndY = localStorage.getItem('assist_window_y');
-            // main window default size and position
-            var defaultW = 500;
-            var defaultH = 500;
-            var defaultX = "right";
-            var defaultY = "center";
-            // define main window limits
-            var minH = 100;
-            var minW = 200;
-            var maxH = 800;
-            var maxW = 1024;
-            // workaround for bug with window minimize detection
-            var saveAllowed = false;
-
-            var addon = document.createElement('div');
-
-            addon.innerHTML = '<wz-overline>' + scriptName + ' v' + GM_info.script.version + '</wz-overline>';
-
-            var section = document.createElement('div');
-            section.id = "assist_options";
-            section.className = "form-group";
-            section.innerHTML = '<wz-label>' + translation.options + '</wz-label>' +
-                '<wz-checkbox name="assist_enabled" id="assist_enabled" value="on">' + translation.enable + '</wz-checkbox>' +
-                '<wz-checkbox name="assist_skip_alt" id="assist_skip_alt" value="on">' + translation.skipAlt + '</wz-checkbox>' +
-                '<wz-checkbox name="assist_move_old_to_alt" id="assist_move_old_to_alt" value="on">' + translation.moveOld + '</wz-checkbox>' +
-                '<wz-button name="assist_reset_window" id="assist_reset_window" color="text" size="sm">' + translation.resetWindow + '</wz-button>';
-            addon.appendChild(section);
-
-            var variant = document.createElement('div');
-            variant.id = 'variant_options';
-            variant.className = "form-group";
-            variant.innerHTML = '<wz-label>' + translation.namingRules + ' <a href="https://www.waze.com/wiki/Ukraine/%D0%AF%D0%BA_%D0%BD%D0%B0%D0%B7%D0%B8%D0%B2%D0%B0%D1%82%D0%B8_%D0%B2%D1%83%D0%BB%D0%B8%D1%86%D1%96" target="_blank"><span class="fa fa-question-circle"></span></a></wz-label>' +
-                '<wz-radio-button name="assist_variant" value="Ukraine" checked="">🏠 Ukraine (Classic)</wz-radio-button>' +
-                '<wz-radio-button name="assist_variant" value="Lviv">🦁 Lviv (Alternative)</wz-radio-button>';
-            if (!$.isEmptyObject(rulesDB)) {
-                console.log("WME Assist UA INFO: Downloaded " + Object.keys(rulesDB).length + " rules from Google Sheet");
-                variant.innerHTML += '<wz-radio-button name="assist_variant" value="GSheets">' + translation.rulesGoogle + ' (' + Object.keys(rulesDB).length + ')</wz-radio-button>';
-            }
-            addon.appendChild(variant);
-
-            section = document.createElement('div');
-            section.id = "assist_custom_rules";
-            section.className = "form-group";
-            $(section)
-                .append($('<wz-label>' + translation.localRules + '</wz-label>'))
-                .append($('<wz-checkbox name="assist_enable_custom_rules" id="assist_enable_custom_rules" value="on">' + translation.enableCustomRules + '</wz-checkbox>'))
-                .append($('<div>').addClass('btn-toolbar').css({
-                    "margin-bottom": "4px"
-                })
-                    .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text(translation.buttonAdd))
-                    .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text(translation.buttonAEdit))
-                    .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text(translation.buttonDel)))
-                .append($('<ul>').addClass('issue-tracker').css({
-                    "height": "250px",
-                    "overflow": "auto",
-                    "padding": "4px",
-                    "border": "1px solid lightgray"
-                }));
-            addon.appendChild(section);
-
-            section = document.createElement('div');
-            section.id = "assist_exceptions";
-            section.className = "form-group";
-            $(section)
-                .append($('<wz-label title="Right click on error in list to add">').text(translation.exceptions))
-                .append($('<ul>').addClass('issue-tracker').css({
-                    "height": "250px",
-                    "overflow": "auto",
-                    "padding": "4px",
-                    "border": "1px solid lightgray"
-                }));
-            addon.appendChild(section);
-
-            const { tabLabel, tabPane } = W.userscripts.registerSidebarTab("sidepanel-assist");
-
-            tabLabel.innerText = scriptName;
-            tabLabel.title = scriptName;
-
-            tabPane.innerHTML = addon.innerHTML;
-
-            //tabPane.addEventListener("element-connected", () => {
-            //    alert("connected");
-            //}, { once: false });
-
-            //tabPane.addEventListener("element-disconnected", () => {
-            //    alert("disconnected");
-            //}, { once: false });
-
-            var selectedCustomRule = -1;
-
-            this.selectedCustomRule = function () {
-                return selectedCustomRule;
-            };
-
-            this.addCustomRule = function (title) {
-                var thisrule = $('<li>').addClass('list-item-card').click(function () {
-                    selectedCustomRule = $('#assist_custom_rules li.list-item-card').index(thisrule);
-                    info('index: ' + selectedCustomRule);
-                    $('#assist_custom_rules li.list-item-card').css({
-                        'background-color': ''
-                    });
-                    $('#assist_custom_rules li.list-item-card').removeClass('active');
-                    $(this).css({
-                        'background-color': 'lightblue'
-                    });
-                    $(this).addClass('active');
-                }).hover(function () {
-                    $(this).css({
-                        cursor: 'pointer',
-                        'background-color': 'lightblue'
-                    });
-                }, function () {
-                    $(this).css({
-                        cursor: 'auto'
-                    });
-                    if (!$(this).hasClass('active')) {
-                        $(this).css({
-                            'background-color': ''
-                        });
-                    }
-                })
-                    .append($('<p>').addClass('additional-info clearfix').text(title))
-                    .appendTo($('#assist_custom_rules ul.issue-tracker'));
-            };
-
-            this.updateCustomRule = function (index, title) {
-                $('#assist_custom_rules li.list-item-card').eq(index).find('p.additional-info').text(title);
-            };
-
-            this.removeCustomRule = function (index) {
-                $('#assist_custom_rules li.list-item-card').eq(index).remove();
-                selectedCustomRule = -1;
-            };
-
-            this.addException = function (name, del) {
-                var thisrule = $('<li>').addClass('list-item-card').click(function () {
-                    var index = $('#assist_exceptions li.list-item-card').index(thisrule);
-                    del(index);
-                }).hover(function () {
-                    $(this).css({
-                        cursor: 'pointer',
-                        'background-color': 'lightblue'
-                    });
-                }, function () {
-                    $(this).css({
-                        cursor: 'auto'
-                    });
-                    if (!$(this).hasClass('active')) {
-                        $(this).css({
-                            'background-color': ''
-                        });
-                    }
-                })
-                    .append($('<p>').addClass('additional-info clearfix').text(name))
-                    .appendTo($('#assist_exceptions ul.issue-tracker'));
-            };
-
-            this.removeException = function (index) {
-                $('#assist_exceptions li.list-item-card').eq(index).remove();
-            };
-
-            this.showMainWindow = function () {
-                localStorage.setItem('assist_enabled', true);
-                mainWindow[0].winbox.show();
-                info('enabled');
-            };
-
-            this.hideMainWindow = function () {
-                localStorage.setItem('assist_enabled', false);
-                $('#assist_clearall_btn').click();
-                mainWindow[0].winbox.hide();
-                info('disabled');
-            };
-
-            var wazeMap = $('#WazeMap');
-
-            // ==== Main Window
-            $('<div>').prop('id', 'assist_main_window_content')
-                .append($('<div>').css({
-                    padding: 10
-                })
-                    .append($('<div class="btn-toolbar">')
-                        .append($('<button id="assist_fixall_btn" class="btn waze-btn waze-btn-small waze-btn-red">' + translation.btnFixAll + '</button>'))
-                        .append($('<button id="assist_fixselected_btn" class="btn waze-btn waze-btn-small waze-btn-red">' + translation.btnFixSel + '</button>'))
-                        .append($('<button id="assist_scanarea_btn" class="btn waze-btn waze-btn-small waze-btn-blue">' + translation.btnScanArea + '</button>'))
-                        .append($('<button id="assist_clearfixed_btn" class="btn waze-btn waze-btn-small waze-btn-green">' + translation.btnClearFixed + '</button>'))
-                        .append($('<button id="assist_clearall_btn" class="btn waze-btn waze-btn-small waze-btn-grey" title="' + translation.btnClearAll + '"><i class="fa fa-close"></i></button>')))
-                    .append($('<h2><input id="assist_select_all_chk" type="checkbox" />' + translation.unresolvedIssues + '</h2>').css({
-                        'font-size': '100%',
-                        'font-weight': 'bold',
-                    }))
-                    .append($('<ol id="assist_unresolved_list"></ol>').css({
-                        border: '1px solid lightgrey',
-                        'padding-top': 2,
-                        'padding-bottom': 2,
-                    })))
-                .append($('<div>').css({
-                    padding: 10,
-                })
-                    .append($('<h2>' + translation.resolvedIssues + '</h2>').css({
-                        'font-size': '100%',
-                        'font-weight': 'bold',
-                    }))
-                    .append($('<ol id="assist_fixed_list"></ol>').css({
-                        border: '1px solid lightgrey',
-                        'padding-top': 2,
-                        'padding-bottom': 2,
-                    })))
-                .appendTo(wazeMap);
-
-            new WinBox(scriptName, {
-                id: "assist_main_window",
-                index: 1,
-                class: ["no-full"],
-                hidden: true,
-                x: wndX ? wndX : defaultX,
-                y: wndY ? wndY : defaultY,
-                width: wndW ? wndW : defaultW,
-                height: wndH ? wndH : defaultH,
-                minheight: minH,
-                minwidth: minW,
-                maxheight: maxH,
-                maxwidth: maxW,
-                background: 'lightblue',
-                border: 4,
-                mount: document.getElementById("assist_main_window_content"),
-                onminimize: function () {
-                    this.focus();
-                },
-                onresize: function (w, h) {
-                    if (!this.hidden && !this.min && !this.max &&
-                        w > minW && h > minH && w < maxW && h < maxH) {
-                        saveAllowed = true;
-                        localStorage.setItem('assist_window_w', w);
-                        localStorage.setItem('assist_window_h', h);
-                    } else {
-                        saveAllowed = false;
-                    }
-                },
-                onmove: function (x, y) {
-                    if (!this.hidden && !this.min && !this.max &&
-                        saveAllowed) {
-                        localStorage.setItem('assist_window_x', x);
-                        localStorage.setItem('assist_window_y', y);
-                    }
-                },
-                onclose: function (force) {
-                    $('#assist_enabled').click();
-                    return true;
-                }
-            });
-            var mainWindow = $('#assist_main_window');
-
-            mainWindow.find('.wb-title').css({
-                'font-weight': 'bold',
-                color: 'black'
-            });
-            mainWindow.find('.wb-title').append($('<span> - </span>'));
-            mainWindow.find('.wb-title')
-                .append($('<span>', {
-                    id: 'assist-error-num',
-                    title: 'Number of unresolved issues',
-                    text: 0,
-                }).css({
-                    color: 'red'
-                }));
-            mainWindow.find('.wb-title').append($('<span> / </span>'));
-            mainWindow.find('.wb-title')
-                .append($('<span>', {
-                    id: 'assist-fixed-num',
-                    title: 'Number of fixed issues',
-                    text: 0,
-                }).css({
-                    color: 'green'
-                }));
-            /*
-            mainWindow.find('.wb-title').append($('<span> - </span>'));
-            mainWindow.find('.wb-title')
-            .append($('<span>', {
-                    id: 'assist-scan-progress',
-                    title: 'Scan progress',
-                    text: 0,
-                }).css({
-                    color: 'blue'
-                }));
-            */
-            $("#assist_reset_window").click(function () {
-                mainWindow[0].winbox.resize(defaultW, defaultH).move(defaultX, defaultY);
-            });
-
-            // ==== Custom Rule Dialog
-            $('<div>').prop('id', 'assist_custom_rule_dialog_content')
-                .append($('<div>').css({
-                    padding: 10
-                })
-                    .append($('<p>' + translation.formCustomRules + '</p>'))
-                    .append($('<fieldset>')
-                        .append($('<label>').prop('for', 'oldname').text(translation.formCustomRulesRegExp))
-                        .append($('<input>', {
-                            type: 'text',
-                            name: 'oldname',
-                            id: 'oldname',
-                        }))
-                        .append($('<label>').prop('for', 'newname').text(translation.formCustomRulesReplaceText))
-                        .append($('<input>', {
-                            type: 'text',
-                            name: 'newname',
-                            id: 'newname',
-                        }))))
-                .append($('<div>').css({
-                    padding: 10
-                })
-                    .append($('<div class="btn-toolbar">')
-                        .append($('<button id="assist_custom_submit_btn" class="btn waze-btn waze-btn-small waze-btn-green">' + translation.btnSubmit + '</button>'))
-                        .append($('<button id="assist_custom_cancel_btn" class="btn waze-btn waze-btn-small waze-btn-red">' + translation.btnCancel + '</button>'))
-                    ))
-                .appendTo(wazeMap);
-
-            $('#assist_custom_rule_dialog_content label').css({
-                display: 'block'
-            });
-            $('#assist_custom_rule_dialog_content input').css({
-                display: 'block',
-                width: '100%'
-            });
-
-            new WinBox("Add Custom Rule", {
-                id: "assist_custom_rule_dialog",
-                index: 1,
-                class: ["no-full", "no-min", "no-max", "no-resize"],
-                hidden: true,
-                x: "center",
-                y: "center",
-                width: "300px",
-                height: "250px",
-                background: 'lightblue',
-                border: 4,
-                mount: document.getElementById("assist_custom_rule_dialog_content"),
-                onclose: function (force) {
-                    this.hide();
-                    return true;
-                }
-            });
-            var customRuleDialog = $('#assist_custom_rule_dialog');
-
-            $("#assist_custom_submit_btn").click(function () {
-                customRuleDialog_Ok();
-                customRuleDialog[0].winbox.hide();
-            });
-            $("#assist_custom_cancel_btn").click(function () {
-                customRuleDialog[0].winbox.hide();
-            });
-
-            var self = this;
-
-            this.addProblem = function (id, text, selectFunc, editFunc, exception, experimental) {
-                var problem = $('<li>')
-                    .prop('id', 'issue-' + id)
-                    .append($('<input>', {
-                        value: id,
-                        type: "checkbox"
-                    }))
-                    .append($('<a>', {
-                        href: "javascript:void(0)",
-                        text: text,
-                        click: function (event) {
-                            selectFunc(event);
-                        },
-                        contextmenu: function (event) {
-                            exception(event);
-                            event.preventDefault();
-                            event.stopPropagation();
-                        },
-                    }))
-                    .append('&nbsp;')
-                    .append($('<span>', {
-                        title: "Add custom rule for this problem",
-                        class: "fa fa-edit",
-                        style: "cursor: pointer;",
-                        click: function (event) {
-                            editFunc(event);
-                        }
-                    }))
-                    .appendTo($('#assist_unresolved_list'));
-
-                if (experimental) {
-                    problem.children().css({
-                        color: 'red'
-                    }).prop('title', 'Experimental rule');
-                }
-            };
-
-            this.getCheckedItemsList = function () {
-                var itemsList = [];
-                $('#assist_unresolved_list').find('input').each(function () {
-                    if (this.checked) {
-                        itemsList.push(this.value);
-                    }
-                });
-                return itemsList;
-            };
-
-            this.updateProblem = function (id, text) {
-                var a = $('li#issue-' + escapeId(id) + ' > a');
-                a.text(a.text() + ' ' + text);
-            };
-
-            this.setUnresolvedErrorNum = function (text) {
-                $('#assist-error-num').text(text);
-            };
-
-            this.setFixedErrorNum = function (text) {
-                $('#assist-fixed-num').text(text);
-            };
-
-            this.setScanProgress = function (text) {
-                //$('#assist-scan-progress').text(text);
-            };
-
-            var escapeId = function (id) {
-                return String(id).replace(/\./g, "\\.");
-            };
-
-            this.moveToFixedList = function (id) {
-                $("#issue-" + escapeId(id)).appendTo($('#assist_fixed_list')).find("span").remove();
-                $("#issue-" + escapeId(id)).find("input").remove();
-            };
-
-            this.removeError = function (id) {
-                $("#issue-" + escapeId(id)).remove();
-            };
-
-            var fixAllBtn = $('#assist_fixall_btn');
-            var fixSelectedBtn = $('#assist_fixselected_btn');
-            var scanAreaBtn = $('#assist_scanarea_btn');
-            var clearFixedBtn = $('#assist_clearfixed_btn');
-            var clearAllBtn = $('#assist_clearall_btn');
-
-            var selectAllChk = $('#assist_select_all_chk');
-
-            var unresolvedList = $('#assist_unresolved_list');
-            var fixedList = $('#assist_fixed_list');
-
-            var enableCheckbox = $('#assist_enabled');
-            var skipAltCheckbox = $('#assist_skip_alt');
-            var moveOld2AltCheckbox = $('#assist_move_old_to_alt');
-            var enableCustomRulesCheckbox = $('#assist_enable_custom_rules');
-
-            var addCustomRuleBtn = $('#assist_add_custom_rule');
-            var editCustomRuleBtn = $('#assist_edit_custom_rule');
-            var delCustomRuleBtn = $('#assist_del_custom_rule');
-
-            this.fixAllBtn = function () {
-                return fixAllBtn;
-            };
-            this.fixSelectedBtn = function () {
-                return fixSelectedBtn;
-            };
-            this.scanAreaBtn = function () {
-                return scanAreaBtn;
-            };
-            this.clearFixedBtn = function () {
-                return clearFixedBtn;
-            };
-            this.clearAllBtn = function () {
-                return clearAllBtn;
-            };
-
-            this.selectAllChk = function () {
-                return selectAllChk;
-            };
-
-            this.unresolvedList = function () {
-                return unresolvedList;
-            };
-            this.fixedList = function () {
-                return fixedList;
-            };
-
-            this.enableCheckbox = function () {
-                return enableCheckbox;
-            };
-            this.skipAltCheckbox = function () {
-                return skipAltCheckbox;
-            };
-            this.moveOld2AltCheckbox = function () {
-                return moveOld2AltCheckbox;
-            };
-            this.enableCustomRulesCheckbox = function () {
-                return enableCustomRulesCheckbox;
-            };
-            this.variantRadio = function (value) {
-                if (!value) {
-                    return $('[name=assist_variant]');
-                }
-
-                return $('[name=assist_variant][value=' + value + ']');
-            };
-
-            this.addCustomRuleBtn = function () {
-                return addCustomRuleBtn;
-            };
-            this.editCustomRuleBtn = function () {
-                return editCustomRuleBtn;
-            };
-            this.delCustomRuleBtn = function () {
-                return delCustomRuleBtn;
-            };
-            this.customRuleDialog = function (title, params) {
-                var deferred = $.Deferred();
-
-                if (params) {
-                    customRuleDialog.find('#oldname').val(params.oldname);
-                    customRuleDialog.find('#newname').val(params.newname);
-                }
-
-                customRuleDialog_Ok = function () {
-                    deferred.resolve({
-                        oldname: customRuleDialog.find('#oldname').val(),
-                        newname: customRuleDialog.find('#newname').val(),
-                    });
+                    return countryRules.concat(commonRules);
                 };
 
-                customRuleDialog[0].winbox.setTitle(title);
-                customRuleDialog[0].winbox.show();
+                var rules = [];
+                var customRulesNumber = 0;
 
-                return deferred.promise();
-            };
-            //this.variant = function () {
-            //    return $('[name=assist_variant][checked]')[0].value;
-            //};
-        };
-
-        var Scanner = function () {
-            var ROAD_TYPE = {
-                STREET: 1,
-                PRIMARY_STREET: 2,
-                FREEWAY: 3,
-                RAMP: 4,
-                WALKING_TRAIL: 5,
-                MAJOR_HIGHWAY: 6,
-                MINOR_HIGHWAY: 7,
-                OFF_ROAD: 8,
-                WALKWAY: 9,
-                PEDESTRIAN_BOARDWALK: 10,
-                FERRY: 15,
-                STAIRWAY: 16,
-                PRIVATE_ROAD: 17,
-                RAILROAD: 18,
-                RUNWAY_TAXIWAY: 19,
-                PARKING_LOT_ROAD: 20,
-                ALLEY: 22
-            };
-
-            var zoomToRoadType = function (e) {
-                if (e < 14) {
-                    return [];
-                }
-                switch (e) {
-                    case 14:
-                        return [ROAD_TYPE.PRIMARY_STREET, ROAD_TYPE.FREEWAY, ROAD_TYPE.RAMP, ROAD_TYPE.MAJOR_HIGHWAY, ROAD_TYPE.MINOR_HIGHWAY, ROAD_TYPE.FERRY];
-                    case 15:
-                        return [ROAD_TYPE.PRIMARY_STREET, ROAD_TYPE.FREEWAY, ROAD_TYPE.RAMP, ROAD_TYPE.MAJOR_HIGHWAY, ROAD_TYPE.MINOR_HIGHWAY, ROAD_TYPE.OFF_ROAD, ROAD_TYPE.WALKWAY, ROAD_TYPE.PEDESTRIAN_BOARDWALK, ROAD_TYPE.FERRY, ROAD_TYPE.STAIRWAY, ROAD_TYPE.PRIVATE_ROAD, ROAD_TYPE.RAILROAD, ROAD_TYPE.RUNWAY_TAXIWAY, ROAD_TYPE.PARKING_LOT_ROAD, ROAD_TYPE.ALLEY];
-                    default:
-                        return Object.values(ROAD_TYPE);
-                }
-            };
-            var zoomToVenueLevel = function (e) {
-                switch (e) {
-                    case 12:
-                        return 1;
-                    case 13:
-                        return 2;
-                    case 14:
-                    case 15:
-                    case 16:
-                        return 3;
-                    case 17:
-                    case 18:
-                    case 19:
-                    case 20:
-                    case 21:
-                    case 22:
-                        return 4;
-                    default:
-                        return null;
-                }
-            };
-
-            var getData = function (e, cb) {
-                //debug(e);
-                $.get(W.Config.paths.features, e).done(cb);
-            };
-
-            var splitExtent = function (extent, zoom) {
-                var result = [];
-
-                var ratio = 1; //map.getResolution() / map.getResolutionForZoom(zoom); //FIXME: temporary commented, because getResolutionForZoom() is gone
-                var dx = extent.getWidth() / ratio;
-                var dy = extent.getHeight() / ratio;
-
-                var x,
-                    y;
-                for (x = extent.left; x < extent.right; x += dx) {
-                    for (y = extent.bottom; y < extent.top; y += dy) {
-                        var bounds = new OpenLayers.Bounds();
-                        bounds.extend(new OpenLayers.LonLat(x, y));
-                        bounds.extend(new OpenLayers.LonLat(x + dx, y + dy));
-
-                        result.push(bounds);
-                    }
-                }
-
-                return result;
-            };
-
-            this.scan = function (bounds, zoom, analyze, progress) {
-                if (localStorage.getItem('assist_enabled') != 'true') {
-                    return;
-                }
-                var boundsArray = splitExtent(bounds, zoom);
-                var completed = 0;
-
-                if (boundsArray.length > 20 && !confirm('Script will scan ' + boundsArray.length + ' pieces. Are you OK?')) {
-                    return;
-                }
-
-                progress = progress || function () { };
-
-                series(boundsArray, 0, function (bounds, next) {
-                    var piece = bounds.transform(W.map.getProjectionObject(), 'EPSG:4326');
-
-                    var e = {
-                        bbox: piece.toBBOX(),
-                        language: I18n.locale,
-                        venueFilter: '3',
-                        venueLevel: zoomToVenueLevel(zoom),
-                    };
-                    var z = {
-                        roadTypes: zoomToRoadType(zoom).toString()
-                    };
-                    OpenLayers.Util.extend(e, z);
-
-                    getData(e, function (data) {
-                        analyze(piece, zoom, data);
-                        progress(++completed * 100 / boundsArray.length);
-                        next();
-                    });
-                });
-            };
-        };
-
-        var Analyzer = function () {
-            var Exceptions = function () {
-                var exceptions = [];
-
-                var onAdd = function (name) { };
+                var onAdd = function (rule) { };
+                var onEdit = function (index, rule) { };
                 var onDelete = function (index) { };
 
-                var save = function (exceptions) {
+                this.onAdd = function (cb) {
+                    onAdd = cb;
+                };
+                this.onEdit = function (cb) {
+                    onEdit = cb;
+                };
+                this.onDelete = function (cb) {
+                    onDelete = cb;
+                };
+
+                //this.onCountryChange = function () {
+                //    info('Country was changed. Reloading rules...');
+                //    rules.splice(customRulesNumber, rules.length - customRulesNumber);
+                //    rules = rules.concat(getCountryRules());
+                //};
+                this.get = function (index) {
+                    return rules[index];
+                };
+
+                this.correct = function (variant, text, city) {
+                    var newtext = text;
+                    var experimental = false;
+                    var custom_enabled = localStorage.getItem('assist_enable_custom_rules') == 'true';
+
+                    for (var i = 0; i < rules.length; ++i) {
+                        var rule = rules[i];
+
+                        if (rule.custom && !custom_enabled)
+                            continue;
+
+                        if (rule.experimental && !this.experimental)
+                            continue;
+
+                        if (rule.variant && rule.variant != variant)
+                            continue;
+
+                        var previous = newtext;
+                        newtext = rule.correct(newtext, city);
+                        var changed = (previous != newtext);
+                        if (rule.experimental && previous != newtext) {
+                            experimental = true;
+                        }
+                        previous = newtext;
+                        // if (rule.custom && changed) {
+                        //     // prevent result overwriting by common rules
+                        //     break;
+                        // }
+                    }
+
+                    return {
+                        value: newtext,
+                        experimental: experimental
+                    };
+                };
+
+                var save = function (rules) {
                     if (localStorage) {
-                        localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
+                        localStorage.setItem('assistRulesKey', JSON.stringify(rules.slice(0, customRulesNumber)));
                     }
                 };
 
                 this.load = function () {
                     if (localStorage) {
-                        var str = localStorage.getItem('assistExceptionsKey');
+                        var str = localStorage.getItem('assistRulesKey');
                         if (str) {
                             var arr = JSON.parse(str);
                             for (var i = 0; i < arr.length; ++i) {
-                                var exception = arr[i];
-                                this.add(exception);
+                                var rule = arr[i];
+                                this.push(rule.oldname, rule.newname);
                             }
                         }
                     }
+
+                    rules = rules.concat(getCountryRules());
                 };
 
-                this.contains = function (name) {
-                    if (exceptions.indexOf(name) == -1)
-                        return false;
-                    return true;
+                this.push = function (oldname, newname) {
+                    var rule = new CustomRule(oldname, newname);
+                    rules.splice(customRulesNumber++, 0, rule);
+                    onAdd(rule);
+
+                    save(rules);
                 };
 
-                this.add = function (name) {
-                    exceptions.push(name);
-                    save(exceptions);
-                    onAdd(name);
+                this.update = function (index, oldname, newname) {
+                    var rule = new CustomRule(oldname, newname);
+                    rules[index] = rule;
+                    onEdit(index, rule);
+
+                    save(rules);
                 };
 
                 this.remove = function (index) {
-                    exceptions.splice(index, 1);
-                    save(exceptions);
+                    rules.splice(index, 1);
+                    --customRulesNumber;
                     onDelete(index);
+
+                    save(rules);
+                };
+            }
+        }
+
+        class ActionHelper {
+            constructor() {
+                var WazeActionAddAlternateStreet = require("Waze/Action/AddAlternateStreet");
+                var WazeActionUpdateFeatureAddress = require("Waze/Action/UpdateFeatureAddress");
+                var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
+
+                var ui;
+
+                var type2repo = function (type) {
+                    var map = {
+                        'venue': W.model.venues,
+                        'segment': W.model.segments
+                    };
+                    return map[type];
                 };
 
-                this.onAdd = function (cb) {
-                    onAdd = cb;
+                this.setUi = function (u) {
+                    ui = u;
                 };
-                this.onDelete = function (cb) {
-                    onDelete = cb;
+
+                this.Select = function (id, type, center, zoom) {
+                    var attemptNum = 10;
+
+                    var select = function () {
+                        info('select: ' + id);
+
+                        var obj = type2repo(type).getObjectById(id);
+
+                        W.model.events.unregister('mergeend', null, select);
+
+                        if (obj) {
+                            W.selectionManager.setSelectedModels([obj]);
+                        } else if (--attemptNum > 0) {
+                            W.model.events.register('mergeend', null, select);
+                        }
+
+                        debug("Attempt number left: " + attemptNum);
+
+                        W.map.setCenter(center, zoom);
+                    };
+
+                    return select;
                 };
-            };
 
-            var analyzedIds = [];
-            var problems = [];
-            var unresolvedIdx = 0;
-            var skippedErrors = 0;
-            var variant;
-            var exceptions = new Exceptions();
-            var rules;
-            var action;
+                this.fixProblem = function (problem) {
+                    var deferred = $.Deferred();
+                    var attemptNum = 10; // after that we decide that object was removed
+                    var setOld2Alt = localStorage.getItem('assist_move_old_to_alt') == 'true';
 
-            var getUnresolvedErrorNum = function () {
-                return problems.length - unresolvedIdx - skippedErrors;
-            };
+                    var fix = function () {
+                        var uniqueId = problem.object.id + '_' + problem.streetID;
+                        var obj = type2repo(problem.object.type).getObjectById(problem.object.id);
+                        W.model.events.unregister('mergeend', null, fix);
 
-            var getFixedErrorNum = function () {
-                return unresolvedIdx;
-            };
+                        if (obj) {
+                            var addr = obj.getAddress().attributes;
+                            var attr = {
+                                countryID: addr.country.attributes.id,
+                                stateID: addr.state.attributes.id,
+                                cityName: addr.city.attributes.name,
+                                emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
+                                streetName: problem.newStreetName,
+                                emptyStreet: problem.isEmpty
+                            };
 
-            this.unresolvedErrorNum = getUnresolvedErrorNum;
-            this.fixedErrorNum = getFixedErrorNum;
+                            // check if alternative name
+                            if (problem.attrName == 'streetIDs') {
+                                // check if still exist
+                                if (obj.attributes.streetIDs.indexOf(problem.streetID) > -1) {
+                                    // remove old street and keep other ones
+                                    var streets2keep = [];
+                                    obj.attributes.streetIDs.forEach(function (sid) {
+                                        if (problem.streetID !== sid) {
+                                            streets2keep.push(sid);
+                                        } else {
+                                            var altStreet = W.model.streets.getObjectById(sid);
+                                            var city = W.model.cities.getObjectById(altStreet.attributes.cityID);
+                                            attr.cityName = city.attributes.name;
+                                            attr.emptyCity = city.hasName() ? null : true;
+                                        }
+                                    });
+                                    W.model.actionManager.add(new WazeActionUpdateObject(obj, {
+                                        streetIDs: streets2keep
+                                    }));
 
-            this.setRules = function (r) {
-                rules = r;
-            };
-
-            this.setActionHelper = function (a) {
-                action = a;
-            };
-
-            this.loadExceptions = function () {
-                exceptions.load();
-            };
-
-            this.onExceptionAdd = function (cb) {
-                exceptions.onAdd(cb);
-            };
-
-            this.onExceptionDelete = function (cb) {
-                exceptions.onDelete(cb);
-            };
-
-            this.addException = function (reason, cb) {
-                exceptions.add(reason);
-
-                var i;
-                for (i = 0; i < problems.length; ++i) {
-                    var problem = problems[i];
-                    if (problem.reason == reason) {
-                        problem.skip = true;
-                        ++skippedErrors;
-
-                        cb(problem.object.id);
-                    }
-                }
-            };
-
-            this.removeException = function (i) {
-                exceptions.remove(i);
-            };
-
-            this.setVariant = function (v) {
-                variant = v;
-            };
-
-            this.reset = function () {
-                analyzedIds = [];
-                problems = [];
-                unresolvedIdx = 0;
-                skippedErrors = 0;
-            };
-
-            this.fixAll = function (oneFixed, allFixed) {
-                series(problems, unresolvedIdx, function (p, next) {
-                    if (p.skip) {
-                        next();
-                        return;
-                    }
-
-                    action.fixProblem(p).done(function (id) {
-                        ++unresolvedIdx;
-                        oneFixed(id);
-
-                        setTimeout(next, 0);
-                    });
-                }, allFixed);
-            };
-
-            this.fixSelected = function (listToFix, oneFixed, allFixed) {
-                series(problems, unresolvedIdx, function (p, next) {
-                    if (listToFix.indexOf(p.object.id + '_' + p.streetID) == -1) {
-                        next();
-                        return;
-                    }
-                    if (p.skip) {
-                        next();
-                        return;
-                    }
-
-                    action.fixProblem(p).done(function (id) {
-                        ++unresolvedIdx;
-                        oneFixed(id);
-
-                        setTimeout(next, 0);
-                    });
-                }, allFixed);
-            };
-
-            var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
-                var userlevel = W.loginManager.getUserRank() + 1;
-                var street = W.model.streets.getObjectById(streetID);
-
-                if (!street)
-                    return;
-
-                var detected = false;
-                var skip = false;
-                var title = '';
-                var reason;
-                var newStreetName;
-
-                if (!street.attributes.isEmpty) {
-                    let streetName = street.attributes.name;
-                    if (!exceptions.contains(streetName)) {
-                        try {
-                            var city = W.model.cities.getObjectById(street.attributes.cityID);
-                            var result = rules.correct(variant, streetName, city.attributes.name);
-                            newStreetName = result.value;
-                            detected = (newStreetName != streetName);
-                            if (obj.type == 'venue') {
-                                title = 'POI: ';
-                            }
-                            // alternative names
-                            if (attrName == 'streetIDs') {
-                                title = 'ALT: ';
-                            }
-                            // if user has lower rank, just show the segment, but no fix allowed
-                            if (obj.lockRank && obj.lockRank >= userlevel) {
-                                title = '(L' + (obj.lockRank + 1) + ') ' + title;
-                                skip = true;
-                            }
-                            // show segments with closures, but lock them from fixing
-                            if (obj.hasClosures) {
-                                title = '(🚧) ' + title;
-                                skip = true;
-                            }
-                            title = title + streetName.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■');
-                            // for "detect only rules" we have no replacement to show
-                            if (!newStreetName) {
-                                skip = true;
+                                    // add new street
+                                    W.model.actionManager.add(new WazeActionAddAlternateStreet(obj, attr, {
+                                        streetIDField: problem.attrName
+                                    }));
+                                } else {
+                                    ui.updateProblem(uniqueId, '(not found. Deleted?)');
+                                }
                             } else {
-                                title = title + ' ➤ ' + newStreetName;
+                                // protect user manual fix
+                                if (problem.reason == addr.street.attributes.name) {
+                                    W.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, {
+                                        streetIDField: problem.attrName
+                                    }));
+                                    // move old name to alt street, if option enabled
+                                    if (setOld2Alt && obj.type == 'segment') {
+                                        var altAttr = {
+                                            countryID: addr.country.attributes.id,
+                                            stateID: addr.state.attributes.id,
+                                            cityName: addr.city.attributes.name,
+                                            emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
+                                            streetName: problem.reason,
+                                            emptyStreet: false //problem.isEmpty
+                                        };
+                                        W.model.actionManager.add(new WazeActionAddAlternateStreet(obj, altAttr, {
+                                            streetIDField: problem.attrName
+                                        }));
+                                    }
+                                } else {
+                                    ui.updateProblem(uniqueId, '(user fix: ' + addr.street.attributes.name + ')');
+                                }
                             }
-                            if (skip) {
-                                title = '🔒 ' + title;
+                            deferred.resolve(uniqueId);
+                        } else if (--attemptNum <= 0) {
+                            ui.updateProblem(uniqueId, '(was not fixed. Deleted?)');
+                            deferred.resolve(uniqueId);
+                        } else {
+                            W.model.events.register('mergeend', null, fix);
+                            W.map.setCenter(problem.detectPos, problem.zoom);
+                        }
+
+                        debug('Attempt number left: ' + attemptNum);
+                    };
+
+                    fix();
+
+                    return deferred.promise();
+                };
+            }
+        }
+
+        class Ui {
+            constructor() {
+                this.customRuleDialog_Ok = null;
+            }
+            async init() {
+                const translations = {
+                    'uk': {
+                        enable: 'Увімкнути/вимкнути',
+                        skipAlt: 'Не перевіряти альтернативи',
+                        moveOld: 'Перенести старе ім\'я в альтерн.',
+                        resetWindow: "Скинути розмір і положення вікна",
+                        options: 'Налаштування',
+                        namingRules: 'Правила йменування',
+                        rulesGoogle: 'Правила з Google таблиці',
+                        localRules: 'Локальні правила',
+                        enableCustomRules: 'Увімкнути локальні правила',
+                        buttonAdd: 'Додати',
+                        buttonAEdit: 'Редагувати',
+                        buttonDel: 'Видалити',
+                        formCustomRules: 'Усі поля повинні бути заповнені',
+                        formCustomRulesRegExp: 'Вираз RegExp',
+                        formCustomRulesReplaceText: 'Текст заміни',
+                        btnSubmit: 'Додати',
+                        btnCancel: 'Скинути',
+                        btnFixAll: 'Усі',
+                        btnFixSel: 'Обрані',
+                        btnScanArea: 'Сканувати',
+                        btnClearFixed: 'Очистити виправлене',
+                        btnClearAll: 'Очистити все',
+                        unresolvedIssues: 'Невирішені проблеми',
+                        resolvedIssues: 'Вирішені проблеми',
+                        exceptions: 'Винятки',
+                    },
+                    'en-us': {
+                        enable: 'Enable/disable',
+                        skipAlt: 'Skip checking alternative names',
+                        moveOld: 'Move old name to alternative',
+                        resetWindow: "Reset window size and position",
+                        options: 'Options',
+                        namingRules: 'Naming Rules',
+                        rulesGoogle: 'Rules from Google Sheet',
+                        localRules: 'Custom Rules',
+                        enableCustomRules: 'Enable custom rules',
+                        buttonAdd: 'Add',
+                        buttonAEdit: 'Edit',
+                        buttonDel: 'Del',
+                        formCustomRules: 'All form fields are required',
+                        formCustomRulesRegExp: 'RegExp rule',
+                        formCustomRulesReplaceText: 'Replace text',
+                        btnSubmit: 'Submit',
+                        btnCancel: 'Cancel',
+                        btnFixAll: 'Fix All',
+                        btnFixSel: 'Fix selected',
+                        btnScanArea: 'Scan area',
+                        btnClearFixed: 'Clear fixed',
+                        btnClearAll: 'Clear All results',
+                        unresolvedIssues: 'Unresolved issues',
+                        resolvedIssues: 'Fixed issues',
+                        exceptions: 'Exceptions',
+                    }
+                };
+
+                var locale = I18n.currentLocale().toLowerCase();
+
+                if (!translations.hasOwnProperty(locale)) {
+                    locale = 'en-us';
+                }
+                const translation = translations[locale];
+
+                // load main window size and position
+                var wndW = localStorage.getItem('assist_window_w');
+                var wndH = localStorage.getItem('assist_window_h');
+                var wndX = localStorage.getItem('assist_window_x');
+                var wndY = localStorage.getItem('assist_window_y');
+                // main window default size and position
+                var defaultW = 500;
+                var defaultH = 500;
+                var defaultX = "right";
+                var defaultY = "center";
+                // define main window limits
+                var minH = 100;
+                var minW = 200;
+                var maxH = 800;
+                var maxW = 1024;
+                // workaround for bug with window minimize detection
+                var saveAllowed = false;
+
+                var addon = document.createElement('div');
+
+                addon.innerHTML = '<wz-overline>' + scriptName + ' v' + GM_info.script.version + '</wz-overline>';
+
+                var section = document.createElement('div');
+                section.id = "assist_options";
+                section.className = "form-group";
+                section.innerHTML = '<wz-label>' + translation.options + '</wz-label>' +
+                    '<wz-checkbox name="assist_enabled" id="assist_enabled" value="on">' + translation.enable + '</wz-checkbox>' +
+                    '<wz-checkbox name="assist_skip_alt" id="assist_skip_alt" value="on">' + translation.skipAlt + '</wz-checkbox>' +
+                    '<wz-checkbox name="assist_move_old_to_alt" id="assist_move_old_to_alt" value="on">' + translation.moveOld + '</wz-checkbox>' +
+                    '<wz-button name="assist_reset_window" id="assist_reset_window" color="text" size="sm">' + translation.resetWindow + '</wz-button>';
+                addon.appendChild(section);
+
+                var variant = document.createElement('div');
+                variant.id = 'variant_options';
+                variant.className = "form-group";
+                variant.innerHTML = '<wz-label>' + translation.namingRules + ' <a href="https://www.waze.com/wiki/Ukraine/%D0%AF%D0%BA_%D0%BD%D0%B0%D0%B7%D0%B8%D0%B2%D0%B0%D1%82%D0%B8_%D0%B2%D1%83%D0%BB%D0%B8%D1%86%D1%96" target="_blank"><span class="fa fa-question-circle"></span></a></wz-label>' +
+                    '<wz-radio-button name="assist_variant" value="Ukraine" checked="">🏠 Ukraine (Classic)</wz-radio-button>' +
+                    '<wz-radio-button name="assist_variant" value="Lviv">🦁 Lviv (Alternative)</wz-radio-button>';
+                if (!$.isEmptyObject(rulesDB)) {
+                    console.log("WME Assist UA INFO: Downloaded " + Object.keys(rulesDB).length + " rules from Google Sheet");
+                    variant.innerHTML += '<wz-radio-button name="assist_variant" value="GSheets">' + translation.rulesGoogle + ' (' + Object.keys(rulesDB).length + ')</wz-radio-button>';
+                }
+                addon.appendChild(variant);
+
+                section = document.createElement('div');
+                section.id = "assist_custom_rules";
+                section.className = "form-group";
+                $(section)
+                    .append($('<wz-label>' + translation.localRules + '</wz-label>'))
+                    .append($('<wz-checkbox name="assist_enable_custom_rules" id="assist_enable_custom_rules" value="on">' + translation.enableCustomRules + '</wz-checkbox>'))
+                    .append($('<div>').addClass('btn-toolbar').css({
+                        "margin-bottom": "4px"
+                    })
+                        .append($('<button>').prop('id', 'assist_add_custom_rule').addClass('btn btn-default btn-primary').text(translation.buttonAdd))
+                        .append($('<button>').prop('id', 'assist_edit_custom_rule').addClass('btn btn-default').text(translation.buttonAEdit))
+                        .append($('<button>').prop('id', 'assist_del_custom_rule').addClass('btn btn-default btn-warning').text(translation.buttonDel)))
+                    .append($('<ul>').addClass('issue-tracker').css({
+                        "height": "250px",
+                        "overflow": "auto",
+                        "padding": "4px",
+                        "border": "1px solid lightgray"
+                    }));
+                addon.appendChild(section);
+
+                section = document.createElement('div');
+                section.id = "assist_exceptions";
+                section.className = "form-group";
+                $(section)
+                    .append($('<wz-label title="Right click on error in list to add">').text(translation.exceptions))
+                    .append($('<ul>').addClass('issue-tracker').css({
+                        "height": "250px",
+                        "overflow": "auto",
+                        "padding": "4px",
+                        "border": "1px solid lightgray"
+                    }));
+                addon.appendChild(section);
+
+                const { tabLabel, tabPane } = W.userscripts.registerSidebarTab("sidepanel-assist");
+
+                tabLabel.innerText = scriptName;
+                tabLabel.title = scriptName;
+
+                tabPane.innerHTML = addon.innerHTML;
+
+                await W.userscripts.waitForElementConnected(tabPane);
+
+                //tabPane.addEventListener("element-connected", () => {
+                //    alert("connected");
+                //}, { once: false });
+                //tabPane.addEventListener("element-disconnected", () => {
+                //    alert("disconnected");
+                //}, { once: false });
+                var selectedCustomRule = -1;
+
+                this.selectedCustomRule = function () {
+                    return selectedCustomRule;
+                };
+
+                this.addCustomRule = function (title) {
+                    var thisrule = $('<li>').addClass('list-item-card').click(function () {
+                        selectedCustomRule = $('#assist_custom_rules li.list-item-card').index(thisrule);
+                        info('index: ' + selectedCustomRule);
+                        $('#assist_custom_rules li.list-item-card').css({
+                            'background-color': ''
+                        });
+                        $('#assist_custom_rules li.list-item-card').removeClass('active');
+                        $(this).css({
+                            'background-color': 'lightblue'
+                        });
+                        $(this).addClass('active');
+                    }).hover(function () {
+                        $(this).css({
+                            cursor: 'pointer',
+                            'background-color': 'lightblue'
+                        });
+                    }, function () {
+                        $(this).css({
+                            cursor: 'auto'
+                        });
+                        if (!$(this).hasClass('active')) {
+                            $(this).css({
+                                'background-color': ''
+                            });
+                        }
+                    })
+                        .append($('<p>').addClass('additional-info clearfix').text(title))
+                        .appendTo($('#assist_custom_rules ul.issue-tracker'));
+                };
+
+                this.updateCustomRule = function (index, title) {
+                    $('#assist_custom_rules li.list-item-card').eq(index).find('p.additional-info').text(title);
+                };
+
+                this.removeCustomRule = function (index) {
+                    $('#assist_custom_rules li.list-item-card').eq(index).remove();
+                    selectedCustomRule = -1;
+                };
+
+                this.addException = function (name, del) {
+                    var thisrule = $('<li>').addClass('list-item-card').click(function () {
+                        var index = $('#assist_exceptions li.list-item-card').index(thisrule);
+                        del(index);
+                    }).hover(function () {
+                        $(this).css({
+                            cursor: 'pointer',
+                            'background-color': 'lightblue'
+                        });
+                    }, function () {
+                        $(this).css({
+                            cursor: 'auto'
+                        });
+                        if (!$(this).hasClass('active')) {
+                            $(this).css({
+                                'background-color': ''
+                            });
+                        }
+                    })
+                        .append($('<p>').addClass('additional-info clearfix').text(name))
+                        .appendTo($('#assist_exceptions ul.issue-tracker'));
+                };
+
+                this.removeException = function (index) {
+                    $('#assist_exceptions li.list-item-card').eq(index).remove();
+                };
+
+                this.showMainWindow = function () {
+                    localStorage.setItem('assist_enabled', true);
+                    mainWindow[0].winbox.show();
+                    info('enabled');
+                };
+
+                this.hideMainWindow = function () {
+                    localStorage.setItem('assist_enabled', false);
+                    $('#assist_clearall_btn').click();
+                    mainWindow[0].winbox.hide();
+                    info('disabled');
+                };
+
+                var wazeMap = $('#WazeMap');
+
+                // ==== Main Window
+                $('<div>').prop('id', 'assist_main_window_content')
+                    .append($('<div>').css({
+                        padding: 10
+                    })
+                        .append($('<div class="btn-toolbar">')
+                            .append($('<button id="assist_fixall_btn" class="btn waze-btn waze-btn-small waze-btn-red">' + translation.btnFixAll + '</button>'))
+                            .append($('<button id="assist_fixselected_btn" class="btn waze-btn waze-btn-small waze-btn-red">' + translation.btnFixSel + '</button>'))
+                            .append($('<button id="assist_scanarea_btn" class="btn waze-btn waze-btn-small waze-btn-blue">' + translation.btnScanArea + '</button>'))
+                            .append($('<button id="assist_clearfixed_btn" class="btn waze-btn waze-btn-small waze-btn-green">' + translation.btnClearFixed + '</button>'))
+                            .append($('<button id="assist_clearall_btn" class="btn waze-btn waze-btn-small waze-btn-grey" title="' + translation.btnClearAll + '"><i class="fa fa-close"></i></button>')))
+                        .append($('<h2><input id="assist_select_all_chk" type="checkbox" />' + translation.unresolvedIssues + '</h2>').css({
+                            'font-size': '100%',
+                            'font-weight': 'bold',
+                        }))
+                        .append($('<ol id="assist_unresolved_list"></ol>').css({
+                            border: '1px solid lightgrey',
+                            'padding-top': 2,
+                            'padding-bottom': 2,
+                        })))
+                    .append($('<div>').css({
+                        padding: 10,
+                    })
+                        .append($('<h2>' + translation.resolvedIssues + '</h2>').css({
+                            'font-size': '100%',
+                            'font-weight': 'bold',
+                        }))
+                        .append($('<ol id="assist_fixed_list"></ol>').css({
+                            border: '1px solid lightgrey',
+                            'padding-top': 2,
+                            'padding-bottom': 2,
+                        })))
+                    .appendTo(wazeMap);
+
+                new WinBox(scriptName, {
+                    id: "assist_main_window",
+                    index: 1,
+                    class: ["no-full"],
+                    hidden: true,
+                    x: wndX ? wndX : defaultX,
+                    y: wndY ? wndY : defaultY,
+                    width: wndW ? wndW : defaultW,
+                    height: wndH ? wndH : defaultH,
+                    minheight: minH,
+                    minwidth: minW,
+                    maxheight: maxH,
+                    maxwidth: maxW,
+                    background: 'lightblue',
+                    border: 4,
+                    mount: document.getElementById("assist_main_window_content"),
+                    onminimize: function () {
+                        this.focus();
+                    },
+                    onresize: function (w, h) {
+                        if (!this.hidden && !this.min && !this.max &&
+                            w > minW && h > minH && w < maxW && h < maxH) {
+                            saveAllowed = true;
+                            localStorage.setItem('assist_window_w', w);
+                            localStorage.setItem('assist_window_h', h);
+                        } else {
+                            saveAllowed = false;
+                        }
+                    },
+                    onmove: function (x, y) {
+                        if (!this.hidden && !this.min && !this.max &&
+                            saveAllowed) {
+                            localStorage.setItem('assist_window_x', x);
+                            localStorage.setItem('assist_window_y', y);
+                        }
+                    },
+                    onclose: function (force) {
+                        $('#assist_enabled').click();
+                        return true;
+                    }
+                });
+                var mainWindow = $('#assist_main_window');
+
+                mainWindow.find('.wb-title').css({
+                    'font-weight': 'bold',
+                    color: 'black'
+                });
+                mainWindow.find('.wb-title').append($('<span> - </span>'));
+                mainWindow.find('.wb-title')
+                    .append($('<span>', {
+                        id: 'assist-error-num',
+                        title: 'Number of unresolved issues',
+                        text: 0,
+                    }).css({
+                        color: 'red'
+                    }));
+                mainWindow.find('.wb-title').append($('<span> / </span>'));
+                mainWindow.find('.wb-title')
+                    .append($('<span>', {
+                        id: 'assist-fixed-num',
+                        title: 'Number of fixed issues',
+                        text: 0,
+                    }).css({
+                        color: 'green'
+                    }));
+                /*
+                mainWindow.find('.wb-title').append($('<span> - </span>'));
+                mainWindow.find('.wb-title')
+                .append($('<span>', {
+                        id: 'assist-scan-progress',
+                        title: 'Scan progress',
+                        text: 0,
+                    }).css({
+                        color: 'blue'
+                    }));
+                */
+                $("#assist_reset_window").click(function () {
+                    mainWindow[0].winbox.resize(defaultW, defaultH).move(defaultX, defaultY);
+                });
+
+                // ==== Custom Rule Dialog
+                $('<div>').prop('id', 'assist_custom_rule_dialog_content')
+                    .append($('<div>').css({
+                        padding: 10
+                    })
+                        .append($('<p>' + translation.formCustomRules + '</p>'))
+                        .append($('<fieldset>')
+                            .append($('<label>').prop('for', 'oldname').text(translation.formCustomRulesRegExp))
+                            .append($('<input>', {
+                                type: 'text',
+                                name: 'oldname',
+                                id: 'oldname',
+                            }))
+                            .append($('<label>').prop('for', 'newname').text(translation.formCustomRulesReplaceText))
+                            .append($('<input>', {
+                                type: 'text',
+                                name: 'newname',
+                                id: 'newname',
+                            }))))
+                    .append($('<div>').css({
+                        padding: 10
+                    })
+                        .append($('<div class="btn-toolbar">')
+                            .append($('<button id="assist_custom_submit_btn" class="btn waze-btn waze-btn-small waze-btn-green">' + translation.btnSubmit + '</button>'))
+                            .append($('<button id="assist_custom_cancel_btn" class="btn waze-btn waze-btn-small waze-btn-red">' + translation.btnCancel + '</button>'))
+                        ))
+                    .appendTo(wazeMap);
+
+                $('#assist_custom_rule_dialog_content label').css({
+                    display: 'block'
+                });
+                $('#assist_custom_rule_dialog_content input').css({
+                    display: 'block',
+                    width: '100%'
+                });
+
+                new WinBox("Add Custom Rule", {
+                    id: "assist_custom_rule_dialog",
+                    index: 1,
+                    class: ["no-full", "no-min", "no-max", "no-resize"],
+                    hidden: true,
+                    x: "center",
+                    y: "center",
+                    width: "300px",
+                    height: "250px",
+                    background: 'lightblue',
+                    border: 4,
+                    mount: document.getElementById("assist_custom_rule_dialog_content"),
+                    onclose: function (force) {
+                        this.hide();
+                        return true;
+                    }
+                });
+                var customRuleDialog = $('#assist_custom_rule_dialog');
+                var self = this;
+                $("#assist_custom_submit_btn").click(function () {
+                    self.customRuleDialog_Ok();
+                    customRuleDialog[0].winbox.hide();
+                });
+                $("#assist_custom_cancel_btn").click(function () {
+                    customRuleDialog[0].winbox.hide();
+                });
+
+                this.addProblem = function (id, text, selectFunc, editFunc, exception, experimental) {
+                    var problem = $('<li>')
+                        .prop('id', 'issue-' + id)
+                        .append($('<input>', {
+                            value: id,
+                            type: "checkbox"
+                        }))
+                        .append($('<a>', {
+                            href: "javascript:void(0)",
+                            text: text,
+                            click: function (event) {
+                                selectFunc(event);
+                            },
+                            contextmenu: function (event) {
+                                exception(event);
+                                event.preventDefault();
+                                event.stopPropagation();
+                            },
+                        }))
+                        .append('&nbsp;')
+                        .append($('<span>', {
+                            title: "Add custom rule for this problem",
+                            class: "fa fa-edit",
+                            style: "cursor: pointer;",
+                            click: function (event) {
+                                editFunc(event);
                             }
-                            reason = streetName;
-                        } catch (err) {
-                            warning('Street name "' + streetName + '" causes error in rules');
+                        }))
+                        .appendTo($('#assist_unresolved_list'));
+
+                    if (experimental) {
+                        problem.children().css({
+                            color: 'red'
+                        }).prop('title', 'Experimental rule');
+                    }
+                };
+
+                this.getCheckedItemsList = function () {
+                    var itemsList = [];
+                    $('#assist_unresolved_list').find('input').each(function () {
+                        if (this.checked) {
+                            itemsList.push(this.value);
+                        }
+                    });
+                    return itemsList;
+                };
+
+                this.updateProblem = function (id, text) {
+                    var a = $('li#issue-' + escapeId(id) + ' > a');
+                    a.text(a.text() + ' ' + text);
+                };
+
+                this.setUnresolvedErrorNum = function (text) {
+                    $('#assist-error-num').text(text);
+                };
+
+                this.setFixedErrorNum = function (text) {
+                    $('#assist-fixed-num').text(text);
+                };
+
+                this.setScanProgress = function (text) {
+                    //$('#assist-scan-progress').text(text);
+                };
+
+                var escapeId = function (id) {
+                    return String(id).replace(/\./g, "\\.");
+                };
+
+                this.moveToFixedList = function (id) {
+                    $("#issue-" + escapeId(id)).appendTo($('#assist_fixed_list')).find("span").remove();
+                    $("#issue-" + escapeId(id)).find("input").remove();
+                };
+
+                this.removeError = function (id) {
+                    $("#issue-" + escapeId(id)).remove();
+                };
+
+                this.fixAllBtn = function () {
+                    return $('#assist_fixall_btn');
+                };
+                this.fixSelectedBtn = function () {
+                    return $('#assist_fixselected_btn');
+                };
+                this.scanAreaBtn = function () {
+                    return $('#assist_scanarea_btn');
+                };
+                this.clearFixedBtn = function () {
+                    return $('#assist_clearfixed_btn');
+                };
+                this.clearAllBtn = function () {
+                    return $('#assist_clearall_btn');
+                };
+
+                this.selectAllChk = function () {
+                    return $('#assist_select_all_chk');
+                };
+
+                this.unresolvedList = function () {
+                    return $('#assist_unresolved_list');
+                };
+                this.fixedList = function () {
+                    return $('#assist_fixed_list');
+                };
+
+                this.enableCheckbox = function () {
+                    return $('#assist_enabled');
+                };
+                this.skipAltCheckbox = function () {
+                    return $('#assist_skip_alt');
+                };
+                this.moveOld2AltCheckbox = function () {
+                    return $('#assist_move_old_to_alt');
+                };
+                this.enableCustomRulesCheckbox = function () {
+                    return $('#assist_enable_custom_rules');
+                };
+                this.variantRadio = function (value) {
+                    if (!value) {
+                        return $('[name=assist_variant]');
+                    }
+
+                    return $('[name=assist_variant][value=' + value + ']');
+                };
+
+                this.addCustomRuleBtn = function () {
+                    return $('#assist_add_custom_rule');
+                };
+                this.editCustomRuleBtn = function () {
+                    return $('#assist_edit_custom_rule');
+                };
+                this.delCustomRuleBtn = function () {
+                    return $('#assist_del_custom_rule');
+                };
+                this.customRuleDialog = function (title, params) {
+                    var deferred = $.Deferred();
+
+                    if (params) {
+                        customRuleDialog.find('#oldname').val(params.oldname);
+                        customRuleDialog.find('#newname').val(params.newname);
+                    }
+
+                    this.customRuleDialog_Ok = function () {
+                        deferred.resolve({
+                            oldname: customRuleDialog.find('#oldname').val(),
+                            newname: customRuleDialog.find('#newname').val(),
+                        });
+                    };
+
+                    customRuleDialog[0].winbox.setTitle(title);
+                    customRuleDialog[0].winbox.show();
+
+                    return deferred.promise();
+                };
+                //this.variant = function () {
+                //    return $('[name=assist_variant][checked]')[0].value;
+                //};
+            }
+        }
+
+        class Scanner {
+            constructor() {
+                var ROAD_TYPE = {
+                    STREET: 1,
+                    PRIMARY_STREET: 2,
+                    FREEWAY: 3,
+                    RAMP: 4,
+                    WALKING_TRAIL: 5,
+                    MAJOR_HIGHWAY: 6,
+                    MINOR_HIGHWAY: 7,
+                    OFF_ROAD: 8,
+                    WALKWAY: 9,
+                    PEDESTRIAN_BOARDWALK: 10,
+                    FERRY: 15,
+                    STAIRWAY: 16,
+                    PRIVATE_ROAD: 17,
+                    RAILROAD: 18,
+                    RUNWAY_TAXIWAY: 19,
+                    PARKING_LOT_ROAD: 20,
+                    ALLEY: 22
+                };
+
+                var zoomToRoadType = function (e) {
+                    if (e < 14) {
+                        return [];
+                    }
+                    switch (e) {
+                        case 14:
+                            return [ROAD_TYPE.PRIMARY_STREET, ROAD_TYPE.FREEWAY, ROAD_TYPE.RAMP, ROAD_TYPE.MAJOR_HIGHWAY, ROAD_TYPE.MINOR_HIGHWAY, ROAD_TYPE.FERRY];
+                        case 15:
+                            return [ROAD_TYPE.PRIMARY_STREET, ROAD_TYPE.FREEWAY, ROAD_TYPE.RAMP, ROAD_TYPE.MAJOR_HIGHWAY, ROAD_TYPE.MINOR_HIGHWAY, ROAD_TYPE.OFF_ROAD, ROAD_TYPE.WALKWAY, ROAD_TYPE.PEDESTRIAN_BOARDWALK, ROAD_TYPE.FERRY, ROAD_TYPE.STAIRWAY, ROAD_TYPE.PRIVATE_ROAD, ROAD_TYPE.RAILROAD, ROAD_TYPE.RUNWAY_TAXIWAY, ROAD_TYPE.PARKING_LOT_ROAD, ROAD_TYPE.ALLEY];
+                        default:
+                            return Object.values(ROAD_TYPE);
+                    }
+                };
+                var zoomToVenueLevel = function (e) {
+                    switch (e) {
+                        case 12:
+                            return 1;
+                        case 13:
+                            return 2;
+                        case 14:
+                        case 15:
+                        case 16:
+                            return 3;
+                        case 17:
+                        case 18:
+                        case 19:
+                        case 20:
+                        case 21:
+                        case 22:
+                            return 4;
+                        default:
+                            return null;
+                    }
+                };
+
+                var getData = function (e, cb) {
+                    //debug(e);
+                    $.get(W.Config.paths.features, e).done(cb);
+                };
+
+                var splitExtent = function (extent, zoom) {
+                    var result = [];
+
+                    var ratio = 1; //map.getResolution() / map.getResolutionForZoom(zoom); //FIXME: temporary commented, because getResolutionForZoom() is gone
+                    var dx = extent.getWidth() / ratio;
+                    var dy = extent.getHeight() / ratio;
+
+                    var x, y;
+                    for (x = extent.left; x < extent.right; x += dx) {
+                        for (y = extent.bottom; y < extent.top; y += dy) {
+                            var bounds = new OpenLayers.Bounds();
+                            bounds.extend(new OpenLayers.LonLat(x, y));
+                            bounds.extend(new OpenLayers.LonLat(x + dx, y + dy));
+
+                            result.push(bounds);
+                        }
+                    }
+
+                    return result;
+                };
+
+                this.scan = function (bounds, zoom, analyze, progress) {
+                    if (localStorage.getItem('assist_enabled') != 'true') {
+                        return;
+                    }
+                    var boundsArray = splitExtent(bounds, zoom);
+                    var completed = 0;
+
+                    if (boundsArray.length > 20 && !confirm('Script will scan ' + boundsArray.length + ' pieces. Are you OK?')) {
+                        return;
+                    }
+
+                    progress = progress || function () { };
+
+                    series(boundsArray, 0, function (bounds, next) {
+                        var piece = bounds.transform(W.map.getProjectionObject(), 'EPSG:4326');
+
+                        var e = {
+                            bbox: piece.toBBOX(),
+                            language: I18n.locale,
+                            venueFilter: '3',
+                            venueLevel: zoomToVenueLevel(zoom),
+                        };
+                        var z = {
+                            roadTypes: zoomToRoadType(zoom).toString()
+                        };
+                        OpenLayers.Util.extend(e, z);
+
+                        getData(e, function (data) {
+                            analyze(piece, zoom, data);
+                            progress(++completed * 100 / boundsArray.length);
+                            next();
+                        });
+                    });
+                };
+            }
+        }
+
+        class Analyzer {
+            constructor() {
+                var Exceptions = function () {
+                    var exceptions = [];
+
+                    var onAdd = function (name) { };
+                    var onDelete = function (index) { };
+
+                    var save = function (exceptions) {
+                        if (localStorage) {
+                            localStorage.setItem('assistExceptionsKey', JSON.stringify(exceptions));
+                        }
+                    };
+
+                    this.load = function () {
+                        if (localStorage) {
+                            var str = localStorage.getItem('assistExceptionsKey');
+                            if (str) {
+                                var arr = JSON.parse(str);
+                                for (var i = 0; i < arr.length; ++i) {
+                                    var exception = arr[i];
+                                    this.add(exception);
+                                }
+                            }
+                        }
+                    };
+
+                    this.contains = function (name) {
+                        if (exceptions.indexOf(name) == -1)
+                            return false;
+                        return true;
+                    };
+
+                    this.add = function (name) {
+                        exceptions.push(name);
+                        save(exceptions);
+                        onAdd(name);
+                    };
+
+                    this.remove = function (index) {
+                        exceptions.splice(index, 1);
+                        save(exceptions);
+                        onDelete(index);
+                    };
+
+                    this.onAdd = function (cb) {
+                        onAdd = cb;
+                    };
+                    this.onDelete = function (cb) {
+                        onDelete = cb;
+                    };
+                };
+
+                var analyzedIds = [];
+                var problems = [];
+                var unresolvedIdx = 0;
+                var skippedErrors = 0;
+                var variant;
+                var exceptions = new Exceptions();
+                var rules;
+                var action;
+
+                var getUnresolvedErrorNum = function () {
+                    return problems.length - unresolvedIdx - skippedErrors;
+                };
+
+                var getFixedErrorNum = function () {
+                    return unresolvedIdx;
+                };
+
+                this.unresolvedErrorNum = getUnresolvedErrorNum;
+                this.fixedErrorNum = getFixedErrorNum;
+
+                this.setRules = function (r) {
+                    rules = r;
+                };
+
+                this.setActionHelper = function (a) {
+                    action = a;
+                };
+
+                this.loadExceptions = function () {
+                    exceptions.load();
+                };
+
+                this.onExceptionAdd = function (cb) {
+                    exceptions.onAdd(cb);
+                };
+
+                this.onExceptionDelete = function (cb) {
+                    exceptions.onDelete(cb);
+                };
+
+                this.addException = function (reason, cb) {
+                    exceptions.add(reason);
+
+                    var i;
+                    for (i = 0; i < problems.length; ++i) {
+                        var problem = problems[i];
+                        if (problem.reason == reason) {
+                            problem.skip = true;
+                            ++skippedErrors;
+
+                            cb(problem.object.id);
+                        }
+                    }
+                };
+
+                this.removeException = function (i) {
+                    exceptions.remove(i);
+                };
+
+                this.setVariant = function (v) {
+                    variant = v;
+                };
+
+                this.reset = function () {
+                    analyzedIds = [];
+                    problems = [];
+                    unresolvedIdx = 0;
+                    skippedErrors = 0;
+                };
+
+                this.fixAll = function (oneFixed, allFixed) {
+                    series(problems, unresolvedIdx, function (p, next) {
+                        if (p.skip) {
+                            next();
                             return;
                         }
+
+                        action.fixProblem(p).done(function (id) {
+                            ++unresolvedIdx;
+                            oneFixed(id);
+
+                            setTimeout(next, 0);
+                        });
+                    }, allFixed);
+                };
+
+                this.fixSelected = function (listToFix, oneFixed, allFixed) {
+                    series(problems, unresolvedIdx, function (p, next) {
+                        if (listToFix.indexOf(p.object.id + '_' + p.streetID) == -1) {
+                            next();
+                            return;
+                        }
+                        if (p.skip) {
+                            next();
+                            return;
+                        }
+
+                        action.fixProblem(p).done(function (id) {
+                            ++unresolvedIdx;
+                            oneFixed(id);
+
+                            setTimeout(next, 0);
+                        });
+                    }, allFixed);
+                };
+
+                var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
+                    var userlevel = W.loginManager.getUserRank() + 1;
+                    var street = W.model.streets.getObjectById(streetID);
+
+                    if (!street)
+                        return;
+
+                    var detected = false;
+                    var skip = false;
+                    var title = '';
+                    var reason;
+                    var newStreetName;
+
+                    if (!street.attributes.isEmpty) {
+                        let streetName = street.attributes.name;
+                        if (!exceptions.contains(streetName)) {
+                            try {
+                                var city = W.model.cities.getObjectById(street.attributes.cityID);
+                                var result = rules.correct(variant, streetName, city.attributes.name);
+                                newStreetName = result.value;
+                                detected = (newStreetName != streetName);
+                                if (obj.type == 'venue') {
+                                    title = 'POI: ';
+                                }
+                                // alternative names
+                                if (attrName == 'streetIDs') {
+                                    title = 'ALT: ';
+                                }
+                                // if user has lower rank, just show the segment, but no fix allowed
+                                if (obj.lockRank && obj.lockRank >= userlevel) {
+                                    title = '(L' + (obj.lockRank + 1) + ') ' + title;
+                                    skip = true;
+                                }
+                                // show segments with closures, but lock them from fixing
+                                if (obj.hasClosures) {
+                                    title = '(🚧) ' + title;
+                                    skip = true;
+                                }
+                                title = title + streetName.replace(/\u00A0/g, '■').replace(/^\s|\s$/, '■');
+                                // for "detect only rules" we have no replacement to show
+                                if (!newStreetName) {
+                                    skip = true;
+                                } else {
+                                    title = title + ' ➤ ' + newStreetName;
+                                }
+                                if (skip) {
+                                    title = '🔒 ' + title;
+                                }
+                                reason = streetName;
+                            } catch (err) {
+                                warning('Street name "' + streetName + '" causes error in rules');
+                                return;
+                            }
+                        }
                     }
-                }
 
-                if (detected) {
-                    var gj = new OpenLayers.Format.GeoJSON();
-                    var geometry = gj.parseGeometry(obj.geometry);
-                    var objCenter = geometry.getBounds().getCenterLonLat().transform(W.Config.map.projection.remote, W.map.getProjectionObject());
-                    var boundsCenter = bounds.clone().getCenterLonLat().transform(W.Config.map.projection.remote, W.map.getProjectionObject());
-                    obj.center = objCenter;
+                    if (detected) {
+                        var gj = new OpenLayers.Format.GeoJSON();
+                        var geometry = gj.parseGeometry(obj.geometry);
+                        var objCenter = geometry.getBounds().getCenterLonLat().transform(W.Config.map.projection.remote, W.map.getProjectionObject());
+                        var boundsCenter = bounds.clone().getCenterLonLat().transform(W.Config.map.projection.remote, W.map.getProjectionObject());
+                        obj.center = objCenter;
 
-                    problems.push({
-                        object: obj,
-                        reason: reason,
-                        attrName: attrName,
-                        detectPos: boundsCenter,
-                        zoom: zoom,
-                        newStreetName: newStreetName,
-                        isEmpty: street.attributes.isEmpty,
-                        cityId: street.attributes.cityID,
-                        streetID: streetID,
-                        experimental: false,
-                        skip: skip,
-                    });
+                        problems.push({
+                            object: obj,
+                            reason: reason,
+                            attrName: attrName,
+                            detectPos: boundsCenter,
+                            zoom: zoom,
+                            newStreetName: newStreetName,
+                            isEmpty: street.attributes.isEmpty,
+                            cityId: street.attributes.cityID,
+                            streetID: streetID,
+                            experimental: false,
+                            skip: skip,
+                        });
 
-                    onProblemDetected(obj.id + '_' + streetID, obj, title, reason);
-                }
-            };
-
-            this.analyze = function (bounds, zoom, data, onProblemDetected) {
-                var startTime = new Date().getTime();
-                var analyzeAlt = true;
-
-                info('start analyze');
-
-                var subjects = {
-                    'segment': {
-                        attr: 'primaryStreetID',
-                        name: 'segments'
-                    },
-                    'venue': {
-                        attr: 'streetID',
-                        name: 'venues'
+                        onProblemDetected(obj.id + '_' + streetID, obj, title, reason);
                     }
                 };
 
-                if (localStorage) {
-                    if (localStorage.getItem('assist_skip_alt') == 'true') {
-                        analyzeAlt = false;
-                    }
-                }
+                this.analyze = function (bounds, zoom, data, onProblemDetected) {
+                    var startTime = new Date().getTime();
+                    var analyzeAlt = true;
 
-                for (var k in subjects) {
-                    var subject = subjects[k];
-                    var subjectData = data[subject.name];
+                    info('start analyze');
 
-                    if (!subjectData)
-                        continue;
-
-                    var objects = subjectData.objects;
-
-                    for (var i = 0; i < objects.length; ++i) {
-                        var obj = objects[i];
-                        var id = obj.id;
-
-                        obj.type = k;
-
-                        if (analyzedIds.indexOf(id) >= 0)
-                            continue;
-
-                        if (typeof obj.approved != 'undefined' && !obj.approved)
-                            continue;
-
-                        checkStreet(bounds, zoom, obj[subject.attr], obj, subject.attr, onProblemDetected);
-
-                        // support for alternative names
-                        if (subject.name == 'segments' && analyzeAlt) {
-                            for (var j = 0, n = obj.streetIDs.length; j < n; j++) {
-                                checkStreet(bounds, zoom, obj.streetIDs[j], obj, 'streetIDs', onProblemDetected);
-                            }
+                    var subjects = {
+                        'segment': {
+                            attr: 'primaryStreetID',
+                            name: 'segments'
+                        },
+                        'venue': {
+                            attr: 'streetID',
+                            name: 'venues'
                         }
-                        analyzedIds.push(id);
+                    };
+
+                    if (localStorage) {
+                        if (localStorage.getItem('assist_skip_alt') == 'true') {
+                            analyzeAlt = false;
+                        }
                     }
-                }
 
-                info('end analyze: ' + (new Date().getTime() - startTime) + 'ms');
-            };
-        };
+                    for (var k in subjects) {
+                        var subject = subjects[k];
+                        var subjectData = data[subject.name];
 
-        var Application = function () {
-            var scanner = new Scanner();
-            var analyzer = new Analyzer();
+                        if (!subjectData)
+                            continue;
 
-            var FULL_ZOOM_LEVEL = 17;
+                        var objects = subjectData.objects;
 
-            var scanForZoom = function (zoom) {
-                scanner.scan(W.map.olMap.calculateBounds(), zoom, function (bounds, zoom, data) {
-                    //debug(data);
-                    //var w = window.open();
-                    //w.document.open();
-                    //w.document.write(JSON.stringify(data));
-                    //w.document.close();
+                        for (var i = 0; i < objects.length; ++i) {
+                            var obj = objects[i];
+                            var id = obj.id;
 
-                    analyzer.analyze(bounds, zoom, data, function (id, obj, title, reason) {
-                        ui.addProblem(id, title,
-                            action.Select(obj.id, obj.type, obj.center, zoom),
-                            function () {
-                                ui.customRuleDialog('Add custom rule', {
-                                    oldname: '(.*)' + reason + '(.*)',
-                                    newname: reason
-                                }).done(function (response) {
-                                    rules.push(response.oldname, response.newname);
-                                    ui.scanAreaBtn().click();
-                                });
-                            },
-                            function () {
-                                analyzer.addException(reason, function (id) {
-                                    ui.removeError(id);
-                                    ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
-                                });
-                            }, false);
+                            obj.type = k;
 
-                        ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                            if (analyzedIds.indexOf(id) >= 0)
+                                continue;
+
+                            if (typeof obj.approved != 'undefined' && !obj.approved)
+                                continue;
+
+                            checkStreet(bounds, zoom, obj[subject.attr], obj, subject.attr, onProblemDetected);
+
+                            // support for alternative names
+                            if (subject.name == 'segments' && analyzeAlt) {
+                                for (var j = 0, n = obj.streetIDs.length; j < n; j++) {
+                                    checkStreet(bounds, zoom, obj.streetIDs[j], obj, 'streetIDs', onProblemDetected);
+                                }
+                            }
+                            analyzedIds.push(id);
+                        }
+                    }
+
+                    info('end analyze: ' + (new Date().getTime() - startTime) + 'ms');
+                };
+            }
+        }
+
+        class Application {
+            constructor() {
+            }
+            async start() {
+                var scanner = new Scanner();
+                var analyzer = new Analyzer();
+                var action = new ActionHelper();
+                var rules = new Rules();
+                var ui = new Ui();
+
+                await ui.init();
+
+                var FULL_ZOOM_LEVEL = 17;
+
+                var scanForZoom = function (zoom) {
+                    scanner.scan(W.map.olMap.calculateBounds(), zoom, function (bounds, zoom, data) {
+                        //debug(data);
+                        //var w = window.open();
+                        //w.document.open();
+                        //w.document.write(JSON.stringify(data));
+                        //w.document.close();
+
+                        analyzer.analyze(bounds, zoom, data, function (id, obj, title, reason) {
+                            ui.addProblem(id, title,
+                                action.Select(obj.id, obj.type, obj.center, zoom),
+                                function () {
+                                    ui.customRuleDialog('Add custom rule', {
+                                        oldname: '(.*)' + reason + '(.*)',
+                                        newname: reason
+                                    }).done(function (response) {
+                                        rules.push(response.oldname, response.newname);
+                                        ui.scanAreaBtn().click();
+                                    });
+                                },
+                                function () {
+                                    analyzer.addException(reason, function (id) {
+                                        ui.removeError(id);
+                                        ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                                    });
+                                }, false);
+
+                            ui.setUnresolvedErrorNum(analyzer.unresolvedErrorNum());
+                        });
+                    }, function (progress) {
+                        ui.setScanProgress(Math.round(progress) + '%');
                     });
-                }, function (progress) {
-                    ui.setScanProgress(Math.round(progress) + '%');
+                };
+
+                var fullscan = function () {
+                    scanForZoom(FULL_ZOOM_LEVEL);
+                };
+
+                var scan = function () {
+                    scanForZoom(W.map.getZoom());
+                };
+
+                analyzer.setRules(rules);
+                analyzer.setActionHelper(action);
+
+                action.setUi(ui);
+
+                analyzer.onExceptionAdd(function (name) {
+                    ui.addException(name, function (index) {
+                        if (confirm('Delete exception for ' + name + '?')) {
+                            analyzer.removeException(index);
+                        }
+                    });
                 });
-            };
 
-            var fullscan = function () {
-                scanForZoom(FULL_ZOOM_LEVEL);
-            };
-
-            var scan = function () {
-                scanForZoom(W.map.getZoom());
-            };
-
-            var action = new ActionHelper();
-            var rules = new Rules();
-            var ui = new Ui();
-
-            analyzer.setRules(rules);
-            analyzer.setActionHelper(action);
-
-            action.setUi(ui);
-
-            analyzer.onExceptionAdd(function (name) {
-                ui.addException(name, function (index) {
-                    if (confirm('Delete exception for ' + name + '?')) {
-                        analyzer.removeException(index);
-                    }
+                analyzer.onExceptionDelete(function (index) {
+                    ui.removeException(index);
                 });
-            });
 
-            analyzer.onExceptionDelete(function (index) {
-                ui.removeException(index);
-            });
+                //        rules.experimental = true;
 
-            //        rules.experimental = true;
+                rules.onAdd(function (rule) {
+                    ui.addCustomRule(rule.comment);
+                });
 
-            rules.onAdd(function (rule) {
-                ui.addCustomRule(rule.comment);
-            });
+                rules.onEdit(function (index, rule) {
+                    ui.updateCustomRule(index, rule.comment);
+                });
 
-            rules.onEdit(function (index, rule) {
-                ui.updateCustomRule(index, rule.comment);
-            });
+                rules.onDelete(function (index) {
+                    ui.removeCustomRule(index);
+                });
 
-            rules.onDelete(function (index) {
-                ui.removeCustomRule(index);
-            });
+                //W.model.events.register('mergeend', null, function () {
+                //    var name = W.model.getTopCountry().getName();
+                //    if (name != currentCountry) {
+                //        rules.onCountryChange(name);
+                //        currentCountry = name;
+                //    }
+                //});
 
-            //W.model.events.register('mergeend', null, function () {
-            //    var name = W.model.getTopCountry().getName();
-            //    if (name != currentCountry) {
-            //        rules.onCountryChange(name);
-            //        currentCountry = name;
-            //    }
-            //});
+                analyzer.loadExceptions();
+                rules.load();
 
-            analyzer.loadExceptions();
-            rules.load();
-
-            this.start = function () {
                 ui.enableCheckbox().change(function () {
                     if (this.checked) {
                         ui.showMainWindow();
@@ -1995,14 +1990,14 @@
                 });
 
                 window.assist = this;
-            };
+            }
         };
 
-        function readyFunc() {
-            requestRules(function () {
+        async function readyFunc() {
+            requestRules(async function () {
                 info("Ready to work!");
-                var app = new Application();
-                app.start();
+                const app = new Application();
+                await app.start();
             });
         }
 
