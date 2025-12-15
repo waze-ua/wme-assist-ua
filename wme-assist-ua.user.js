@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2025.05.02.001
+// @version      2025.12.15.001
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
@@ -305,7 +305,7 @@
                             // This rule should be before renaming rules or they couldn't see some errors
                             return t
                                 .replace(/[@#№$,^!:;*"?<]/g, ' ').replace(/ {2,}/, ' ')
-                                .replace(/[`\u02bc]/g, '\''); // replace incorrect apostrophes (`’)
+                                .replace(/[`\u02bc\u2019]/g, '\''); // replace incorrect apostrophes (`’)
                         }),
                         /*
                         new Rule('Incorrect language', function (t) {
