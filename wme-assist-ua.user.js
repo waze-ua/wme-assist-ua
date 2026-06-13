@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         WME Assist UA
 // @description  Check and fix street names for POI and segments. UA fork of original WME Assist
-// @version      2025.12.15.001
+// @version      2026.06.13.001
 // @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
 // @author       borman84 (Boris Molodenkov), madnut, turbopirate + (add yourself here)
 // @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
 // @updateURL    https://greasyfork.org/uk/scripts/457555-wme-assist-ua
 // @downloadURL  https://greasyfork.org/uk/scripts/457555-wme-assist-ua
 // @connect      google.com
@@ -17,15 +18,35 @@
 // ==/UserScript==
 
 /* jshint esversion: 11 */
-/* global W */
 /* global $ */
-/* global require */
-/* global OpenLayers */
-/* global I18n */
+/* global GM_info */
+/* global GM_xmlhttpRequest */
+/* global unsafeWindow */
+/* global WinBox */
 
 (function () {
 
     const scriptName = GM_info.script.name;
+    const wmeWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+    let wmeSDK = null;
+
+    function waitForWmeSdkReady() {
+        return new Promise(function (resolve, reject) {
+            function attach() {
+                if (wmeWindow.SDK_INITIALIZED && wmeWindow.getWmeSdk) {
+                    wmeWindow.SDK_INITIALIZED.then(resolve).catch(reject);
+                } else {
+                    setTimeout(attach, 250);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', attach, { once: true });
+            } else {
+                attach();
+            }
+        });
+    }
 
     function debug(message) {
         if (typeof message === 'string') {
@@ -68,6 +89,12 @@
     }
 
     async function run_wme_assist() {
+        await waitForWmeSdkReady();
+        wmeSDK = wmeWindow.getWmeSdk({
+            scriptId: "wme-assist-ua",
+            scriptName: scriptName
+        });
+
         const supportedRulesVersion = "1.1";
         const requestsTimeout = 20000; // in ms
         const rulesHash = "AKfycbyCR85UB-OexWIcN2pkTV1828bf0M6hUXkfHmu79M50PW3LMjpXkZ4ynRUzf2AOJqQqBA";
@@ -120,7 +147,7 @@
 
         function requestRules(callbackFunc) {
             GM_xmlhttpRequest({
-                url: 'https://script.google.com/macros/s/' + rulesHash + '/exec?func=getStreetRules&user=' + W.loginManager.user.getUsername(),
+                url: 'https://script.google.com/macros/s/' + rulesHash + '/exec?func=getStreetRules&user=' + encodeURIComponent((wmeSDK.State.getUserInfo() || {}).userName || ''),
                 method: 'GET',
                 timeout: requestsTimeout,
                 onload: function (res) {
@@ -452,8 +479,6 @@
                             return text.replace(/[ ]*$/, '');
                         }),
                     ];
-                    //var countryName = W.model.getTopCountry().getName();
-                    //info('Get rules for country: ' + countryName);
                     var countryRules = rules_UA();
 
                     return countryRules.concat(commonRules);
@@ -570,18 +595,90 @@
 
         class ActionHelper {
             constructor() {
-                var WazeActionAddAlternateStreet = require("Waze/Action/AddAlternateStreet");
-                var WazeActionUpdateFeatureAddress = require("Waze/Action/UpdateFeatureAddress");
-                var WazeActionUpdateObject = require("Waze/Action/UpdateObject");
-
                 var ui;
 
-                var type2repo = function (type) {
-                    var map = {
-                        'venue': W.model.venues,
-                        'segment': W.model.segments
-                    };
-                    return map[type];
+                var getById = function (type, id) {
+                    if (type == 'venue') {
+                        return wmeSDK.DataModel.Venues.getById({ venueId: String(id) });
+                    }
+                    return wmeSDK.DataModel.Segments.getById({ segmentId: Number(id) });
+                };
+
+                var getAddress = function (type, id) {
+                    if (type == 'venue') {
+                        return wmeSDK.DataModel.Venues.getAddress({ venueId: String(id) });
+                    }
+                    return wmeSDK.DataModel.Segments.getAddress({ segmentId: Number(id) });
+                };
+
+                var selectionType = function (type) {
+                    return type == 'venue' ? 'venue' : 'segment';
+                };
+
+                var getStreetById = function (streetId) {
+                    return wmeSDK.DataModel.Streets.getById({ streetId: Number(streetId) });
+                };
+
+                var findEmptyStreet = function (cityId) {
+                    return wmeSDK.DataModel.Streets.getAll().find(function (street) {
+                        return street.isEmpty && (cityId == null || street.cityId == cityId);
+                    }) || null;
+                };
+
+                var getOrCreateStreet = function (cityId, streetName, emptyStreet) {
+                    if (emptyStreet) {
+                        return findEmptyStreet(cityId);
+                    }
+
+                    var args = { streetName: streetName };
+                    if (cityId != null) {
+                        args.cityId = Number(cityId);
+                    }
+
+                    var street = wmeSDK.DataModel.Streets.getStreet(args);
+                    if (!street) {
+                        street = wmeSDK.DataModel.Streets.addStreet(args);
+                    }
+                    return street;
+                };
+
+                var getCityIdFromAddress = function (addr, fallbackStreetId) {
+                    if (addr && addr.city && addr.city.id != null) {
+                        return addr.city.id;
+                    }
+                    if (addr && addr.street && addr.street.cityId != null) {
+                        return addr.street.cityId;
+                    }
+                    if (fallbackStreetId != null) {
+                        var street = getStreetById(fallbackStreetId);
+                        if (street && street.cityId != null) {
+                            return street.cityId;
+                        }
+                    }
+                    var topCity = wmeSDK.DataModel.Cities.getTopCity();
+                    return topCity ? topCity.id : null;
+                };
+
+                var setPrimaryStreet = function (type, id, streetId) {
+                    if (type == 'venue') {
+                        wmeSDK.DataModel.Venues.updateAddress({
+                            venueId: String(id),
+                            streetId: Number(streetId)
+                        });
+                    } else {
+                        wmeSDK.DataModel.Segments.updateAddress({
+                            segmentId: Number(id),
+                            primaryStreetId: Number(streetId)
+                        });
+                    }
+                };
+
+                var waitForMapDataAndRun = function (callback) {
+                    wmeSDK.Events.once({ eventName: 'wme-map-data-loaded' })
+                        .then(callback)
+                        .catch(function (err) {
+                            warning(err);
+                        });
                 };
 
                 this.setUi = function (u) {
@@ -594,19 +691,27 @@
                     var select = function () {
                         info('select: ' + id);
 
-                        var obj = type2repo(type).getObjectById(id);
+                        var obj = getById(type, id);
 
-                        W.model.events.unregister('mergeend', null, select);
-
-                        if (obj) {
-                            W.selectionManager.setSelectedModels([obj]);
-                        } else if (--attemptNum > 0) {
-                            W.model.events.register('mergeend', null, select);
+                        if (center) {
+                            wmeSDK.Map.setMapCenter({
+                                lonLat: center,
+                                zoomLevel: zoom
+                            });
                         }
 
-                        debug("Attempt number left: " + attemptNum);
+                        if (obj) {
+                            wmeSDK.Editing.setSelection({
+                                selection: {
+                                    objectType: selectionType(type),
+                                    ids: [type == 'venue' ? String(id) : Number(id)]
+                                }
+                            });
+                        } else if (--attemptNum > 0) {
+                            waitForMapDataAndRun(select);
+                        }
 
-                        W.map.setCenter(center, zoom);
+                        debug('Attempt number left: ' + attemptNum);
                     };
 
                     return select;
@@ -619,78 +724,83 @@
 
                     var fix = function () {
                         var uniqueId = problem.object.id + '_' + problem.streetID;
-                        var obj = type2repo(problem.object.type).getObjectById(problem.object.id);
-                        W.model.events.unregister('mergeend', null, fix);
+                        var obj = getById(problem.object.type, problem.object.id);
 
                         if (obj) {
-                            var addr = obj.getAddress().attributes;
-                            var attr = {
-                                countryID: addr.country.attributes.id,
-                                stateID: addr.state.attributes.id,
-                                cityName: addr.city.attributes.name,
-                                emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
-                                streetName: problem.newStreetName,
-                                emptyStreet: problem.isEmpty
-                            };
+                            try {
+                                var addr = getAddress(problem.object.type, problem.object.id);
+                                var currentStreetName = addr && addr.street ? addr.street.name : null;
+                                var cityId = problem.cityId != null ? problem.cityId : getCityIdFromAddress(addr, problem.streetID);
 
-                            // check if alternative name
-                            if (problem.attrName == 'streetIDs') {
-                                // check if still exist
-                                if (obj.attributes.streetIDs.indexOf(problem.streetID) > -1) {
-                                    // remove old street and keep other ones
-                                    var streets2keep = [];
-                                    obj.attributes.streetIDs.forEach(function (sid) {
-                                        if (problem.streetID !== sid) {
-                                            streets2keep.push(sid);
+                                // check if alternative name
+                                if (problem.attrName == 'streetIDs') {
+                                    if (problem.object.type != 'segment') {
+                                        ui.updateProblem(uniqueId, '(not applicable to venue)');
+                                    } else if (obj.alternateStreetIds && obj.alternateStreetIds.indexOf(problem.streetID) > -1) {
+                                        var altStreet = getStreetById(problem.streetID);
+                                        var altCityId = altStreet && altStreet.cityId != null ? altStreet.cityId : cityId;
+                                        var newAltStreet = getOrCreateStreet(altCityId, problem.newStreetName, problem.isEmpty);
+                                        if (!newAltStreet) {
+                                            ui.updateProblem(uniqueId, '(empty street not found)');
                                         } else {
-                                            var altStreet = W.model.streets.getObjectById(sid);
-                                            var city = W.model.cities.getObjectById(altStreet.attributes.cityID);
-                                            attr.cityName = city.attributes.name;
-                                            attr.emptyCity = city.hasName() ? null : true;
+                                            var streets2keep = obj.alternateStreetIds.filter(function (sid) {
+                                                return problem.streetID !== sid;
+                                            });
+                                            if (streets2keep.indexOf(newAltStreet.id) == -1) {
+                                                streets2keep.push(newAltStreet.id);
+                                            }
+                                            wmeSDK.DataModel.Segments.updateAddress({
+                                                segmentId: Number(problem.object.id),
+                                                alternateStreetIds: streets2keep
+                                            });
                                         }
-                                    });
-                                    W.model.actionManager.add(new WazeActionUpdateObject(obj, {
-                                        streetIDs: streets2keep
-                                    }));
-
-                                    // add new street
-                                    W.model.actionManager.add(new WazeActionAddAlternateStreet(obj, attr, {
-                                        streetIDField: problem.attrName
-                                    }));
-                                } else {
-                                    ui.updateProblem(uniqueId, '(not found. Deleted?)');
-                                }
-                            } else {
-                                // protect user manual fix
-                                if (problem.reason == addr.street.attributes.name) {
-                                    W.model.actionManager.add(new WazeActionUpdateFeatureAddress(obj, attr, {
-                                        streetIDField: problem.attrName
-                                    }));
-                                    // move old name to alt street, if option enabled
-                                    if (setOld2Alt && obj.type == 'segment') {
-                                        var altAttr = {
-                                            countryID: addr.country.attributes.id,
-                                            stateID: addr.state.attributes.id,
-                                            cityName: addr.city.attributes.name,
-                                            emptyCity: addr.city.attributes.name === null || addr.city.attributes.name === '',
-                                            streetName: problem.reason,
-                                            emptyStreet: false //problem.isEmpty
-                                        };
-                                        W.model.actionManager.add(new WazeActionAddAlternateStreet(obj, altAttr, {
-                                            streetIDField: problem.attrName
-                                        }));
+                                    } else {
+                                        ui.updateProblem(uniqueId, '(not found. Deleted?)');
                                     }
                                 } else {
-                                    ui.updateProblem(uniqueId, '(user fix: ' + addr.street.attributes.name + ')');
+                                    // protect user manual fix
+                                    if (problem.reason == currentStreetName) {
+                                        var newStreet = getOrCreateStreet(cityId, problem.newStreetName, problem.isEmpty);
+                                        if (!newStreet) {
+                                            ui.updateProblem(uniqueId, '(empty street not found)');
+                                        } else {
+                                            setPrimaryStreet(problem.object.type, problem.object.id, newStreet.id);
+
+                                            // move old name to alt street, if option enabled
+                                            if (setOld2Alt && problem.object.type == 'segment') {
+                                                var oldStreet = getStreetById(problem.streetID);
+                                                if (oldStreet) {
+                                                    var segmentAfterUpdate = getById('segment', problem.object.id);
+                                                    if (!segmentAfterUpdate.alternateStreetIds || segmentAfterUpdate.alternateStreetIds.indexOf(oldStreet.id) == -1) {
+                                                        wmeSDK.DataModel.Segments.addAlternateStreet({
+                                                            segmentIds: [Number(problem.object.id)],
+                                                            streetId: oldStreet.id
+                                                        });
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        ui.updateProblem(uniqueId, '(user fix: ' + currentStreetName + ')');
+                                    }
                                 }
+                                deferred.resolve(uniqueId);
+                            } catch (err) {
+                                warning(err);
+                                ui.updateProblem(uniqueId, '(' + (err.message || err) + ')');
+                                deferred.resolve(uniqueId);
                             }
-                            deferred.resolve(uniqueId);
                         } else if (--attemptNum <= 0) {
                             ui.updateProblem(uniqueId, '(was not fixed. Deleted?)');
                             deferred.resolve(uniqueId);
                         } else {
-                            W.model.events.register('mergeend', null, fix);
-                            W.map.setCenter(problem.detectPos, problem.zoom);
+                            if (problem.detectPos) {
+                                wmeSDK.Map.setMapCenter({
+                                    lonLat: problem.detectPos,
+                                    zoomLevel: problem.zoom
+                                });
+                            }
+                            waitForMapDataAndRun(fix);
                         }
 
                         debug('Attempt number left: ' + attemptNum);
@@ -765,7 +875,7 @@
                     }
                 };
 
-                var locale = I18n.currentLocale().toLowerCase();
+                var locale = wmeSDK.Settings.getLocale().localeCode.toLowerCase();
 
                 if (!translations.hasOwnProperty(locale)) {
                     locale = 'en-us';
@@ -849,14 +959,12 @@
                     }));
                 addon.appendChild(section);
 
-                const { tabLabel, tabPane } = W.userscripts.registerSidebarTab("sidepanel-assist");
+                const { tabLabel, tabPane } = await wmeSDK.Sidebar.registerScriptTab();
 
                 tabLabel.innerText = scriptName;
                 tabLabel.title = scriptName;
 
                 tabPane.innerHTML = addon.innerHTML;
-
-                await W.userscripts.waitForElementConnected(tabPane);
 
                 //tabPane.addEventListener("element-connected", () => {
                 //    alert("connected");
@@ -1323,87 +1431,123 @@
                             return Object.values(ROAD_TYPE);
                     }
                 };
-                var zoomToVenueLevel = function (e) {
-                    switch (e) {
-                        case 12:
-                            return 1;
-                        case 13:
-                            return 2;
-                        case 14:
-                        case 15:
-                        case 16:
-                            return 3;
-                        case 17:
-                        case 18:
-                        case 19:
-                        case 20:
-                        case 21:
-                        case 22:
-                            return 4;
-                        default:
-                            return null;
+
+                var collectCoordinates = function (coordinates, result) {
+                    if (!coordinates) {
+                        return;
                     }
+                    if (typeof coordinates[0] == 'number' && typeof coordinates[1] == 'number') {
+                        result.push(coordinates);
+                        return;
+                    }
+                    coordinates.forEach(function (child) {
+                        collectCoordinates(child, result);
+                    });
                 };
 
-                var getData = function (e, cb) {
-                    //debug(e);
-                    $.get(W.Config.paths.features, e).done(cb);
-                };
-
-                var splitExtent = function (extent, zoom) {
-                    var result = [];
-
-                    var ratio = 1; //map.getResolution() / map.getResolutionForZoom(zoom); //FIXME: temporary commented, because getResolutionForZoom() is gone
-                    var dx = extent.getWidth() / ratio;
-                    var dy = extent.getHeight() / ratio;
-
-                    var x, y;
-                    for (x = extent.left; x < extent.right; x += dx) {
-                        for (y = extent.bottom; y < extent.top; y += dy) {
-                            var bounds = new OpenLayers.Bounds();
-                            bounds.extend(new OpenLayers.LonLat(x, y));
-                            bounds.extend(new OpenLayers.LonLat(x + dx, y + dy));
-
-                            result.push(bounds);
+                var normalizeBbox = function (bbox) {
+                    if (!bbox) {
+                        return null;
+                    }
+                    if (Array.isArray(bbox) && bbox.length >= 4) {
+                        return [bbox[0], bbox[1], bbox[2], bbox[3]];
+                    }
+                    if (typeof bbox == 'object') {
+                        var minLon = bbox.minLon ?? bbox.left ?? bbox.west ?? bbox.minX;
+                        var minLat = bbox.minLat ?? bbox.bottom ?? bbox.south ?? bbox.minY;
+                        var maxLon = bbox.maxLon ?? bbox.right ?? bbox.east ?? bbox.maxX;
+                        var maxLat = bbox.maxLat ?? bbox.top ?? bbox.north ?? bbox.maxY;
+                        if ([minLon, minLat, maxLon, maxLat].every(function (n) { return typeof n == 'number'; })) {
+                            return [minLon, minLat, maxLon, maxLat];
                         }
                     }
+                    return null;
+                };
 
-                    return result;
+                var geometryIntersectsBbox = function (geometry, bbox) {
+                    bbox = normalizeBbox(bbox);
+                    if (!geometry || !bbox) {
+                        return false;
+                    }
+                    var coords = [];
+                    collectCoordinates(geometry.coordinates, coords);
+                    if (!coords.length) {
+                        return false;
+                    }
+
+                    var geomBbox = coords.reduce(function (acc, coord) {
+                        var lon = coord[0];
+                        var lat = coord[1];
+                        return [
+                            Math.min(acc[0], lon),
+                            Math.min(acc[1], lat),
+                            Math.max(acc[2], lon),
+                            Math.max(acc[3], lat)
+                        ];
+                    }, [Infinity, Infinity, -Infinity, -Infinity]);
+
+                    return geomBbox[0] <= bbox[2] && geomBbox[2] >= bbox[0] &&
+                        geomBbox[1] <= bbox[3] && geomBbox[3] >= bbox[1];
+                };
+
+                var getData = function (bounds, zoom) {
+                    var roadTypes = zoomToRoadType(zoom);
+                    var segments = wmeSDK.DataModel.Segments.getAll()
+                        .filter(function (segment) {
+                            return (roadTypes.length == 0 || roadTypes.indexOf(segment.roadType) > -1) && geometryIntersectsBbox(segment.geometry, bounds);
+                        })
+                        .map(function (segment) {
+                            return {
+                                id: segment.id,
+                                type: 'segment',
+                                primaryStreetID: segment.primaryStreetId,
+                                streetIDs: segment.alternateStreetIds || [],
+                                lockRank: segment.lockRank,
+                                hasClosures: segment.hasClosures,
+                                approved: true,
+                                geometry: segment.geometry
+                            };
+                        });
+
+                    var venues = wmeSDK.DataModel.Venues.getAll()
+                        .filter(function (venue) {
+                            return venue.approved !== false && geometryIntersectsBbox(venue.geometry, bounds);
+                        })
+                        .map(function (venue) {
+                            var streetId = null;
+                            try {
+                                var address = wmeSDK.DataModel.Venues.getAddress({ venueId: String(venue.id) });
+                                streetId = address && address.street ? address.street.id : null;
+                            } catch (err) {
+                                warning(err);
+                            }
+                            return {
+                                id: venue.id,
+                                type: 'venue',
+                                streetID: streetId,
+                                lockRank: venue.lockRank,
+                                approved: venue.approved,
+                                geometry: venue.geometry
+                            };
+                        });
+
+                    return {
+                        segments: { objects: segments },
+                        venues: { objects: venues }
+                    };
                 };
 
                 this.scan = function (bounds, zoom, analyze, progress) {
                     if (localStorage.getItem('assist_enabled') != 'true') {
                         return;
                     }
-                    var boundsArray = splitExtent(bounds, zoom);
-                    var completed = 0;
-
-                    if (boundsArray.length > 20 && !confirm('Script will scan ' + boundsArray.length + ' pieces. Are you OK?')) {
-                        return;
-                    }
 
                     progress = progress || function () { };
+                    bounds = bounds || wmeSDK.Map.getMapExtent();
 
-                    series(boundsArray, 0, function (bounds, next) {
-                        var piece = bounds.transform(W.map.getProjectionObject(), 'EPSG:4326');
-
-                        var e = {
-                            bbox: piece.toBBOX(),
-                            language: I18n.locale,
-                            venueFilter: '3',
-                            venueLevel: zoomToVenueLevel(zoom),
-                        };
-                        var z = {
-                            roadTypes: zoomToRoadType(zoom).toString()
-                        };
-                        OpenLayers.Util.extend(e, z);
-
-                        getData(e, function (data) {
-                            analyze(piece, zoom, data);
-                            progress(++completed * 100 / boundsArray.length);
-                            next();
-                        });
-                    });
+                    var data = getData(bounds, zoom);
+                    analyze(bounds, zoom, data);
+                    progress(100);
                 };
             }
         }
@@ -1567,9 +1711,50 @@
                     }, allFixed);
                 };
 
+                var collectCoordinates = function (coordinates, result) {
+                    if (!coordinates) {
+                        return;
+                    }
+                    if (typeof coordinates[0] == 'number' && typeof coordinates[1] == 'number') {
+                        result.push(coordinates);
+                        return;
+                    }
+                    coordinates.forEach(function (child) {
+                        collectCoordinates(child, result);
+                    });
+                };
+
+                var getGeometryCenter = function (geometry) {
+                    var coords = [];
+                    collectCoordinates(geometry ? geometry.coordinates : null, coords);
+                    if (!coords.length) {
+                        return wmeSDK.Map.getMapCenter();
+                    }
+                    var minLon = coords[0][0], maxLon = coords[0][0];
+                    var minLat = coords[0][1], maxLat = coords[0][1];
+                    coords.forEach(function (coord) {
+                        minLon = Math.min(minLon, coord[0]);
+                        maxLon = Math.max(maxLon, coord[0]);
+                        minLat = Math.min(minLat, coord[1]);
+                        maxLat = Math.max(maxLat, coord[1]);
+                    });
+                    return {
+                        lon: (minLon + maxLon) / 2,
+                        lat: (minLat + maxLat) / 2
+                    };
+                };
+
+                var getBoundsCenter = function (bounds) {
+                    return {
+                        lon: (bounds[0] + bounds[2]) / 2,
+                        lat: (bounds[1] + bounds[3]) / 2
+                    };
+                };
+
                 var checkStreet = function (bounds, zoom, streetID, obj, attrName, onProblemDetected) {
-                    var userlevel = W.loginManager.getUserRank() + 1;
-                    var street = W.model.streets.getObjectById(streetID);
+                    var userInfo = wmeSDK.State.getUserInfo();
+                    var userlevel = userInfo ? userInfo.rank + 1 : 0;
+                    var street = streetID != null ? wmeSDK.DataModel.Streets.getById({ streetId: Number(streetID) }) : null;
 
                     if (!street)
                         return;
@@ -1580,12 +1765,12 @@
                     var reason;
                     var newStreetName;
 
-                    if (!street.attributes.isEmpty) {
-                        let streetName = street.attributes.name;
+                    if (!street.isEmpty) {
+                        let streetName = street.name;
                         if (!exceptions.contains(streetName)) {
                             try {
-                                var city = W.model.cities.getObjectById(street.attributes.cityID);
-                                var result = rules.correct(variant, streetName, city.attributes.name);
+                                var city = street.cityId != null ? wmeSDK.DataModel.Cities.getById({ cityId: Number(street.cityId) }) : null;
+                                var result = rules.correct(variant, streetName, city && city.name ? city.name : '');
                                 newStreetName = result.value;
                                 detected = (newStreetName != streetName);
                                 if (obj.type == 'venue') {
@@ -1624,10 +1809,8 @@
                     }
 
                     if (detected) {
-                        var gj = new OpenLayers.Format.GeoJSON();
-                        var geometry = gj.parseGeometry(obj.geometry);
-                        var objCenter = geometry.getBounds().getCenterLonLat().transform(W.Config.map.projection.remote, W.map.getProjectionObject());
-                        var boundsCenter = bounds.clone().getCenterLonLat().transform(W.Config.map.projection.remote, W.map.getProjectionObject());
+                        var objCenter = getGeometryCenter(obj.geometry);
+                        var boundsCenter = getBoundsCenter(bounds);
                         obj.center = objCenter;
 
                         problems.push({
@@ -1637,8 +1820,8 @@
                             detectPos: boundsCenter,
                             zoom: zoom,
                             newStreetName: newStreetName,
-                            isEmpty: street.attributes.isEmpty,
-                            cityId: street.attributes.cityID,
+                            isEmpty: street.isEmpty,
+                            cityId: street.cityId,
                             streetID: streetID,
                             experimental: false,
                             skip: skip,
@@ -1724,7 +1907,7 @@
                 var FULL_ZOOM_LEVEL = 17;
 
                 var scanForZoom = function (zoom) {
-                    scanner.scan(W.map.olMap.calculateBounds(), zoom, function (bounds, zoom, data) {
+                    scanner.scan(wmeSDK.Map.getMapExtent(), zoom, function (bounds, zoom, data) {
                         //debug(data);
                         //var w = window.open();
                         //w.document.open();
@@ -1762,7 +1945,23 @@
                 };
 
                 var scan = function () {
-                    scanForZoom(W.map.getZoom());
+                    scanForZoom(wmeSDK.Map.getZoomLevel());
+                };
+
+                var mapDataLoadedUnsubscribe = null;
+                var registerMapDataLoaded = function () {
+                    if (!mapDataLoadedUnsubscribe) {
+                        mapDataLoadedUnsubscribe = wmeSDK.Events.on({
+                            eventName: 'wme-map-data-loaded',
+                            eventHandler: scan
+                        });
+                    }
+                };
+                var unregisterMapDataLoaded = function () {
+                    if (mapDataLoadedUnsubscribe) {
+                        mapDataLoadedUnsubscribe();
+                        mapDataLoadedUnsubscribe = null;
+                    }
                 };
 
                 analyzer.setRules(rules);
@@ -1796,13 +1995,6 @@
                     ui.removeCustomRule(index);
                 });
 
-                //W.model.events.register('mergeend', null, function () {
-                //    var name = W.model.getTopCountry().getName();
-                //    if (name != currentCountry) {
-                //        rules.onCountryChange(name);
-                //        currentCountry = name;
-                //    }
-                //});
 
                 analyzer.loadExceptions();
                 rules.load();
@@ -1818,9 +2010,9 @@
                         }
 
                         scan();
-                        W.model.events.register('mergeend', null, scan);
+                        registerMapDataLoaded();
                     } else {
-                        W.model.events.unregister('mergeend', null, scan);
+                        unregisterMapDataLoaded();
                         ui.hideMainWindow();
                     }
                 });
@@ -1877,7 +2069,7 @@
                     ui.clearFixedBtn().hide();
                     ui.clearAllBtn().hide();
 
-                    W.model.events.unregister('mergeend', null, scan);
+                    unregisterMapDataLoaded();
 
                     setTimeout(function () {
                         analyzer.fixAll(function (id) {
@@ -1891,7 +2083,7 @@
                             ui.clearFixedBtn().show();
                             ui.clearAllBtn().show();
 
-                            W.model.events.register('mergeend', null, scan);
+                            registerMapDataLoaded();
                         });
                     }, 0);
                 });
@@ -1903,7 +2095,7 @@
                     ui.clearFixedBtn().hide();
                     ui.clearAllBtn().hide();
 
-                    W.model.events.unregister('mergeend', null, scan);
+                    unregisterMapDataLoaded();
 
                     var listToFix = ui.getCheckedItemsList();
 
@@ -1919,7 +2111,7 @@
                             ui.clearFixedBtn().show();
                             ui.clearAllBtn().show();
 
-                            W.model.events.register('mergeend', null, scan);
+                            registerMapDataLoaded();
                         });
                     }, 0);
                 });
@@ -1989,11 +2181,16 @@
                     }
                 });
 
-                window.assist = this;
+                wmeWindow.assist = this;
             }
         };
 
+        let applicationStarted = false;
         async function readyFunc() {
+            if (applicationStarted) {
+                return;
+            }
+            applicationStarted = true;
             requestRules(async function () {
                 info("Ready to work!");
                 const app = new Application();
@@ -2001,16 +2198,17 @@
             });
         }
 
-        if (W?.userscripts?.state.isReady) {
+        if (wmeSDK.State.isReady()) {
             readyFunc();
         } else {
-            document.addEventListener("wme-ready", readyFunc, {
-                once: true,
-            });
+            wmeSDK.Events.once({ eventName: "wme-ready" }).then(readyFunc);
         }
 
     }
 
-    run_wme_assist();
+    run_wme_assist().catch(function (err) {
+        warning(err);
+        alert(scriptName + ': failed to initialize WME SDK. ' + (err.message || err));
+    });
 
 })();
